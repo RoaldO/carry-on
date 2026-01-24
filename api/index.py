@@ -1,6 +1,5 @@
 import os
-from datetime import date as date_type
-from datetime import datetime
+from datetime import UTC, date as date_type, datetime
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -98,7 +97,7 @@ async def create_shot(shot: ShotCreate, x_pin: str = Header(None)):
         "distance": shot.distance if not shot.fail else None,
         "fail": shot.fail,
         "date": shot.date.isoformat(),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
     result = shots_collection.insert_one(doc)
