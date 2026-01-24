@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Golf shot tracking web app"
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi[standard]>=0.115.0",
     "pymongo>=4.10.0",
     "python-dotenv>=1.0.0",
     "uvicorn>=0.32.0",
