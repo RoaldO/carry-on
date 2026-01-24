@@ -14,8 +14,9 @@
 - [x] Automated deployment to Vercel on push
 
 ### 0b. In-App Idea Capture
-- Submit new feature ideas/feedback from within the app
-- Store ideas in database for later review
+- [x] Submit new feature ideas/feedback from within the app
+- [x] Store ideas in database for later review
+- [ ] Move "Submit an Idea" to a less intrusive location
 
 ### 0c. Refactor to DDD/SOLID (ADR Compliance)
 Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
