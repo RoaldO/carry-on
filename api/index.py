@@ -27,6 +27,17 @@ def get_shots_collection():
     return _client.carryon.shots
 
 
+def get_ideas_collection():
+    """Get MongoDB ideas collection, initializing connection if needed."""
+    global _client
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        return None
+    if _client is None:
+        _client = MongoClient(uri)
+    return _client.carryon.ideas
+
+
 def verify_pin(x_pin: str = Header(None)):
     """Verify PIN from request header."""
     expected_pin = os.getenv("APP_PIN")
@@ -48,8 +59,10 @@ class Shot(BaseModel):
     club: str
     distance: Optional[int] = None
     fail: bool = False
-    date: str
-    created_at: str
+
+
+class IdeaCreate(BaseModel):
+    description: str = Field(..., min_length=1, max_length=1000)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -136,6 +149,55 @@ async def list_shots(limit: int = 20, x_pin: str = Header(None)):
         })
 
     return {"shots": shots, "count": len(shots)}
+
+
+@app.post("/api/ideas")
+async def create_idea(idea: IdeaCreate, x_pin: str = Header(None)):
+    """Submit a new idea."""
+    verify_pin(x_pin)
+
+    ideas_collection = get_ideas_collection()
+    if ideas_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    created_at = datetime.now(UTC).isoformat()
+    doc = {
+        "description": idea.description,
+        "created_at": created_at,
+    }
+
+    result = ideas_collection.insert_one(doc)
+
+    return {
+        "id": str(result.inserted_id),
+        "message": "Idea submitted successfully",
+        "idea": {
+            "description": idea.description,
+            "created_at": created_at,
+        }
+    }
+
+
+@app.get("/api/ideas")
+async def list_ideas(limit: int = 50, x_pin: str = Header(None)):
+    """List submitted ideas."""
+    verify_pin(x_pin)
+
+    ideas_collection = get_ideas_collection()
+    if ideas_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    ideas = []
+    cursor = ideas_collection.find().sort("created_at", -1).limit(limit)
+
+    for doc in cursor:
+        ideas.append({
+            "id": str(doc["_id"]),
+            "description": doc["description"],
+            "created_at": doc["created_at"],
+        })
+
+    return {"ideas": ideas, "count": len(ideas)}
 
 
 def get_inline_html() -> str:

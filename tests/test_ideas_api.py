@@ -34,48 +34,48 @@ class TestIdeasEndpoint:
         assert data["idea"]["description"] == "Add dark mode"
         assert "created_at" in data["idea"]
 
-    def test_post_idea_without_description_returns_400(
+    def test_post_idea_without_description_returns_422(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
     ) -> None:
-        """POST /api/ideas without description should return 400 (FR-2)."""
+        """POST /api/ideas without description should return 422 (FR-2)."""
         response = client.post(
             "/api/ideas",
             json={},
             headers=auth_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
-    def test_post_idea_with_empty_description_returns_400(
+    def test_post_idea_with_empty_description_returns_422(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
     ) -> None:
-        """POST /api/ideas with empty description should return 400 (FR-2)."""
+        """POST /api/ideas with empty description should return 422 (FR-2)."""
         response = client.post(
             "/api/ideas",
             json={"description": ""},
             headers=auth_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
-    def test_post_idea_with_description_over_1000_chars_returns_400(
+    def test_post_idea_with_description_over_1000_chars_returns_422(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
     ) -> None:
-        """POST /api/ideas with description > 1000 chars should return 400 (FR-2)."""
+        """POST /api/ideas with description > 1000 chars should return 422 (FR-2)."""
         long_description = "a" * 1001
         response = client.post(
             "/api/ideas",
             json={"description": long_description},
             headers=auth_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_post_idea_with_description_exactly_1000_chars(
         self,

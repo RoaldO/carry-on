@@ -71,7 +71,7 @@ X-Pin: <pin>
 
 **Error Responses**
 - `401 Unauthorized`: Invalid or missing PIN
-- `400 Bad Request`: Description missing or exceeds 1000 characters
+- `422 Unprocessable Entity`: Description missing, empty, or exceeds 1000 characters
 
 ### GET /api/ideas
 
