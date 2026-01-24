@@ -27,6 +27,17 @@ def get_shots_collection():
     return _client.carryon.shots
 
 
+def get_ideas_collection():
+    """Get MongoDB ideas collection, initializing connection if needed."""
+    global _client
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        return None
+    if _client is None:
+        _client = MongoClient(uri)
+    return _client.carryon.ideas
+
+
 def verify_pin(x_pin: str = Header(None)):
     """Verify PIN from request header."""
     expected_pin = os.getenv("APP_PIN")
@@ -48,8 +59,10 @@ class Shot(BaseModel):
     club: str
     distance: Optional[int] = None
     fail: bool = False
-    date: str
-    created_at: str
+
+
+class IdeaCreate(BaseModel):
+    description: str = Field(..., min_length=1, max_length=1000)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -138,6 +151,55 @@ async def list_shots(limit: int = 20, x_pin: str = Header(None)):
     return {"shots": shots, "count": len(shots)}
 
 
+@app.post("/api/ideas")
+async def create_idea(idea: IdeaCreate, x_pin: str = Header(None)):
+    """Submit a new idea."""
+    verify_pin(x_pin)
+
+    ideas_collection = get_ideas_collection()
+    if ideas_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    created_at = datetime.now(UTC).isoformat()
+    doc = {
+        "description": idea.description,
+        "created_at": created_at,
+    }
+
+    result = ideas_collection.insert_one(doc)
+
+    return {
+        "id": str(result.inserted_id),
+        "message": "Idea submitted successfully",
+        "idea": {
+            "description": idea.description,
+            "created_at": created_at,
+        }
+    }
+
+
+@app.get("/api/ideas")
+async def list_ideas(limit: int = 50, x_pin: str = Header(None)):
+    """List submitted ideas."""
+    verify_pin(x_pin)
+
+    ideas_collection = get_ideas_collection()
+    if ideas_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    ideas = []
+    cursor = ideas_collection.find().sort("created_at", -1).limit(limit)
+
+    for doc in cursor:
+        ideas.append({
+            "id": str(doc["_id"]),
+            "description": doc["description"],
+            "created_at": doc["created_at"],
+        })
+
+    return {"ideas": ideas, "count": len(ideas)}
+
+
 def get_inline_html() -> str:
     """Return inline HTML for the form (fallback for Vercel)."""
     return """<!DOCTYPE html>
@@ -170,6 +232,11 @@ def get_inline_html() -> str:
         #pinScreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f5f5f5; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
         #pinScreen.hidden { display: none; }
         #pinForm { width: 100%; max-width: 300px; }
+        .ideas-section { margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; }
+        textarea { width: 100%; padding: 14px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: white; resize: vertical; min-height: 100px; font-family: inherit; }
+        textarea:focus { outline: none; border-color: #2d5a27; }
+        .char-counter { text-align: right; font-size: 12px; color: #666; margin-top: 4px; }
+        .char-counter.warning { color: #dc3545; }
     </style>
 </head>
 <body>
@@ -202,6 +269,7 @@ def get_inline_html() -> str:
     </form>
     <div id="message"></div>
     <div class="recent-shots"><h3>Recent Shots</h3><div id="recentShots">Loading...</div></div>
+    <div class="ideas-section"><h3>Submit an Idea</h3><form id="ideaForm"><div class="form-group"><label for="ideaDescription">Your idea or feedback</label><textarea id="ideaDescription" name="description" maxlength="1000" placeholder="Share your idea..." required></textarea><div class="char-counter"><span id="charCount">1000</span> characters remaining</div></div><button type="submit">Submit Idea</button></form><div id="ideaMessage"></div></div>
     <script>
         const pinScreen = document.getElementById('pinScreen'), pinForm = document.getElementById('pinForm'), pinInput = document.getElementById('pin'), pinMessage = document.getElementById('pinMessage');
         function getStoredPin() { return localStorage.getItem('carryon_pin'); }
@@ -229,6 +297,9 @@ def get_inline_html() -> str:
         });
         function showMessage(text, type) { const msg = document.getElementById('message'); msg.textContent = text; msg.className = 'message ' + type; setTimeout(() => { msg.textContent = ''; msg.className = ''; }, 3000); }
         async function loadRecentShots() { try { const response = await fetch('/api/shots?limit=5', { headers: { 'X-Pin': getStoredPin() || '' } }); const data = await response.json(); const container = document.getElementById('recentShots'); if (data.shots.length === 0) { container.innerHTML = '<p>No shots yet</p>'; return; } container.innerHTML = data.shots.map(shot => '<div class="shot-item"><span class="shot-club">' + shot.club.toUpperCase() + '</span><span class="' + (shot.fail ? 'shot-fail' : 'shot-distance') + '">' + (shot.fail ? 'FAIL' : shot.distance + 'm') + '</span><span style="color:#999;font-size:12px">' + shot.date + '</span></div>').join(''); } catch (err) { document.getElementById('recentShots').innerHTML = '<p>Could not load shots</p>'; } }
+        const ideaForm = document.getElementById('ideaForm'), ideaDescription = document.getElementById('ideaDescription'), charCount = document.getElementById('charCount'), ideaMessage = document.getElementById('ideaMessage');
+        ideaDescription.addEventListener('input', function() { const remaining = 1000 - this.value.length; charCount.textContent = remaining; charCount.parentElement.classList.toggle('warning', remaining < 100); });
+        ideaForm.addEventListener('submit', async function(e) { e.preventDefault(); const submitBtn = this.querySelector('button[type="submit"]'); submitBtn.disabled = true; try { const response = await fetch('/api/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Pin': getStoredPin() || '' }, body: JSON.stringify({ description: ideaDescription.value }) }); if (response.ok) { ideaMessage.textContent = 'Idea submitted!'; ideaMessage.className = 'message success'; ideaDescription.value = ''; charCount.textContent = '1000'; charCount.parentElement.classList.remove('warning'); setTimeout(() => { ideaMessage.textContent = ''; ideaMessage.className = ''; }, 3000); } else if (response.status === 401) { localStorage.removeItem('carryon_pin'); showPinScreen(); ideaMessage.textContent = 'PIN expired'; ideaMessage.className = 'message error'; } else { const result = await response.json(); ideaMessage.textContent = result.detail || 'Error'; ideaMessage.className = 'message error'; } } catch (err) { ideaMessage.textContent = 'Network error: ' + err.message; ideaMessage.className = 'message error'; } submitBtn.disabled = false; });
         initAuth();
     </script>
 </body>

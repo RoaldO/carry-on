@@ -47,3 +47,14 @@ def client(test_pin: str) -> Generator[TestClient, None, None]:
 def auth_headers(test_pin: str) -> dict[str, str]:
     """Headers with valid PIN for authenticated requests."""
     return {"X-Pin": test_pin}
+
+
+@pytest.fixture
+def mock_ideas_collection() -> Generator[MagicMock, None, None]:
+    """Mock MongoDB ideas collection."""
+    mock_collection = MagicMock()
+    mock_collection.find.return_value.sort.return_value.limit.return_value = []
+    mock_collection.insert_one.return_value.inserted_id = "test_idea_123"
+
+    with patch("api.index.get_ideas_collection", return_value=mock_collection):
+        yield mock_collection
