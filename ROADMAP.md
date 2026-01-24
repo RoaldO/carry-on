@@ -7,6 +7,16 @@
 
 ## Planned Features
 
+### 0. Test, Build & Deploy Tooling
+- Set up pytest for backend testing
+- Add API endpoint tests
+- CI/CD pipeline (GitHub Actions)
+- Automated deployment to Vercel on push
+
+### 0b. In-App Idea Capture
+- Submit new feature ideas/feedback from within the app
+- Store ideas in database for later review
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
@@ -18,7 +28,14 @@ Store golf course information including:
 - Store player handicap index
 - Support for course handicap calculation based on course rating/slope
 
-### 3. Round Tracking
+### 3. Stableford Score Calculation
+- Calculate Stableford points per hole based on:
+  - Net strokes (gross - handicap strokes)
+  - Par for the hole
+- Show running Stableford total during round
+- Store completed rounds with final scores
+
+### 4. Round Tracking
 Use the app during a round to:
 - Select a course
 - Track strokes per hole
@@ -26,16 +43,9 @@ Use the app during a round to:
 - Mark penalties, putts, etc.
 - Measure shot distances (club + distance per shot)
 
-### 4. GPS & Club Advice
+### 5. GPS & Club Advice
 - Mark hole locations by GPS when on the course (tee, green/pin)
 - Store GPS coordinates per hole for later reference
 - Get current location during round
 - Calculate distance to hole
 - Recommend clubs based on historical shot data (average distance per club)
-
-### 5. Stableford Score Calculation
-- Calculate Stableford points per hole based on:
-  - Net strokes (gross - handicap strokes)
-  - Par for the hole
-- Show running Stableford total during round
-- Store completed rounds with final scores
