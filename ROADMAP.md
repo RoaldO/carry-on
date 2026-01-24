@@ -17,6 +17,18 @@
 - Submit new feature ideas/feedback from within the app
 - Store ideas in database for later review
 
+### 0c. Refactor to DDD/SOLID (ADR Compliance)
+Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
+- [ ] Create domain layer (`domain/shot.py`) with Shot entity and value objects
+- [ ] Create repository layer (`repositories/shot_repository.py`) with abstract interface
+- [ ] Create service layer (`services/shot_service.py`) for business logic
+- [ ] Refactor `api/index.py` to only handle routing, delegate to services
+- [ ] Update tests to use dependency injection
+
+### 0d. Dependency Version Audit (ADR-0007 Compliance)
+- [ ] Check all dependencies are on latest patch version
+- [ ] Upgrade to latest minor versions where available
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
