@@ -8,10 +8,10 @@
 ## Planned Features
 
 ### 0. Test, Build & Deploy Tooling
-- Set up pytest for backend testing
-- Add API endpoint tests
-- CI/CD pipeline (GitHub Actions)
-- Automated deployment to Vercel on push
+- [x] Set up pytest for backend testing
+- [x] Add API endpoint tests
+- [x] CI/CD pipeline (GitHub Actions)
+- [ ] Automated deployment to Vercel on push
 
 ### 0b. In-App Idea Capture
 - Submit new feature ideas/feedback from within the app
