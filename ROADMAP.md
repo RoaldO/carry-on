@@ -24,8 +24,16 @@ Use the app during a round to:
 - Track strokes per hole
 - Tally total hits in real-time
 - Mark penalties, putts, etc.
+- Measure shot distances (club + distance per shot)
 
-### 4. Stableford Score Calculation
+### 4. GPS & Club Advice
+- Mark hole locations by GPS when on the course (tee, green/pin)
+- Store GPS coordinates per hole for later reference
+- Get current location during round
+- Calculate distance to hole
+- Recommend clubs based on historical shot data (average distance per club)
+
+### 5. Stableford Score Calculation
 - Calculate Stableford points per hole based on:
   - Net strokes (gross - handicap strokes)
   - Par for the hole
