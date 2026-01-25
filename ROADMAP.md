@@ -31,9 +31,9 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [ ] Upgrade to latest minor versions where available
 
 ### 0e. Code Coverage
-- [ ] Add pytest-cov for coverage reporting
-- [ ] Add coverage check to CI pipeline
-- [ ] Set minimum coverage threshold
+- [x] Add pytest-cov for coverage reporting
+- [x] Add coverage check to CI pipeline
+- [x] Set minimum coverage threshold (70%)
 
 ### 1. Golf Course Management
 Store golf course information including:
