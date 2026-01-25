@@ -20,6 +20,7 @@
 
 ### 0c. Refactor to DDD/SOLID (ADR Compliance)
 Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
+- [x] Create ubiquitous language glossary (`docs/glossary.md`)
 - [ ] Create domain layer (`domain/shot.py`) with Shot entity and value objects
 - [ ] Create repository layer (`repositories/shot_repository.py`) with abstract interface
 - [ ] Create service layer (`services/shot_service.py`) for business logic
