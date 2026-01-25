@@ -17,6 +17,9 @@ venv/
 *.swp
 *.swo
 
-# uv
-uv.lock
+# Vercel (duplicate removed)
 .vercel
+
+# Coverage
+.coverage
+coverage.xml
