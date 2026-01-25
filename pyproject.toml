@@ -15,8 +15,20 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.27.0",
+    "pytest-cov>=7.0.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=api --cov-report=term-missing --cov-fail-under=70"
+
+[tool.coverage.run]
+source = ["api"]
+omit = ["**/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
