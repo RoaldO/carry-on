@@ -12,13 +12,13 @@ from api.pin_security import hash_pin, needs_rehash, verify_pin as verify_pin_ha
 
 load_dotenv()
 
-app = FastAPI(title="CarryOn - Golf Shot Tracker")
+app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 
 # MongoDB connection (lazy initialization for serverless)
 _client: Optional[MongoClient] = None
 
 
-def get_shots_collection():
+def get_strokes_collection():
     """Get MongoDB collection, initializing connection if needed."""
     global _client
     uri = os.getenv("MONGODB_URI")
@@ -26,7 +26,7 @@ def get_shots_collection():
         return None
     if _client is None:
         _client = MongoClient(uri)
-    return _client.carryon.shots
+    return _client.carryon.strokes
 
 
 def get_ideas_collection():
@@ -74,14 +74,14 @@ def verify_pin(x_pin: str = Header(None), x_email: str = Header(None)):
         )
 
 
-class ShotCreate(BaseModel):
+class StrokeCreate(BaseModel):
     club: str
     distance: Optional[int] = None
     fail: bool = False
     date: date_type = Field(default_factory=date_type.today)
 
 
-class Shot(BaseModel):
+class Stroke(BaseModel):
     id: str
     club: str
     distance: Optional[int] = None
@@ -193,7 +193,7 @@ async def login(request: LoginRequest):
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_form():
-    """Serve the golf shot entry form."""
+    """Serve the golf stroke entry form."""
     html_path = os.path.join(os.path.dirname(__file__), "..", "public", "index.html")
 
     # For Vercel deployment, the file might be in a different location
@@ -223,53 +223,53 @@ async def serve_ideas():
         return f.read()
 
 
-@app.post("/api/shots")
-async def create_shot(shot: ShotCreate, x_pin: str = Header(None), x_email: str = Header(None)):
-    """Record a new golf shot."""
+@app.post("/api/strokes")
+async def create_stroke(stroke: StrokeCreate, x_pin: str = Header(None), x_email: str = Header(None)):
+    """Record a new golf stroke."""
     verify_pin(x_pin, x_email)
 
-    shots_collection = get_shots_collection()
-    if shots_collection is None:
+    strokes_collection = get_strokes_collection()
+    if strokes_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
 
-    if not shot.fail and shot.distance is None:
+    if not stroke.fail and stroke.distance is None:
         raise HTTPException(status_code=400, detail="Distance required when not a fail")
 
     doc = {
-        "club": shot.club,
-        "distance": shot.distance if not shot.fail else None,
-        "fail": shot.fail,
-        "date": shot.date.isoformat(),
+        "club": stroke.club,
+        "distance": stroke.distance if not stroke.fail else None,
+        "fail": stroke.fail,
+        "date": stroke.date.isoformat(),
         "created_at": datetime.now(UTC).isoformat(),
     }
 
-    result = shots_collection.insert_one(doc)
+    result = strokes_collection.insert_one(doc)
 
     return {
         "id": str(result.inserted_id),
-        "message": "Shot recorded successfully",
-        "shot": {
-            "club": shot.club,
-            "distance": shot.distance,
-            "fail": shot.fail,
-            "date": shot.date.isoformat(),
+        "message": "Stroke recorded successfully",
+        "stroke": {
+            "club": stroke.club,
+            "distance": stroke.distance,
+            "fail": stroke.fail,
+            "date": stroke.date.isoformat(),
         }
     }
 
 
-@app.get("/api/shots")
-async def list_shots(limit: int = 20, x_pin: str = Header(None), x_email: str = Header(None)):
-    """List recent shots."""
+@app.get("/api/strokes")
+async def list_strokes(limit: int = 20, x_pin: str = Header(None), x_email: str = Header(None)):
+    """List recent strokes."""
     verify_pin(x_pin, x_email)
-    shots_collection = get_shots_collection()
-    if shots_collection is None:
+    strokes_collection = get_strokes_collection()
+    if strokes_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
 
-    shots = []
-    cursor = shots_collection.find().sort("created_at", -1).limit(limit)
+    strokes = []
+    cursor = strokes_collection.find().sort("created_at", -1).limit(limit)
 
     for doc in cursor:
-        shots.append({
+        strokes.append({
             "id": str(doc["_id"]),
             "club": doc["club"],
             "distance": doc.get("distance"),
@@ -278,7 +278,7 @@ async def list_shots(limit: int = 20, x_pin: str = Header(None), x_email: str = 
             "created_at": doc["created_at"],
         })
 
-    return {"shots": shots, "count": len(shots)}
+    return {"strokes": strokes, "count": len(strokes)}
 
 
 @app.post("/api/ideas")
@@ -337,7 +337,7 @@ def get_inline_html() -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CarryOn - Golf Shot Tracker</title>
+    <title>CarryOn - Golf Stroke Tracker</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
@@ -357,11 +357,11 @@ def get_inline_html() -> str:
         .message { padding: 12px; border-radius: 8px; margin-top: 20px; text-align: center; }
         .message.success { background: #d4edda; color: #155724; }
         .message.error { background: #f8d7da; color: #721c24; }
-        .recent-shots { margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; }
-        .shot-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .shot-club { font-weight: 600; color: #2d5a27; }
-        .shot-distance { color: #666; }
-        .shot-fail { color: #dc3545; font-weight: 600; }
+        .recent-strokes { margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; }
+        .stroke-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .stroke-club { font-weight: 600; color: #2d5a27; }
+        .stroke-distance { color: #666; }
+        .stroke-fail { color: #dc3545; font-weight: 600; }
         #loginScreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f5f5f5; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
         #loginScreen.hidden { display: none; }
         .login-form { width: 100%; max-width: 300px; }
@@ -396,7 +396,7 @@ def get_inline_html() -> str:
         </div>
     </div>
     <div class="header"><h1>CarryOn</h1><a href="/ideas" class="idea-link" title="Submit an idea">&#128161;</a></div>
-    <form id="shotForm">
+    <form id="strokeForm">
         <div class="form-group"><label for="date">Date</label><input type="date" id="date" name="date" required></div>
         <div class="form-group"><label for="club">Club</label>
             <select id="club" name="club" required>
@@ -408,11 +408,11 @@ def get_inline_html() -> str:
             </select>
         </div>
         <div class="form-group"><label for="distance">Distance (meters)</label><input type="number" id="distance" name="distance" min="0" max="400" placeholder="Enter distance"></div>
-        <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="fail" name="fail"><label for="fail" style="margin: 0;">Failed shot</label></div></div>
-        <button type="submit">Record Shot</button>
+        <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="fail" name="fail"><label for="fail" style="margin: 0;">Failed stroke</label></div></div>
+        <button type="submit">Record Stroke</button>
     </form>
     <div id="message"></div>
-    <div class="recent-shots"><h3>Recent Shots</h3><div id="recentShots">Loading...</div></div>
+    <div class="recent-strokes"><h3>Recent Strokes</h3><div id="recentStrokes">Loading...</div></div>
     <script>
         const loginScreen = document.getElementById('loginScreen'), stepEmail = document.getElementById('stepEmail'), stepPin = document.getElementById('stepPin');
         const emailForm = document.getElementById('emailForm'), emailInput = document.getElementById('email'), emailMessage = document.getElementById('emailMessage');
@@ -435,26 +435,26 @@ def get_inline_html() -> str:
         async function login(email, pin) { try { const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, pin }) }); const data = await r.json(); if (data.detail) data.detail = parseErrorDetail(data.detail); return { ok: r.ok, data }; } catch { return { ok: false, data: { detail: 'Network error' } }; } }
         emailForm.addEventListener('submit', async function(e) { e.preventDefault(); const email = emailInput.value.trim().toLowerCase(); emailMessage.textContent = ''; emailMessage.className = ''; const result = await checkEmail(email); if (result.status === 'not_found') { emailMessage.textContent = 'Email not registered. Contact administrator.'; emailMessage.className = 'message error'; return; } if (result.status === 'error') { emailMessage.textContent = 'Connection error. Please try again.'; emailMessage.className = 'message error'; return; } currentEmail = email; isActivation = result.status === 'needs_activation'; welcomeName.textContent = 'Welcome, ' + (result.display_name || email); if (isActivation) { pinLabel.textContent = 'Create your PIN'; confirmPinGroup.style.display = 'block'; confirmPinInput.required = true; pinSubmitBtn.textContent = 'Activate'; } else { pinLabel.textContent = 'Enter PIN'; confirmPinGroup.style.display = 'none'; confirmPinInput.required = false; pinSubmitBtn.textContent = 'Login'; } pinInput.value = ''; confirmPinInput.value = ''; pinMessage.textContent = ''; showStep('pin'); });
         document.getElementById('backToEmail').addEventListener('click', function() { showStep('email'); });
-        pinForm.addEventListener('submit', async function(e) { e.preventDefault(); const pin = pinInput.value; pinMessage.textContent = ''; pinMessage.className = ''; if (isActivation) { if (pin !== confirmPinInput.value) { pinMessage.textContent = 'PINs do not match'; pinMessage.className = 'message error'; return; } const result = await activateAccount(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); loadRecentShots(); } else { pinMessage.textContent = result.data.detail || 'Activation failed'; pinMessage.className = 'message error'; } } else { const result = await login(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); loadRecentShots(); } else { pinMessage.textContent = result.data.detail || 'Invalid PIN'; pinMessage.className = 'message error'; pinInput.value = ''; } } });
-        async function initAuth() { const auth = getStoredAuth(); if (auth) { const result = await login(auth.email, auth.pin); if (result.ok) { hideLoginScreen(); loadRecentShots(); return; } clearAuth(); } showLoginScreen(); }
+        pinForm.addEventListener('submit', async function(e) { e.preventDefault(); const pin = pinInput.value; pinMessage.textContent = ''; pinMessage.className = ''; if (isActivation) { if (pin !== confirmPinInput.value) { pinMessage.textContent = 'PINs do not match'; pinMessage.className = 'message error'; return; } const result = await activateAccount(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); loadRecentStrokes(); } else { pinMessage.textContent = result.data.detail || 'Activation failed'; pinMessage.className = 'message error'; } } else { const result = await login(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); loadRecentStrokes(); } else { pinMessage.textContent = result.data.detail || 'Invalid PIN'; pinMessage.className = 'message error'; pinInput.value = ''; } } });
+        async function initAuth() { const auth = getStoredAuth(); if (auth) { const result = await login(auth.email, auth.pin); if (result.ok) { hideLoginScreen(); loadRecentStrokes(); return; } clearAuth(); } showLoginScreen(); }
         document.getElementById('date').valueAsDate = new Date();
         const failCheckbox = document.getElementById('fail'), distanceInput = document.getElementById('distance');
         failCheckbox.addEventListener('change', function() { distanceInput.disabled = this.checked; if (this.checked) distanceInput.value = ''; });
-        document.getElementById('shotForm').addEventListener('submit', async function(e) {
+        document.getElementById('strokeForm').addEventListener('submit', async function(e) {
             e.preventDefault(); const submitBtn = this.querySelector('button[type="submit"]'); submitBtn.disabled = true;
             const data = { date: document.getElementById('date').value, club: document.getElementById('club').value, fail: failCheckbox.checked };
             if (!data.fail) { const distance = parseInt(distanceInput.value); if (isNaN(distance)) { showMessage('Please enter a distance or mark as failed', 'error'); submitBtn.disabled = false; return; } data.distance = distance; }
             try {
-                const response = await fetch('/api/shots', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify(data) });
+                const response = await fetch('/api/strokes', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify(data) });
                 const result = await response.json();
-                if (response.ok) { showMessage('Recorded: ' + data.club + ' - ' + (data.fail ? 'FAIL' : data.distance + 'm'), 'success'); distanceInput.value = ''; failCheckbox.checked = false; distanceInput.disabled = false; loadRecentShots(); }
+                if (response.ok) { showMessage('Recorded: ' + data.club + ' - ' + (data.fail ? 'FAIL' : data.distance + 'm'), 'success'); distanceInput.value = ''; failCheckbox.checked = false; distanceInput.disabled = false; loadRecentStrokes(); }
                 else if (response.status === 401) { clearAuth(); showLoginScreen(); showMessage('Session expired', 'error'); }
                 else { showMessage(result.detail || 'Error', 'error'); }
             } catch (err) { showMessage('Network error: ' + err.message, 'error'); }
             submitBtn.disabled = false;
         });
         function showMessage(text, type) { const msg = document.getElementById('message'); msg.textContent = text; msg.className = 'message ' + type; setTimeout(() => { msg.textContent = ''; msg.className = ''; }, 3000); }
-        async function loadRecentShots() { try { const response = await fetch('/api/shots?limit=5', { headers: getAuthHeaders() }); const data = await response.json(); const container = document.getElementById('recentShots'); if (data.shots.length === 0) { container.innerHTML = '<p>No shots yet</p>'; return; } container.innerHTML = data.shots.map(shot => '<div class="shot-item"><span class="shot-club">' + shot.club.toUpperCase() + '</span><span class="' + (shot.fail ? 'shot-fail' : 'shot-distance') + '">' + (shot.fail ? 'FAIL' : shot.distance + 'm') + '</span><span style="color:#999;font-size:12px">' + shot.date + '</span></div>').join(''); } catch (err) { document.getElementById('recentShots').innerHTML = '<p>Could not load shots</p>'; } }
+        async function loadRecentStrokes() { try { const response = await fetch('/api/strokes?limit=5', { headers: getAuthHeaders() }); const data = await response.json(); const container = document.getElementById('recentStrokes'); if (data.strokes.length === 0) { container.innerHTML = '<p>No strokes yet</p>'; return; } container.innerHTML = data.strokes.map(stroke => '<div class="stroke-item"><span class="stroke-club">' + stroke.club.toUpperCase() + '</span><span class="' + (stroke.fail ? 'stroke-fail' : 'stroke-distance') + '">' + (stroke.fail ? 'FAIL' : stroke.distance + 'm') + '</span><span style="color:#999;font-size:12px">' + stroke.date + '</span></div>').join(''); } catch (err) { document.getElementById('recentStrokes').innerHTML = '<p>Could not load strokes</p>'; } }
         initAuth();
     </script>
 </body>
@@ -523,7 +523,7 @@ def get_ideas_html() -> str:
             </div>
         </div>
     </div>
-    <div class="header-wrapper"><a href="/" class="back-link" title="Back to shots">&#8592;</a><h1>Submit Idea</h1></div>
+    <div class="header-wrapper"><a href="/" class="back-link" title="Back to strokes">&#8592;</a><h1>Submit Idea</h1></div>
     <form id="ideaForm">
         <div class="form-group"><label for="ideaDescription">Your idea or feedback</label><textarea id="ideaDescription" name="description" maxlength="1000" placeholder="Share your idea for improving CarryOn..." required></textarea><div class="char-counter"><span id="charCount">1000</span> characters remaining</div></div>
         <button type="submit">Submit Idea</button>

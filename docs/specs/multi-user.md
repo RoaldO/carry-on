@@ -8,7 +8,7 @@ Transition from single-user PIN authentication to a multi-user system where each
 
 - As an administrator, I want to add users directly to the database, so that I control who has access
 - As an invited user, I want to activate my account using my email address, so that I can start using the app
-- As a user, I want my shots and ideas to be private to my account, so that my data is separate from other users
+- As a user, I want my strokes and ideas to be private to my account, so that my data is separate from other users
 
 ## Requirements
 
@@ -19,15 +19,15 @@ Transition from single-user PIN authentication to a multi-user system where each
 - FR-3: User can activate their account by entering their email address
 - FR-4: Upon first activation, user sets a PIN for future logins
 - FR-5: Activated users log in using email + PIN
-- FR-6: All shots are associated with a user ID
+- FR-6: All strokes are associated with a user ID
 - FR-7: All ideas are associated with a user ID
-- FR-8: Users can only view and create their own shots and ideas
+- FR-8: Users can only view and create their own strokes and ideas
 
 ### Non-Functional Requirements
 
 - NFR-1: Email addresses must be unique in the system
 - NFR-2: PINs are stored securely (hashed with Argon2id) - see [ADR-0009](../adr/0009-password-hashing.md)
-- NFR-3: Existing shots/ideas are migrated to a default user account
+- NFR-3: Existing strokes/ideas are migrated to a default user account
 
 ## Domain Model
 
@@ -43,7 +43,7 @@ Transition from single-user PIN authentication to a multi-user system where each
 
 ### Updated Entities
 
-**Shot** (updated)
+**Stroke** (updated)
 - `user_id`: Reference to User (required)
 - ... existing fields
 
@@ -195,7 +195,7 @@ db.users.insertOne({
 
 1. Create `users` collection
 2. Create a default admin user
-3. Add `user_id` field to existing shots (set to admin user)
+3. Add `user_id` field to existing strokes (set to admin user)
 4. Add `user_id` field to existing ideas (set to admin user)
 5. Update all API endpoints to require user context
 6. Update UI to use new login flow
@@ -207,7 +207,7 @@ db.users.insertOne({
 - [x] Activated users can log in with email + PIN
 - [x] PINs are securely hashed with Argon2id
 - [x] Legacy plain text PINs are auto-migrated on login
-- [ ] Shots are associated with logged-in user
+- [ ] Strokes are associated with logged-in user
 - [ ] Ideas are associated with logged-in user
 - [ ] Users cannot see other users' data
 - [ ] Existing data is migrated to default user

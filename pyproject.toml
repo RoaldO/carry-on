@@ -1,7 +1,7 @@
 [project]
 name = "carry-on"
 version = "0.1.0"
-description = "Golf shot tracking web app"
+description = "Golf stroke tracking web app"
 requires-python = ">=3.10"
 dependencies = [
     "argon2-cffi>=25.1.0",

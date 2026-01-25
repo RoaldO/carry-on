@@ -16,96 +16,96 @@ class TestRootEndpoint:
         assert "CarryOn" in response.text
 
 
-class TestShotsEndpoint:
-    """Tests for shots API endpoints."""
+class TestStrokesEndpoint:
+    """Tests for strokes API endpoints."""
 
-    def test_get_shots_without_auth_returns_401(
+    def test_get_strokes_without_auth_returns_401(
         self, client: TestClient, mock_users_collection: MagicMock
     ) -> None:
-        """GET /api/shots without authentication should return 401."""
-        response = client.get("/api/shots")
+        """GET /api/strokes without authentication should return 401."""
+        response = client.get("/api/strokes")
         assert response.status_code == 401
 
-    def test_get_shots_with_invalid_credentials_returns_401(
+    def test_get_strokes_with_invalid_credentials_returns_401(
         self, client: TestClient, mock_users_collection: MagicMock
     ) -> None:
-        """GET /api/shots with invalid credentials should return 401."""
+        """GET /api/strokes with invalid credentials should return 401."""
         response = client.get(
-            "/api/shots", headers={"X-Email": "wrong@example.com", "X-Pin": "wrong"}
+            "/api/strokes", headers={"X-Email": "wrong@example.com", "X-Pin": "wrong"}
         )
         assert response.status_code == 401
 
-    def test_get_shots_with_valid_auth(
+    def test_get_strokes_with_valid_auth(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
-        mock_shots_collection: MagicMock,
+        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
-        """GET /api/shots with valid authentication should return shots."""
-        response = client.get("/api/shots", headers=auth_headers)
+        """GET /api/strokes with valid authentication should return strokes."""
+        response = client.get("/api/strokes", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert "shots" in data
+        assert "strokes" in data
         assert "count" in data
 
-    def test_post_shot_without_auth_returns_401(
+    def test_post_stroke_without_auth_returns_401(
         self, client: TestClient, mock_users_collection: MagicMock
     ) -> None:
-        """POST /api/shots without authentication should return 401."""
+        """POST /api/strokes without authentication should return 401."""
         response = client.post(
-            "/api/shots",
+            "/api/strokes",
             json={"club": "i7", "distance": 150},
         )
         assert response.status_code == 401
 
-    def test_post_shot_with_valid_auth(
+    def test_post_stroke_with_valid_auth(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
-        mock_shots_collection: MagicMock,
+        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
-        """POST /api/shots with valid authentication should create shot."""
+        """POST /api/strokes with valid authentication should create stroke."""
         response = client.post(
-            "/api/shots",
+            "/api/strokes",
             json={"club": "i7", "distance": 150},
             headers=auth_headers,
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["message"] == "Shot recorded successfully"
-        assert data["shot"]["club"] == "i7"
-        assert data["shot"]["distance"] == 150
+        assert data["message"] == "Stroke recorded successfully"
+        assert data["stroke"]["club"] == "i7"
+        assert data["stroke"]["distance"] == 150
 
-    def test_post_failed_shot(
+    def test_post_failed_stroke(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
-        mock_shots_collection: MagicMock,
+        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
-        """POST /api/shots with fail=true should not require distance."""
+        """POST /api/strokes with fail=true should not require distance."""
         response = client.post(
-            "/api/shots",
+            "/api/strokes",
             json={"club": "d", "fail": True},
             headers=auth_headers,
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["shot"]["fail"] is True
-        assert data["shot"]["distance"] is None
+        assert data["stroke"]["fail"] is True
+        assert data["stroke"]["distance"] is None
 
-    def test_post_shot_without_distance_or_fail_returns_400(
+    def test_post_stroke_without_distance_or_fail_returns_400(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
-        mock_shots_collection: MagicMock,
+        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
-        """POST /api/shots without distance and fail=false should return 400."""
+        """POST /api/strokes without distance and fail=false should return 400."""
         response = client.post(
-            "/api/shots",
+            "/api/strokes",
             json={"club": "i7"},
             headers=auth_headers,
         )

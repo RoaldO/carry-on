@@ -1,6 +1,6 @@
 # CarryOn
 
-Golf shot tracking web application.
+Golf stroke tracking web application.
 
 ## Tech Stack
 
