@@ -7,6 +7,9 @@ This glossary defines the domain terms used throughout the CarryOn application. 
 ### Address
 The act of a player positioning their body and club to prepare for a stroke.
 
+### Fairway
+The manicured path between the tee and the green.
+
 ### Handicap
 A numerical measure of a golfer's potential. It functions as a Value Object used to "normalize" scores between players of different skill levels.
 
