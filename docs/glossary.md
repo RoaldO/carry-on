@@ -28,6 +28,9 @@ The predetermined number of strokes an expert golfer is expected to need to comp
 ### Round
 The primary Aggregate Root. It tracks the player's progress across 18 (or 9) holes.
 
+### Shank
+If you swing with the intent to hit the ball and you hit it poorly (a "shank" or "top"), it is 100% a stroke.
+
 ### Stroke
 A single act of hitting the ball. This is the fundamental unit of the domain.
 
