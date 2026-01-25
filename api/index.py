@@ -8,6 +8,8 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
 
+from api.pin_security import hash_pin, needs_rehash, verify_pin as verify_pin_hash
+
 load_dotenv()
 
 app = FastAPI(title="CarryOn - Golf Shot Tracker")
@@ -62,8 +64,14 @@ def verify_pin(x_pin: str = Header(None), x_email: str = Header(None)):
         raise HTTPException(status_code=500, detail="Database not configured")
 
     user = users_collection.find_one({"email": x_email.lower()})
-    if not user or user.get("pin_hash") != x_pin:
+    if not user or not verify_pin_hash(x_pin, user.get("pin_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or PIN")
+
+    # Rehash if needed (on successful auth)
+    if needs_rehash(user.get("pin_hash", "")):
+        users_collection.update_one(
+            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(x_pin)}}
+        )
 
 
 class ShotCreate(BaseModel):
@@ -130,12 +138,12 @@ async def activate_account(request: ActivateRequest):
     if user.get("activated_at"):
         raise HTTPException(status_code=400, detail="Account already activated")
 
-    # Store PIN (temporary: plain text, will add hashing later)
+    # Hash PIN before storing
     users_collection.update_one(
         {"_id": user["_id"]},
         {
             "$set": {
-                "pin_hash": request.pin,
+                "pin_hash": hash_pin(request.pin),
                 "activated_at": datetime.now(UTC).isoformat(),
             }
         },
@@ -164,9 +172,15 @@ async def login(request: LoginRequest):
     if not user.get("activated_at"):
         raise HTTPException(status_code=400, detail="Account not activated")
 
-    # Check PIN (temporary: plain comparison, will add hashing later)
-    if user.get("pin_hash") != request.pin:
+    # Check PIN using secure verification
+    if not verify_pin_hash(request.pin, user.get("pin_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or PIN")
+
+    # Rehash if using outdated algorithm
+    if needs_rehash(user.get("pin_hash", "")):
+        users_collection.update_one(
+            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(request.pin)}}
+        )
 
     return {
         "message": "Login successful",

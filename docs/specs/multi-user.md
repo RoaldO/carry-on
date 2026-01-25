@@ -26,7 +26,7 @@ Transition from single-user PIN authentication to a multi-user system where each
 ### Non-Functional Requirements
 
 - NFR-1: Email addresses must be unique in the system
-- NFR-2: PINs are stored securely (hashed) - **Note: Currently stored as plain text; hashing to be implemented**
+- NFR-2: PINs are stored securely (hashed with Argon2id)
 - NFR-3: Existing shots/ideas are migrated to a default user account
 
 ## Domain Model

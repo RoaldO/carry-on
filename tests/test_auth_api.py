@@ -4,6 +4,8 @@ from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 
+from api.pin_security import hash_pin
+
 
 class TestCheckEmailEndpoint:
     """Tests for POST /api/check-email endpoint."""
@@ -129,6 +131,30 @@ class TestActivateEndpoint:
         assert data["user"]["email"] == "user@example.com"
         mock_users_collection.update_one.assert_called_once()
 
+    def test_activate_hashes_pin(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/activate stores PIN as Argon2 hash."""
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "pin_hash": None,
+            "activated_at": None,
+        }
+
+        response = client.post(
+            "/api/activate",
+            json={"email": "user@example.com", "pin": "1234"},
+        )
+        assert response.status_code == 200
+        # Verify the stored hash is Argon2 format
+        call_args = mock_users_collection.update_one.call_args
+        stored_hash = call_args[0][1]["$set"]["pin_hash"]
+        assert stored_hash.startswith("$argon2id$")
+
 
 class TestLoginEndpoint:
     """Tests for POST /api/login endpoint."""
@@ -186,18 +212,18 @@ class TestLoginEndpoint:
         )
         assert response.status_code == 401
 
-    def test_login_success(
+    def test_login_success_with_hashed_pin(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/login with correct credentials returns success."""
-        # PIN "1234" hashed (we'll use simple comparison for now)
+        """POST /api/login with correct credentials and hashed PIN returns success."""
+        hashed = hash_pin("1234")
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "1234",  # Temporary: plain PIN until we add hashing
+            "pin_hash": hashed,
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -209,3 +235,31 @@ class TestLoginEndpoint:
         data = response.json()
         assert data["message"] == "Login successful"
         assert data["user"]["email"] == "user@example.com"
+        # Should not rehash since PIN is already properly hashed
+        mock_users_collection.update_one.assert_not_called()
+
+    def test_login_success_with_plain_pin_triggers_rehash(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/login with plain text PIN triggers rehashing."""
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "pin_hash": "1234",  # Plain text PIN (legacy)
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        response = client.post(
+            "/api/login",
+            json={"email": "user@example.com", "pin": "1234"},
+        )
+        assert response.status_code == 200
+        # Should trigger rehash since PIN was plain text
+        mock_users_collection.update_one.assert_called_once()
+        # Verify the new hash is Argon2 format
+        call_args = mock_users_collection.update_one.call_args
+        new_hash = call_args[0][1]["$set"]["pin_hash"]
+        assert new_hash.startswith("$argon2id$")
