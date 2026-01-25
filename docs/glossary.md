@@ -4,5 +4,8 @@ This glossary defines the domain terms used throughout the CarryOn application. 
 
 ## Terms
 
+### Round
+The primary Aggregate Root. It tracks the player's progress across 18 (or 9) holes.
+
 ### Stroke
 A single act of hitting the ball. This is the fundamental unit of the domain.
