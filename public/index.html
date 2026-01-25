@@ -374,19 +374,6 @@
             }
         }
 
-        // Legacy PIN verification (temporary compatibility)
-        async function verifyPin(pin) {
-            try {
-                const response = await fetch('/api/verify-pin', {
-                    method: 'POST',
-                    headers: { 'X-Pin': pin }
-                });
-                return response.ok;
-            } catch {
-                return false;
-            }
-        }
-
         // Email form submission
         emailForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -480,7 +467,6 @@
         async function initAuth() {
             const auth = getStoredAuth();
 
-            // Try new auth system first
             if (auth) {
                 const result = await login(auth.email, auth.pin);
                 if (result.ok) {
@@ -491,22 +477,25 @@
                 clearAuth();
             }
 
-            // Fallback to legacy PIN (temporary)
-            const legacyPin = localStorage.getItem('carryon_pin');
-            if (legacyPin && await verifyPin(legacyPin)) {
-                hideLoginScreen();
-                loadRecentShots();
-                return;
-            }
-
-            localStorage.removeItem('carryon_pin');
             showLoginScreen();
         }
 
-        // Helper to get PIN for API calls (supports both old and new auth)
+        // Helpers to get credentials for API calls
         function getStoredPin() {
             const auth = getStoredAuth();
-            return auth ? auth.pin : localStorage.getItem('carryon_pin');
+            return auth ? auth.pin : '';
+        }
+
+        function getStoredEmail() {
+            const auth = getStoredAuth();
+            return auth ? auth.email : '';
+        }
+
+        function getAuthHeaders() {
+            return {
+                'X-Pin': getStoredPin() || '',
+                'X-Email': getStoredEmail()
+            };
         }
 
         // Set default date to today
@@ -551,7 +540,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Pin': getStoredPin() || ''
+                        ...getAuthHeaders()
                     },
                     body: JSON.stringify(data)
                 });
@@ -590,7 +579,7 @@
         async function loadRecentShots() {
             try {
                 const response = await fetch('/api/shots?limit=5', {
-                    headers: { 'X-Pin': getStoredPin() || '' }
+                    headers: getAuthHeaders()
                 });
                 const data = await response.json();
 

@@ -16,69 +16,57 @@ class TestRootEndpoint:
         assert "CarryOn" in response.text
 
 
-class TestVerifyPinEndpoint:
-    """Tests for PIN verification endpoint."""
-
-    def test_verify_pin_with_valid_pin(
-        self, client: TestClient, auth_headers: dict[str, str]
-    ) -> None:
-        """Valid PIN should return success."""
-        response = client.post("/api/verify-pin", headers=auth_headers)
-        assert response.status_code == 200
-        assert response.json()["valid"] is True
-
-    def test_verify_pin_with_invalid_pin(self, client: TestClient) -> None:
-        """Invalid PIN should return 401."""
-        response = client.post("/api/verify-pin", headers={"X-Pin": "wrong"})
-        assert response.status_code == 401
-
-    def test_verify_pin_without_pin(self, client: TestClient) -> None:
-        """Missing PIN should return 401."""
-        response = client.post("/api/verify-pin")
-        assert response.status_code == 401
-
-
 class TestShotsEndpoint:
     """Tests for shots API endpoints."""
 
-    def test_get_shots_without_pin_returns_401(self, client: TestClient) -> None:
-        """GET /api/shots without PIN should return 401."""
+    def test_get_shots_without_auth_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """GET /api/shots without authentication should return 401."""
         response = client.get("/api/shots")
         assert response.status_code == 401
 
-    def test_get_shots_with_invalid_pin_returns_401(self, client: TestClient) -> None:
-        """GET /api/shots with invalid PIN should return 401."""
-        response = client.get("/api/shots", headers={"X-Pin": "wrong"})
+    def test_get_shots_with_invalid_credentials_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """GET /api/shots with invalid credentials should return 401."""
+        response = client.get(
+            "/api/shots", headers={"X-Email": "wrong@example.com", "X-Pin": "wrong"}
+        )
         assert response.status_code == 401
 
-    def test_get_shots_with_valid_pin(
+    def test_get_shots_with_valid_auth(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_shots_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
-        """GET /api/shots with valid PIN should return shots."""
+        """GET /api/shots with valid authentication should return shots."""
         response = client.get("/api/shots", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert "shots" in data
         assert "count" in data
 
-    def test_post_shot_without_pin_returns_401(self, client: TestClient) -> None:
-        """POST /api/shots without PIN should return 401."""
+    def test_post_shot_without_auth_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """POST /api/shots without authentication should return 401."""
         response = client.post(
             "/api/shots",
             json={"club": "i7", "distance": 150},
         )
         assert response.status_code == 401
 
-    def test_post_shot_with_valid_pin(
+    def test_post_shot_with_valid_auth(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_shots_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
-        """POST /api/shots with valid PIN should create shot."""
+        """POST /api/shots with valid authentication should create shot."""
         response = client.post(
             "/api/shots",
             json={"club": "i7", "distance": 150},
@@ -95,6 +83,7 @@ class TestShotsEndpoint:
         client: TestClient,
         auth_headers: dict[str, str],
         mock_shots_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/shots with fail=true should not require distance."""
         response = client.post(
@@ -112,6 +101,7 @@ class TestShotsEndpoint:
         client: TestClient,
         auth_headers: dict[str, str],
         mock_shots_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/shots without distance and fail=false should return 400."""
         response = client.post(

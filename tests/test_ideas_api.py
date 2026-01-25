@@ -8,21 +8,24 @@ from fastapi.testclient import TestClient
 class TestIdeasEndpoint:
     """Tests for ideas API endpoints."""
 
-    def test_post_idea_without_pin_returns_401(self, client: TestClient) -> None:
-        """POST /api/ideas without PIN should return 401 (NFR-1)."""
+    def test_post_idea_without_auth_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """POST /api/ideas without authentication should return 401 (NFR-1)."""
         response = client.post(
             "/api/ideas",
             json={"description": "Add dark mode"},
         )
         assert response.status_code == 401
 
-    def test_post_idea_with_valid_pin(
+    def test_post_idea_with_valid_auth(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
-        """POST /api/ideas with valid PIN should create idea (FR-3, FR-4)."""
+        """POST /api/ideas with valid authentication should create idea (FR-3, FR-4)."""
         response = client.post(
             "/api/ideas",
             json={"description": "Add dark mode"},
@@ -39,6 +42,7 @@ class TestIdeasEndpoint:
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/ideas without description should return 422 (FR-2)."""
         response = client.post(
@@ -53,6 +57,7 @@ class TestIdeasEndpoint:
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/ideas with empty description should return 422 (FR-2)."""
         response = client.post(
@@ -67,6 +72,7 @@ class TestIdeasEndpoint:
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/ideas with description > 1000 chars should return 422 (FR-2)."""
         long_description = "a" * 1001
@@ -82,6 +88,7 @@ class TestIdeasEndpoint:
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/ideas with exactly 1000 chars should succeed (FR-2)."""
         description = "a" * 1000
@@ -92,18 +99,21 @@ class TestIdeasEndpoint:
         )
         assert response.status_code == 200
 
-    def test_get_ideas_without_pin_returns_401(self, client: TestClient) -> None:
-        """GET /api/ideas without PIN should return 401 (NFR-1)."""
+    def test_get_ideas_without_auth_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """GET /api/ideas without authentication should return 401 (NFR-1)."""
         response = client.get("/api/ideas")
         assert response.status_code == 401
 
-    def test_get_ideas_with_valid_pin(
+    def test_get_ideas_with_valid_auth(
         self,
         client: TestClient,
         auth_headers: dict[str, str],
         mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
     ) -> None:
-        """GET /api/ideas with valid PIN should return ideas."""
+        """GET /api/ideas with valid authentication should return ideas."""
         response = client.get("/api/ideas", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
