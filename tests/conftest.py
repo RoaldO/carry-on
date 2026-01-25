@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from api.pin_security import hash_pin
+
 
 @pytest.fixture
 def mock_shots_collection() -> Generator[MagicMock, None, None]:
@@ -29,6 +31,12 @@ def test_email() -> str:
 def test_pin() -> str:
     """Test PIN for authentication."""
     return "1234"
+
+
+@pytest.fixture
+def test_pin_hashed(test_pin: str) -> str:
+    """Test PIN hashed with Argon2 for authentication tests."""
+    return hash_pin(test_pin)
 
 
 @pytest.fixture
@@ -75,9 +83,24 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_authenticated_user(
+    mock_users_collection: MagicMock, test_email: str, test_pin_hashed: str
+) -> MagicMock:
+    """Mock a valid authenticated user in the database with hashed PIN."""
+    mock_users_collection.find_one.return_value = {
+        "_id": "user123",
+        "email": test_email,
+        "display_name": "Test User",
+        "pin_hash": test_pin_hashed,
+        "activated_at": "2026-01-25T10:00:00Z",
+    }
+    return mock_users_collection
+
+
+@pytest.fixture
+def mock_authenticated_user_plain_pin(
     mock_users_collection: MagicMock, test_email: str, test_pin: str
 ) -> MagicMock:
-    """Mock a valid authenticated user in the database."""
+    """Mock a user with plain text PIN (legacy, needs rehash)."""
     mock_users_collection.find_one.return_value = {
         "_id": "user123",
         "email": test_email,

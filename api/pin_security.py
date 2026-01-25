@@ -1,0 +1,32 @@
+"""PIN hashing utilities with algorithm versioning."""
+
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
+
+# Current preferred hasher
+_hasher = PasswordHasher()
+
+
+def hash_pin(pin: str) -> str:
+    """Hash a PIN using the current preferred algorithm (Argon2id)."""
+    return _hasher.hash(pin)
+
+
+def verify_pin(pin: str, stored_hash: str) -> bool:
+    """Verify PIN against stored hash (supports plain text and Argon2)."""
+    if stored_hash.startswith("$argon2"):
+        try:
+            _hasher.verify(stored_hash, pin)
+            return True
+        except (VerifyMismatchError, InvalidHashError, VerificationError):
+            return False
+    else:
+        # Plain text comparison (legacy)
+        return stored_hash == pin
+
+
+def needs_rehash(stored_hash: str) -> bool:
+    """Check if hash needs to be upgraded (plain text or outdated params)."""
+    if not stored_hash.startswith("$argon2"):
+        return True  # Plain text needs hashing
+    return _hasher.check_needs_rehash(stored_hash)
