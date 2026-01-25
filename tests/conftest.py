@@ -11,13 +11,13 @@ from api.pin_security import hash_pin
 
 
 @pytest.fixture
-def mock_shots_collection() -> Generator[MagicMock, None, None]:
-    """Mock MongoDB shots collection."""
+def mock_strokes_collection() -> Generator[MagicMock, None, None]:
+    """Mock MongoDB strokes collection."""
     mock_collection = MagicMock()
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_id_123"
 
-    with patch("api.index.get_shots_collection", return_value=mock_collection):
+    with patch("api.index.get_strokes_collection", return_value=mock_collection):
         yield mock_collection
 
 

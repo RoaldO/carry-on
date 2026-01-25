@@ -1,8 +1,8 @@
 # CarryOn Roadmap
 
 ## Current Features
-- Record golf shots (club, distance, fail)
-- View recent shots
+- Record golf strokes (club, distance, fail)
+- View recent strokes
 - Multi-user authentication (email + PIN)
 
 ## Planned Features
@@ -21,9 +21,9 @@
 ### 0c. Refactor to DDD/SOLID (ADR Compliance)
 Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [x] Create ubiquitous language glossary (`docs/glossary.md`)
-- [ ] Create domain layer (`domain/shot.py`) with Shot entity and value objects
-- [ ] Create repository layer (`repositories/shot_repository.py`) with abstract interface
-- [ ] Create service layer (`services/shot_service.py`) for business logic
+- [ ] Create domain layer (`domain/stroke.py`) with Stroke entity and value objects
+- [ ] Create repository layer (`repositories/stroke_repository.py`) with abstract interface
+- [ ] Create service layer (`services/stroke_service.py`) for business logic
 - [ ] Refactor `api/index.py` to only handle routing, delegate to services
 - [ ] Update tests to use dependency injection
 
@@ -48,8 +48,8 @@ See [specification](docs/specs/multi-user.md) for details.
 - [x] Update UI with email/PIN login flow
 - [x] Remove legacy APP_PIN authentication
 - [x] Secure PIN hashing with Argon2id (see [ADR-0009](docs/adr/0009-password-hashing.md))
-- [ ] Add user_id to shots and ideas
-- [ ] Filter shots/ideas by logged-in user
+- [ ] Add user_id to strokes and ideas
+- [ ] Filter strokes/ideas by logged-in user
 - [ ] Migrate existing data to default user
 
 ### 0g. Password Complexity Support
@@ -67,7 +67,7 @@ Allow users to use generated passwords from password managers.
 Implement tab-based navigation for better app structure.
 See [specification](docs/specs/navigation.md) for details.
 - [ ] Add tab bar component (bottom of screen)
-- [ ] Create Shots tab (current main page)
+- [ ] Create Strokes tab (current main page)
 - [ ] Create Ideas tab (current /ideas page)
 - [ ] Create Profile tab with user info and logout
 - [ ] Implement `/api/me` endpoint for profile data
@@ -98,11 +98,11 @@ Use the app during a round to:
 - Track strokes per hole
 - Tally total hits in real-time
 - Mark penalties, putts, etc.
-- Measure shot distances (club + distance per shot)
+- Measure stroke distances (club + distance per stroke)
 
 ### 5. GPS & Club Advice
 - Mark hole locations by GPS when on the course (tee, green/pin)
 - Store GPS coordinates per hole for later reference
 - Get current location during round
 - Calculate distance to hole
-- Recommend clubs based on historical shot data (average distance per club)
+- Recommend clubs based on historical stroke data (average distance per club)

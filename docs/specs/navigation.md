@@ -15,7 +15,7 @@ Implement a tab-based navigation system to allow users to move between different
 ### Functional Requirements
 
 - FR-1: Tab bar is displayed at the bottom of the screen (mobile-first design)
-- FR-2: Tab bar contains navigation to: Shots, Ideas, Profile
+- FR-2: Tab bar contains navigation to: Strokes, Ideas, Profile
 - FR-3: Active tab is visually highlighted
 - FR-4: Tapping a tab navigates to that section
 - FR-5: Tab bar is persistent across all authenticated pages
@@ -37,7 +37,7 @@ Implement a tab-based navigation system to allow users to move between different
 │           Page Content              │
 │                                     │
 ├───────────┬───────────┬─────────────┤
-│   Shots   │   Ideas   │   Profile   │
+│  Strokes  │   Ideas   │   Profile   │
 │    ⛳     │    💡     │     👤      │
 └───────────┴───────────┴─────────────┘
 ```
@@ -46,7 +46,7 @@ Implement a tab-based navigation system to allow users to move between different
 
 | Tab | Icon | Description |
 |-----|------|-------------|
-| Shots | ⛳ (or golf icon) | Record and view golf shots (current main page) |
+| Strokes | ⛳ (or golf icon) | Record and view golf strokes (current main page) |
 | Ideas | 💡 (or lightbulb) | Submit and view ideas (current /ideas page) |
 | Profile | 👤 (or person icon) | User profile and account settings |
 
@@ -74,12 +74,12 @@ Future additions (out of scope for this spec):
 Use JavaScript to swap content without page reloads:
 - Store all tab content in the same HTML
 - Show/hide sections based on active tab
-- Update URL hash for bookmarkability (`#shots`, `#ideas`, `#profile`)
+- Update URL hash for bookmarkability (`#strokes`, `#ideas`, `#profile`)
 
 ### Option B: Server-Side Pages
 
 Separate HTML pages with shared tab bar component:
-- `/` - Shots page
+- `/` - Strokes page
 - `/ideas` - Ideas page
 - `/profile` - Profile page
 
@@ -117,7 +117,7 @@ X-Pin: <pin>
 ## Acceptance Criteria
 
 - [ ] Tab bar displays at bottom of screen on all authenticated pages
-- [ ] Three tabs available: Shots, Ideas, Profile
+- [ ] Three tabs available: Strokes, Ideas, Profile
 - [ ] Active tab is visually distinct
 - [ ] Tapping tab navigates to corresponding section
 - [ ] Profile page shows user's display name and email

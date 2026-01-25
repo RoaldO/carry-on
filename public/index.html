@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CarryOn - Golf Shot Tracker</title>
+    <title>CarryOn - Golf Stroke Tracker</title>
     <style>
         * {
             box-sizing: border-box;
@@ -102,12 +102,12 @@
             background: #f8d7da;
             color: #721c24;
         }
-        .recent-shots {
+        .recent-strokes {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 2px solid #ddd;
         }
-        .shot-item {
+        .stroke-item {
             background: white;
             padding: 12px;
             border-radius: 8px;
@@ -116,14 +116,14 @@
             justify-content: space-between;
             align-items: center;
         }
-        .shot-club {
+        .stroke-club {
             font-weight: 600;
             color: #2d5a27;
         }
-        .shot-distance {
+        .stroke-distance {
             color: #666;
         }
-        .shot-fail {
+        .stroke-fail {
             color: #dc3545;
             font-weight: 600;
         }
@@ -211,7 +211,7 @@
         <a href="/ideas" class="idea-link" title="Submit an idea">&#128161;</a>
     </div>
 
-    <form id="shotForm">
+    <form id="strokeForm">
         <div class="form-group">
             <label for="date">Date</label>
             <input type="date" id="date" name="date" required>
@@ -246,18 +246,18 @@
         <div class="form-group">
             <div class="checkbox-group">
                 <input type="checkbox" id="fail" name="fail">
-                <label for="fail" style="margin: 0;">Failed shot (topped, shanked, etc.)</label>
+                <label for="fail" style="margin: 0;">Failed stroke (topped, shanked, etc.)</label>
             </div>
         </div>
 
-        <button type="submit">Record Shot</button>
+        <button type="submit">Record Stroke</button>
     </form>
 
     <div id="message"></div>
 
-    <div class="recent-shots">
-        <h3>Recent Shots</h3>
-        <div id="recentShots">Loading...</div>
+    <div class="recent-strokes">
+        <h3>Recent Strokes</h3>
+        <div id="recentStrokes">Loading...</div>
     </div>
 
     <script>
@@ -443,7 +443,7 @@
                 if (result.ok) {
                     storeAuth(currentEmail, pin);
                     hideLoginScreen();
-                    loadRecentShots();
+                    loadRecentStrokes();
                 } else {
                     pinMessage.textContent = result.data.detail || 'Activation failed';
                     pinMessage.className = 'message error';
@@ -454,7 +454,7 @@
                 if (result.ok) {
                     storeAuth(currentEmail, pin);
                     hideLoginScreen();
-                    loadRecentShots();
+                    loadRecentStrokes();
                 } else {
                     pinMessage.textContent = result.data.detail || 'Invalid PIN';
                     pinMessage.className = 'message error';
@@ -471,7 +471,7 @@
                 const result = await login(auth.email, auth.pin);
                 if (result.ok) {
                     hideLoginScreen();
-                    loadRecentShots();
+                    loadRecentStrokes();
                     return;
                 }
                 clearAuth();
@@ -513,7 +513,7 @@
         });
 
         // Form submission
-        document.getElementById('shotForm').addEventListener('submit', async function(e) {
+        document.getElementById('strokeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -536,7 +536,7 @@
             }
 
             try {
-                const response = await fetch('/api/shots', {
+                const response = await fetch('/api/strokes', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -553,14 +553,14 @@
                     distanceInput.value = '';
                     failCheckbox.checked = false;
                     distanceInput.disabled = false;
-                    loadRecentShots();
+                    loadRecentStrokes();
                 } else if (response.status === 401) {
                     // PIN invalid, show PIN screen
                     localStorage.removeItem('carryon_pin');
                     showPinScreen();
                     showMessage('PIN expired, please re-enter', 'error');
                 } else {
-                    showMessage(result.detail || 'Error recording shot', 'error');
+                    showMessage(result.detail || 'Error recording stroke', 'error');
                 }
             } catch (err) {
                 showMessage('Network error: ' + err.message, 'error');
@@ -576,30 +576,30 @@
             setTimeout(() => { msg.textContent = ''; msg.className = ''; }, 3000);
         }
 
-        async function loadRecentShots() {
+        async function loadRecentStrokes() {
             try {
-                const response = await fetch('/api/shots?limit=5', {
+                const response = await fetch('/api/strokes?limit=5', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
 
-                const container = document.getElementById('recentShots');
-                if (data.shots.length === 0) {
-                    container.innerHTML = '<p>No shots recorded yet</p>';
+                const container = document.getElementById('recentStrokes');
+                if (data.strokes.length === 0) {
+                    container.innerHTML = '<p>No strokes recorded yet</p>';
                     return;
                 }
 
-                container.innerHTML = data.shots.map(shot => `
-                    <div class="shot-item">
-                        <span class="shot-club">${shot.club.toUpperCase()}</span>
-                        <span class="${shot.fail ? 'shot-fail' : 'shot-distance'}">
-                            ${shot.fail ? 'FAIL' : shot.distance + 'm'}
+                container.innerHTML = data.strokes.map(stroke => `
+                    <div class="stroke-item">
+                        <span class="stroke-club">${stroke.club.toUpperCase()}</span>
+                        <span class="${stroke.fail ? 'stroke-fail' : 'stroke-distance'}">
+                            ${stroke.fail ? 'FAIL' : stroke.distance + 'm'}
                         </span>
-                        <span style="color: #999; font-size: 12px;">${shot.date}</span>
+                        <span style="color: #999; font-size: 12px;">${stroke.date}</span>
                     </div>
                 `).join('');
             } catch (err) {
-                document.getElementById('recentShots').innerHTML = '<p>Could not load shots</p>';
+                document.getElementById('recentStrokes').innerHTML = '<p>Could not load strokes</p>';
             }
         }
 
