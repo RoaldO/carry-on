@@ -110,7 +110,7 @@
             background: #f8d7da;
             color: #721c24;
         }
-        #pinScreen {
+        #loginScreen {
             position: fixed;
             top: 0;
             left: 0;
@@ -124,12 +124,32 @@
             padding: 20px;
             z-index: 100;
         }
-        #pinScreen.hidden {
+        #loginScreen.hidden {
             display: none;
         }
-        #pinForm {
+        .login-form {
             width: 100%;
             max-width: 300px;
+        }
+        .step { display: none; }
+        .step.active { display: block; }
+        .welcome-name {
+            text-align: center;
+            color: #2d5a27;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            color: #2d5a27;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 15px;
+            padding: 0;
+        }
+        .back-button:hover {
+            text-decoration: underline;
         }
         input {
             width: 100%;
@@ -146,16 +166,39 @@
     </style>
 </head>
 <body>
-    <div id="pinScreen">
+    <div id="loginScreen">
         <h1>CarryOn</h1>
-        <form id="pinForm">
-            <div class="form-group">
-                <label for="pin">Enter PIN</label>
-                <input type="password" id="pin" name="pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN" required>
+        <div class="login-form">
+            <!-- Step 1: Email -->
+            <div id="stepEmail" class="step active">
+                <form id="emailForm">
+                    <div class="form-group">
+                        <label for="email">Email address</label>
+                        <input type="email" id="email" name="email" placeholder="your@email.com" required>
+                    </div>
+                    <button type="submit">Continue</button>
+                    <div id="emailMessage"></div>
+                </form>
             </div>
-            <button type="submit">Unlock</button>
-            <div id="pinMessage"></div>
-        </form>
+
+            <!-- Step 2: PIN (login or activate) -->
+            <div id="stepPin" class="step">
+                <button type="button" class="back-button" id="backToEmail">&larr; Back</button>
+                <div id="welcomeName" class="welcome-name"></div>
+                <form id="pinForm">
+                    <div class="form-group">
+                        <label for="pin" id="pinLabel">Enter PIN</label>
+                        <input type="password" id="pin" name="pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN" minlength="4" required>
+                    </div>
+                    <div class="form-group" id="confirmPinGroup" style="display: none;">
+                        <label for="confirmPin">Confirm PIN</label>
+                        <input type="password" id="confirmPin" name="confirmPin" inputmode="numeric" pattern="[0-9]*" placeholder="Confirm PIN" minlength="4">
+                    </div>
+                    <button type="submit" id="pinSubmitBtn">Login</button>
+                    <div id="pinMessage"></div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <div class="header-wrapper">
@@ -174,27 +217,120 @@
     <div id="ideaMessage"></div>
 
     <script>
-        const pinScreen = document.getElementById('pinScreen');
+        // Login screen elements
+        const loginScreen = document.getElementById('loginScreen');
+        const stepEmail = document.getElementById('stepEmail');
+        const stepPin = document.getElementById('stepPin');
+        const emailForm = document.getElementById('emailForm');
+        const emailInput = document.getElementById('email');
+        const emailMessage = document.getElementById('emailMessage');
         const pinForm = document.getElementById('pinForm');
         const pinInput = document.getElementById('pin');
+        const confirmPinInput = document.getElementById('confirmPin');
+        const confirmPinGroup = document.getElementById('confirmPinGroup');
         const pinMessage = document.getElementById('pinMessage');
+        const pinLabel = document.getElementById('pinLabel');
+        const pinSubmitBtn = document.getElementById('pinSubmitBtn');
+        const welcomeName = document.getElementById('welcomeName');
+        const backToEmail = document.getElementById('backToEmail');
 
-        function getStoredPin() {
-            return localStorage.getItem('carryon_pin');
+        let currentEmail = '';
+        let isActivation = false;
+
+        // Storage helpers
+        function getStoredAuth() {
+            const email = localStorage.getItem('carryon_email');
+            const pin = localStorage.getItem('carryon_pin');
+            return email && pin ? { email, pin } : null;
         }
 
-        function storePin(pin) {
+        function storeAuth(email, pin) {
+            localStorage.setItem('carryon_email', email);
             localStorage.setItem('carryon_pin', pin);
         }
 
-        function showPinScreen() {
-            pinScreen.classList.remove('hidden');
+        function clearAuth() {
+            localStorage.removeItem('carryon_email');
+            localStorage.removeItem('carryon_pin');
         }
 
-        function hidePinScreen() {
-            pinScreen.classList.add('hidden');
+        function showLoginScreen() {
+            loginScreen.classList.remove('hidden');
+            showStep('email');
         }
 
+        function hideLoginScreen() {
+            loginScreen.classList.add('hidden');
+        }
+
+        function showStep(step) {
+            stepEmail.classList.remove('active');
+            stepPin.classList.remove('active');
+            if (step === 'email') {
+                stepEmail.classList.add('active');
+            } else {
+                stepPin.classList.add('active');
+            }
+        }
+
+        // Check email status
+        async function checkEmail(email) {
+            try {
+                const response = await fetch('/api/check-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                if (response.status === 404) {
+                    return { status: 'not_found' };
+                }
+                return await response.json();
+            } catch {
+                return { status: 'error' };
+            }
+        }
+
+        // Parse API error detail (handles FastAPI validation errors)
+        function parseErrorDetail(detail) {
+            if (Array.isArray(detail)) {
+                return detail.map(e => e.msg).join(', ');
+            }
+            return detail;
+        }
+
+        // Activate account
+        async function activateAccount(email, pin) {
+            try {
+                const response = await fetch('/api/activate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, pin })
+                });
+                const data = await response.json();
+                if (data.detail) data.detail = parseErrorDetail(data.detail);
+                return { ok: response.ok, data };
+            } catch {
+                return { ok: false, data: { detail: 'Network error' } };
+            }
+        }
+
+        // Login
+        async function login(email, pin) {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, pin })
+                });
+                const data = await response.json();
+                if (data.detail) data.detail = parseErrorDetail(data.detail);
+                return { ok: response.ok, data };
+            } catch {
+                return { ok: false, data: { detail: 'Network error' } };
+            }
+        }
+
+        // Legacy PIN verification (temporary compatibility)
         async function verifyPin(pin) {
             try {
                 const response = await fetch('/api/verify-pin', {
@@ -207,28 +343,122 @@
             }
         }
 
+        // Email form submission
+        emailForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = emailInput.value.trim().toLowerCase();
+            emailMessage.textContent = '';
+            emailMessage.className = '';
+
+            const result = await checkEmail(email);
+
+            if (result.status === 'not_found') {
+                emailMessage.textContent = 'Email not registered. Contact administrator.';
+                emailMessage.className = 'message error';
+                return;
+            }
+
+            if (result.status === 'error') {
+                emailMessage.textContent = 'Connection error. Please try again.';
+                emailMessage.className = 'message error';
+                return;
+            }
+
+            currentEmail = email;
+            isActivation = result.status === 'needs_activation';
+
+            // Show welcome and configure PIN step
+            welcomeName.textContent = `Welcome, ${result.display_name || email}`;
+
+            if (isActivation) {
+                pinLabel.textContent = 'Create your PIN';
+                confirmPinGroup.style.display = 'block';
+                confirmPinInput.required = true;
+                pinSubmitBtn.textContent = 'Activate';
+            } else {
+                pinLabel.textContent = 'Enter PIN';
+                confirmPinGroup.style.display = 'none';
+                confirmPinInput.required = false;
+                pinSubmitBtn.textContent = 'Login';
+            }
+
+            pinInput.value = '';
+            confirmPinInput.value = '';
+            pinMessage.textContent = '';
+            showStep('pin');
+        });
+
+        // Back button
+        backToEmail.addEventListener('click', function() {
+            showStep('email');
+        });
+
+        // PIN form submission
         pinForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const pin = pinInput.value;
+            pinMessage.textContent = '';
+            pinMessage.className = '';
 
-            if (await verifyPin(pin)) {
-                storePin(pin);
-                hidePinScreen();
+            if (isActivation) {
+                // Activation flow
+                if (pin !== confirmPinInput.value) {
+                    pinMessage.textContent = 'PINs do not match';
+                    pinMessage.className = 'message error';
+                    return;
+                }
+
+                const result = await activateAccount(currentEmail, pin);
+                if (result.ok) {
+                    storeAuth(currentEmail, pin);
+                    hideLoginScreen();
+                } else {
+                    pinMessage.textContent = result.data.detail || 'Activation failed';
+                    pinMessage.className = 'message error';
+                }
             } else {
-                pinMessage.textContent = 'Invalid PIN';
-                pinMessage.className = 'message error';
-                pinInput.value = '';
+                // Login flow
+                const result = await login(currentEmail, pin);
+                if (result.ok) {
+                    storeAuth(currentEmail, pin);
+                    hideLoginScreen();
+                } else {
+                    pinMessage.textContent = result.data.detail || 'Invalid PIN';
+                    pinMessage.className = 'message error';
+                    pinInput.value = '';
+                }
             }
         });
 
+        // Check auth on load
         async function initAuth() {
-            const storedPin = getStoredPin();
-            if (storedPin && await verifyPin(storedPin)) {
-                hidePinScreen();
-            } else {
-                localStorage.removeItem('carryon_pin');
-                showPinScreen();
+            const auth = getStoredAuth();
+
+            // Try new auth system first
+            if (auth) {
+                const result = await login(auth.email, auth.pin);
+                if (result.ok) {
+                    hideLoginScreen();
+                    return;
+                }
+                clearAuth();
             }
+
+            // Fallback to legacy PIN (temporary)
+            const legacyPin = localStorage.getItem('carryon_pin');
+            if (legacyPin && await verifyPin(legacyPin)) {
+                hideLoginScreen();
+                return;
+            }
+
+            localStorage.removeItem('carryon_pin');
+            showLoginScreen();
+        }
+
+        // Helper to get PIN for API calls (supports both old and new auth)
+        function getStoredPin() {
+            const auth = getStoredAuth();
+            return auth ? auth.pin : localStorage.getItem('carryon_pin');
         }
 
         // Ideas form handling
@@ -266,9 +496,9 @@
                     charCount.textContent = '1000';
                     charCount.parentElement.classList.remove('warning');
                 } else if (response.status === 401) {
-                    localStorage.removeItem('carryon_pin');
-                    showPinScreen();
-                    ideaMessage.textContent = 'PIN expired, please re-enter';
+                    clearAuth();
+                    showLoginScreen();
+                    ideaMessage.textContent = 'Session expired, please log in again';
                     ideaMessage.className = 'message error';
                 } else {
                     const result = await response.json();
