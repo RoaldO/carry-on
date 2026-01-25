@@ -38,11 +38,15 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [x] Set minimum coverage threshold (70%)
 
 ### 0f. Multi-User Support
-Transition from single-user to multi-user before adding more features:
-- [ ] User registration and authentication (replace PIN)
-- [ ] Associate shots/ideas with user accounts
-- [ ] User-specific data isolation
-- [ ] Migrate existing data to default user (if needed)
+Transition from single-user to multi-user before adding more features.
+See [specification](docs/specs/multi-user.md) for details.
+- [x] Write specification
+- [ ] Create users collection and User entity
+- [ ] Implement activation endpoint (`POST /api/activate`)
+- [ ] Implement login endpoint (`POST /api/login`)
+- [ ] Add user_id to shots and ideas
+- [ ] Update UI with email/PIN login flow
+- [ ] Migrate existing data to default user
 
 ### 1. Golf Course Management
 Store golf course information including:
