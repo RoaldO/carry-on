@@ -341,7 +341,7 @@ def get_inline_html() -> str:
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 2px solid #ddd; max-width: 400px; margin: 0 auto; }
         .tab-bar.hidden { display: none; }
         .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; color: #666; background: none; border: none; font-size: 14px; }
-        .tab.active { color: #2d5a27; font-weight: 600; }
+        .tab.active { color: #2d5a27; font-weight: 600; background: #e8f5e6; border-top: 3px solid #2d5a27; margin-top: -1px; }
         .tab-icon { font-size: 20px; display: block; margin-bottom: 4px; }
         textarea { width: 100%; padding: 14px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: white; resize: vertical; min-height: 150px; font-family: inherit; }
         textarea:focus { outline: none; border-color: #2d5a27; }
