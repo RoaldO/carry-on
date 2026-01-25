@@ -13,6 +13,7 @@
             max-width: 400px;
             margin: 0 auto;
             padding: 20px;
+            padding-bottom: 80px;
             background: #f5f5f5;
         }
         h1 {
@@ -26,18 +27,69 @@
             justify-content: center;
             gap: 12px;
             margin-bottom: 30px;
-            position: relative;
         }
-        .idea-link {
-            position: absolute;
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
             right: 0;
-            color: #2d5a27;
-            text-decoration: none;
-            font-size: 20px;
-            padding: 4px;
+            display: flex;
+            background: white;
+            border-top: 2px solid #ddd;
+            max-width: 400px;
+            margin: 0 auto;
         }
-        .idea-link:hover {
-            opacity: 0.7;
+        .tab-bar.hidden {
+            display: none;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #666;
+            background: none;
+            border: none;
+            font-size: 14px;
+        }
+        .tab.active {
+            color: #2d5a27;
+            font-weight: 600;
+        }
+        .tab-icon {
+            font-size: 20px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        textarea {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            resize: vertical;
+            min-height: 150px;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2d5a27;
+        }
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .char-counter.warning {
+            color: #dc3545;
         }
         .form-group {
             margin-bottom: 20px;
@@ -208,9 +260,10 @@
 
     <div class="header">
         <h1>CarryOn</h1>
-        <a href="/ideas" class="idea-link" title="Submit an idea">&#128161;</a>
     </div>
 
+    <!-- Strokes Tab Content -->
+    <div id="strokesContent" class="tab-content active">
     <form id="strokeForm">
         <div class="form-group">
             <label for="date">Date</label>
@@ -259,6 +312,32 @@
         <h3>Recent Strokes</h3>
         <div id="recentStrokes">Loading...</div>
     </div>
+    </div>
+
+    <!-- Ideas Tab Content -->
+    <div id="ideasContent" class="tab-content">
+        <form id="ideaForm">
+            <div class="form-group">
+                <label for="ideaDescription">Your idea or feedback</label>
+                <textarea id="ideaDescription" name="description" maxlength="1000" placeholder="Share your idea for improving CarryOn..." required></textarea>
+                <div class="char-counter"><span id="charCount">1000</span> characters remaining</div>
+            </div>
+            <button type="submit">Submit Idea</button>
+        </form>
+        <div id="ideaMessage"></div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div id="tabBar" class="tab-bar hidden">
+        <button class="tab active" data-tab="strokes">
+            <span class="tab-icon">&#9971;</span>
+            Strokes
+        </button>
+        <button class="tab" data-tab="ideas">
+            <span class="tab-icon">&#128161;</span>
+            Ideas
+        </button>
+    </div>
 
     <script>
         // Login screen elements
@@ -281,6 +360,12 @@
         let currentEmail = '';
         let isActivation = false;
 
+        // Tab bar elements
+        const tabBar = document.getElementById('tabBar');
+        const tabs = document.querySelectorAll('.tab');
+        const strokesContent = document.getElementById('strokesContent');
+        const ideasContent = document.getElementById('ideasContent');
+
         // Storage helpers
         function getStoredAuth() {
             const email = localStorage.getItem('carryon_email');
@@ -300,11 +385,13 @@
 
         function showLoginScreen() {
             loginScreen.classList.remove('hidden');
+            tabBar.classList.add('hidden');
             showStep('email');
         }
 
         function hideLoginScreen() {
             loginScreen.classList.add('hidden');
+            tabBar.classList.remove('hidden');
         }
 
         function showStep(step) {
@@ -603,7 +690,92 @@
             }
         }
 
-        // Initialize authentication on page load
+        // Tab navigation
+        function showTab(tabName) {
+            // Update content visibility
+            strokesContent.classList.toggle('active', tabName === 'strokes');
+            ideasContent.classList.toggle('active', tabName === 'ideas');
+
+            // Update tab states
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            // Update URL hash without scrolling
+            history.replaceState(null, '', '#' + tabName);
+        }
+
+        // Tab click handlers
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => showTab(tab.dataset.tab));
+        });
+
+        // Handle URL hash changes
+        function handleHashChange() {
+            const hash = window.location.hash.slice(1);
+            if (hash === 'ideas' || hash === 'strokes') {
+                showTab(hash);
+            } else {
+                showTab('strokes');
+            }
+        }
+
+        window.addEventListener('hashchange', handleHashChange);
+
+        // Ideas form handling
+        const ideaForm = document.getElementById('ideaForm');
+        const ideaDescription = document.getElementById('ideaDescription');
+        const charCount = document.getElementById('charCount');
+        const ideaMessage = document.getElementById('ideaMessage');
+
+        ideaDescription.addEventListener('input', function() {
+            const remaining = 1000 - this.value.length;
+            charCount.textContent = remaining;
+            charCount.parentElement.classList.toggle('warning', remaining < 100);
+        });
+
+        ideaForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/ideas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({ description: ideaDescription.value })
+                });
+
+                if (response.ok) {
+                    ideaMessage.textContent = 'Idea submitted! Thank you for your feedback.';
+                    ideaMessage.className = 'message success';
+                    ideaDescription.value = '';
+                    charCount.textContent = '1000';
+                    charCount.parentElement.classList.remove('warning');
+                } else if (response.status === 401) {
+                    clearAuth();
+                    showLoginScreen();
+                    ideaMessage.textContent = 'Session expired, please log in again';
+                    ideaMessage.className = 'message error';
+                } else {
+                    const result = await response.json();
+                    ideaMessage.textContent = result.detail || 'Error submitting idea';
+                    ideaMessage.className = 'message error';
+                }
+            } catch (err) {
+                ideaMessage.textContent = 'Network error: ' + err.message;
+                ideaMessage.className = 'message error';
+            }
+
+            submitBtn.disabled = false;
+        });
+
+        // Initialize: check hash and auth
+        handleHashChange();
         initAuth();
     </script>
 </body>
