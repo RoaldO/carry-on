@@ -33,3 +33,13 @@ A single act of hitting the ball. This is the fundamental unit of the domain.
 
 ### Tee Box
 The designated starting area for a hole. In a digital model, this often carries attributes like "color" (pro, amateur, ladies) which dictate the total distance.
+
+## Scoring Terminology
+
+| Term | Definition | Logic |
+|------|------------|-------|
+| Ace | A hole-in-one. | `Strokes == 1` |
+| Birdie | One stroke under par. | `Strokes == Par - 1` |
+| Bogey | One stroke over par. | `Strokes == Par + 1` |
+| Double Bogey | Two strokes over par. | `Strokes == Par + 2` |
+| Eagle | Two strokes under par. | `Strokes == Par - 2` |
