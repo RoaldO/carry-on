@@ -16,6 +16,9 @@ The destination area containing the hole/cup. This is where different rules of m
 ### Handicap
 A numerical measure of a golfer's potential. It functions as a Value Object used to "normalize" scores between players of different skill levels.
 
+### Hazard
+Obstacles like "Bunkers" (sand traps) or "Water Hazards." These represent Policy changes in your code (e.g., penalty strokes or restricted movement).
+
 ### Lie
 The position of the ball and the condition of the ground it is resting on.
 
