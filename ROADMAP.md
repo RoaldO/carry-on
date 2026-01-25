@@ -54,10 +54,11 @@ See [specification](docs/specs/multi-user.md) for details.
 
 ### 0g. Password Complexity Support
 Allow users to use generated passwords from password managers.
-- [ ] Support special characters in PIN/password field (e.g., `!@#$%^&*`)
+- [ ] Rename "PIN" to "password" throughout codebase (API, UI, docs)
+- [ ] Support special characters in password field (e.g., `!@#$%^&*`)
 - [ ] Support mixed case letters (uppercase and lowercase)
 - [ ] Support numbers
-- [ ] Update PIN field validation to accept complex passwords
+- [ ] Update password field validation to accept complex passwords
 - [ ] Update UI input field to allow all character types
 
 ### 1. Golf Course Management
