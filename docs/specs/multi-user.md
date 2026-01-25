@@ -26,7 +26,7 @@ Transition from single-user PIN authentication to a multi-user system where each
 ### Non-Functional Requirements
 
 - NFR-1: Email addresses must be unique in the system
-- NFR-2: PINs are stored securely (hashed)
+- NFR-2: PINs are stored securely (hashed) - **Note: Currently stored as plain text; hashing to be implemented**
 - NFR-3: Existing shots/ideas are migrated to a default user account
 
 ## Domain Model
@@ -53,11 +53,42 @@ Transition from single-user PIN authentication to a multi-user system where each
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/activate` | Activate account and set PIN |
-| POST | `/api/login` | Login with email + PIN |
-| GET | `/api/me` | Get current user info |
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| POST | `/api/check-email` | Check if email exists and activation status | Done |
+| POST | `/api/activate` | Activate account and set PIN | Done |
+| POST | `/api/login` | Login with email + PIN | Done |
+| GET | `/api/me` | Get current user info | Not implemented |
+
+### POST /api/check-email
+
+Check if an email exists in the system and its activation status.
+
+**Request Body**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response (200 OK) - Needs activation**
+```json
+{
+  "status": "needs_activation",
+  "display_name": "John Doe"
+}
+```
+
+**Response (200 OK) - Already activated**
+```json
+{
+  "status": "activated",
+  "display_name": "John Doe"
+}
+```
+
+**Error Responses**
+- `404 Not Found`: Email not found in system
 
 ### POST /api/activate
 
@@ -113,16 +144,13 @@ Transition from single-user PIN authentication to a multi-user system where each
 
 ### Authentication Header
 
-After login, all API requests use a session token:
+All authenticated API requests use email and PIN headers:
 ```
-Authorization: Bearer <session_token>
-```
-
-Or continue using `X-Pin` header with user context:
-```
-X-User-Email: user@example.com
+X-Email: user@example.com
 X-Pin: <pin>
 ```
+
+The frontend stores these credentials in localStorage after successful login/activation and sends them with each request.
 
 ## UI/UX
 
@@ -174,14 +202,14 @@ db.users.insertOne({
 
 ## Acceptance Criteria
 
-- [ ] Admin can add users via database
-- [ ] New users can activate with email + set PIN
-- [ ] Activated users can log in with email + PIN
+- [x] Admin can add users via database
+- [x] New users can activate with email + set PIN
+- [x] Activated users can log in with email + PIN
 - [ ] Shots are associated with logged-in user
 - [ ] Ideas are associated with logged-in user
 - [ ] Users cannot see other users' data
 - [ ] Existing data is migrated to default user
-- [ ] PIN screen replaced with email/PIN login
+- [x] PIN screen replaced with email/PIN login
 
 ## Out of Scope
 

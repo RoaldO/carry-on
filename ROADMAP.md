@@ -3,7 +3,7 @@
 ## Current Features
 - Record golf shots (club, distance, fail)
 - View recent shots
-- PIN authentication
+- Multi-user authentication (email + PIN)
 
 ## Planned Features
 
@@ -41,11 +41,14 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 Transition from single-user to multi-user before adding more features.
 See [specification](docs/specs/multi-user.md) for details.
 - [x] Write specification
-- [ ] Create users collection and User entity
-- [ ] Implement activation endpoint (`POST /api/activate`)
-- [ ] Implement login endpoint (`POST /api/login`)
+- [x] Create users collection and User entity
+- [x] Implement check-email endpoint (`POST /api/check-email`)
+- [x] Implement activation endpoint (`POST /api/activate`)
+- [x] Implement login endpoint (`POST /api/login`)
+- [x] Update UI with email/PIN login flow
+- [x] Remove legacy APP_PIN authentication
 - [ ] Add user_id to shots and ideas
-- [ ] Update UI with email/PIN login flow
+- [ ] Filter shots/ideas by logged-in user
 - [ ] Migrate existing data to default user
 
 ### 1. Golf Course Management
