@@ -27,8 +27,9 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [ ] Update tests to use dependency injection
 
 ### 0d. Dependency Version Audit (ADR-0007 Compliance)
-- [ ] Check all dependencies are on latest patch version
-- [ ] Upgrade to latest minor versions where available
+- [x] Check all dependencies are on latest patch version
+- [x] Upgrade to latest minor versions where available
+- [x] Track uv.lock for reproducible builds
 
 ### 0e. Code Coverage
 - [x] Add pytest-cov for coverage reporting
