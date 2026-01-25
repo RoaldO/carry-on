@@ -47,6 +47,7 @@ See [specification](docs/specs/multi-user.md) for details.
 - [x] Implement login endpoint (`POST /api/login`)
 - [x] Update UI with email/PIN login flow
 - [x] Remove legacy APP_PIN authentication
+- [x] Secure PIN hashing with Argon2id (see [ADR-0009](docs/adr/0009-password-hashing.md))
 - [ ] Add user_id to shots and ideas
 - [ ] Filter shots/ideas by logged-in user
 - [ ] Migrate existing data to default user

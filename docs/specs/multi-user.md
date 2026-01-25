@@ -26,7 +26,7 @@ Transition from single-user PIN authentication to a multi-user system where each
 ### Non-Functional Requirements
 
 - NFR-1: Email addresses must be unique in the system
-- NFR-2: PINs are stored securely (hashed with Argon2id)
+- NFR-2: PINs are stored securely (hashed with Argon2id) - see [ADR-0009](../adr/0009-password-hashing.md)
 - NFR-3: Existing shots/ideas are migrated to a default user account
 
 ## Domain Model
@@ -205,6 +205,8 @@ db.users.insertOne({
 - [x] Admin can add users via database
 - [x] New users can activate with email + set PIN
 - [x] Activated users can log in with email + PIN
+- [x] PINs are securely hashed with Argon2id
+- [x] Legacy plain text PINs are auto-migrated on login
 - [ ] Shots are associated with logged-in user
 - [ ] Ideas are associated with logged-in user
 - [ ] Users cannot see other users' data
