@@ -7,6 +7,9 @@ This glossary defines the domain terms used throughout the CarryOn application. 
 ### Address
 The act of a player positioning their body and club to prepare for a stroke.
 
+### Driving Range
+A controlled practice environment used to measure, repeat, and analyze golf strokes.
+
 ### Fairway
 The manicured path between the tee and the green.
 
