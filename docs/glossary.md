@@ -18,3 +18,6 @@ The primary Aggregate Root. It tracks the player's progress across 18 (or 9) hol
 
 ### Stroke
 A single act of hitting the ball. This is the fundamental unit of the domain.
+
+### Tee Box
+The designated starting area for a hole. In a digital model, this often carries attributes like "color" (pro, amateur, ladies) which dictate the total distance.
