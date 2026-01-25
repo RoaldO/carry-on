@@ -66,13 +66,14 @@ Allow users to use generated passwords from password managers.
 ### 0h. Tab Navigation
 Implement tab-based navigation for better app structure.
 See [specification](docs/specs/navigation.md) for details.
-- [ ] Add tab bar component (bottom of screen)
-- [ ] Create Strokes tab (current main page)
-- [ ] Create Ideas tab (current /ideas page)
+- [x] Add tab bar component (bottom of screen)
+- [x] Create Strokes tab (current main page)
+- [x] Create Ideas tab (merged into main page)
+- [x] Highlight active tab
+- [x] Hide tab bar on login/activation screens
+- [x] URL hash routing (#strokes, #ideas)
 - [ ] Create Profile tab with user info and logout
 - [ ] Implement `/api/me` endpoint for profile data
-- [ ] Highlight active tab
-- [ ] Hide tab bar on login/activation screens
 
 ### 1. Golf Course Management
 Store golf course information including:
