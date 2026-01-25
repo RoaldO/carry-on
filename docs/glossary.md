@@ -22,6 +22,9 @@ Obstacles like "Bunkers" (sand traps) or "Water Hazards." These represent Policy
 ### Lie
 The position of the ball and the condition of the ground it is resting on.
 
+### Par
+The predetermined number of strokes an expert golfer is expected to need to complete a hole. This is your baseline for all scoring logic.
+
 ### Round
 The primary Aggregate Root. It tracks the player's progress across 18 (or 9) holes.
 
