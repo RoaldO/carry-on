@@ -2,7 +2,6 @@
 
 import os
 from collections.abc import Generator
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -21,15 +20,20 @@ def mock_shots_collection() -> Generator[MagicMock, None, None]:
 
 
 @pytest.fixture
+def test_email() -> str:
+    """Test email for authentication."""
+    return "test@example.com"
+
+
+@pytest.fixture
 def test_pin() -> str:
     """Test PIN for authentication."""
     return "1234"
 
 
 @pytest.fixture
-def client(test_pin: str) -> Generator[TestClient, None, None]:
-    """Create test client with PIN configured."""
-    os.environ["APP_PIN"] = test_pin
+def client() -> Generator[TestClient, None, None]:
+    """Create test client."""
     os.environ["MONGODB_URI"] = "mongodb://test"
 
     # Import app after setting env vars
@@ -39,14 +43,13 @@ def client(test_pin: str) -> Generator[TestClient, None, None]:
         yield client
 
     # Cleanup
-    os.environ.pop("APP_PIN", None)
     os.environ.pop("MONGODB_URI", None)
 
 
 @pytest.fixture
-def auth_headers(test_pin: str) -> dict[str, str]:
-    """Headers with valid PIN for authenticated requests."""
-    return {"X-Pin": test_pin}
+def auth_headers(test_email: str, test_pin: str) -> dict[str, str]:
+    """Headers with valid email and PIN for authenticated requests."""
+    return {"X-Email": test_email, "X-Pin": test_pin}
 
 
 @pytest.fixture
@@ -68,3 +71,18 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
 
     with patch("api.index.get_users_collection", return_value=mock_collection):
         yield mock_collection
+
+
+@pytest.fixture
+def mock_authenticated_user(
+    mock_users_collection: MagicMock, test_email: str, test_pin: str
+) -> MagicMock:
+    """Mock a valid authenticated user in the database."""
+    mock_users_collection.find_one.return_value = {
+        "_id": "user123",
+        "email": test_email,
+        "display_name": "Test User",
+        "pin_hash": test_pin,
+        "activated_at": "2026-01-25T10:00:00Z",
+    }
+    return mock_users_collection

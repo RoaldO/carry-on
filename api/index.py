@@ -52,24 +52,18 @@ def get_users_collection():
 def verify_pin(x_pin: str = Header(None), x_email: str = Header(None)):
     """Verify PIN from request header.
 
-    Supports two authentication methods:
-    1. User-based: X-Email + X-Pin headers verified against user's PIN in database
-    2. Legacy: X-Pin header verified against APP_PIN environment variable
+    Authenticates user by verifying X-Email + X-Pin headers against user's PIN in database.
     """
-    # Try user-based authentication first
-    if x_email and x_pin:
-        users_collection = get_users_collection()
-        if users_collection is not None:
-            user = users_collection.find_one({"email": x_email.lower()})
-            if user and user.get("pin_hash") == x_pin:
-                return  # User authenticated successfully
+    if not x_email or not x_pin:
+        raise HTTPException(status_code=401, detail="Authentication required")
 
-    # Fall back to legacy APP_PIN authentication
-    expected_pin = os.getenv("APP_PIN")
-    if not expected_pin:
-        return  # No PIN configured, allow all
-    if x_pin != expected_pin:
-        raise HTTPException(status_code=401, detail="Invalid PIN")
+    users_collection = get_users_collection()
+    if users_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    user = users_collection.find_one({"email": x_email.lower()})
+    if not user or user.get("pin_hash") != x_pin:
+        raise HTTPException(status_code=401, detail="Invalid email or PIN")
 
 
 class ShotCreate(BaseModel):
@@ -213,17 +207,6 @@ async def serve_ideas():
 
     with open(html_path, "r") as f:
         return f.read()
-
-
-@app.post("/api/verify-pin")
-async def verify_pin_endpoint(x_pin: str = Header(None)):
-    """Verify if the provided PIN is correct."""
-    expected_pin = os.getenv("APP_PIN")
-    if not expected_pin:
-        return {"valid": True, "message": "No PIN required"}
-    if x_pin == expected_pin:
-        return {"valid": True, "message": "PIN verified"}
-    raise HTTPException(status_code=401, detail="Invalid PIN")
 
 
 @app.post("/api/shots")
@@ -426,7 +409,7 @@ def get_inline_html() -> str:
         function getStoredAuth() { const e = localStorage.getItem('carryon_email'), p = localStorage.getItem('carryon_pin'); return e && p ? { email: e, pin: p } : null; }
         function storeAuth(e, p) { localStorage.setItem('carryon_email', e); localStorage.setItem('carryon_pin', p); }
         function clearAuth() { localStorage.removeItem('carryon_email'); localStorage.removeItem('carryon_pin'); }
-        function getStoredPin() { const a = getStoredAuth(); return a ? a.pin : localStorage.getItem('carryon_pin'); }
+        function getStoredPin() { const a = getStoredAuth(); return a ? a.pin : ''; }
         function getStoredEmail() { const a = getStoredAuth(); return a ? a.email : ''; }
         function getAuthHeaders() { return { 'X-Pin': getStoredPin() || '', 'X-Email': getStoredEmail() }; }
         function showLoginScreen() { loginScreen.classList.remove('hidden'); showStep('email'); }
@@ -436,11 +419,10 @@ def get_inline_html() -> str:
         function parseErrorDetail(d) { return Array.isArray(d) ? d.map(e => e.msg).join(', ') : d; }
         async function activateAccount(email, pin) { try { const r = await fetch('/api/activate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, pin }) }); const data = await r.json(); if (data.detail) data.detail = parseErrorDetail(data.detail); return { ok: r.ok, data }; } catch { return { ok: false, data: { detail: 'Network error' } }; } }
         async function login(email, pin) { try { const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, pin }) }); const data = await r.json(); if (data.detail) data.detail = parseErrorDetail(data.detail); return { ok: r.ok, data }; } catch { return { ok: false, data: { detail: 'Network error' } }; } }
-        async function verifyPin(pin) { try { const r = await fetch('/api/verify-pin', { method: 'POST', headers: { 'X-Pin': pin } }); return r.ok; } catch { return false; } }
         emailForm.addEventListener('submit', async function(e) { e.preventDefault(); const email = emailInput.value.trim().toLowerCase(); emailMessage.textContent = ''; emailMessage.className = ''; const result = await checkEmail(email); if (result.status === 'not_found') { emailMessage.textContent = 'Email not registered. Contact administrator.'; emailMessage.className = 'message error'; return; } if (result.status === 'error') { emailMessage.textContent = 'Connection error. Please try again.'; emailMessage.className = 'message error'; return; } currentEmail = email; isActivation = result.status === 'needs_activation'; welcomeName.textContent = 'Welcome, ' + (result.display_name || email); if (isActivation) { pinLabel.textContent = 'Create your PIN'; confirmPinGroup.style.display = 'block'; confirmPinInput.required = true; pinSubmitBtn.textContent = 'Activate'; } else { pinLabel.textContent = 'Enter PIN'; confirmPinGroup.style.display = 'none'; confirmPinInput.required = false; pinSubmitBtn.textContent = 'Login'; } pinInput.value = ''; confirmPinInput.value = ''; pinMessage.textContent = ''; showStep('pin'); });
         document.getElementById('backToEmail').addEventListener('click', function() { showStep('email'); });
         pinForm.addEventListener('submit', async function(e) { e.preventDefault(); const pin = pinInput.value; pinMessage.textContent = ''; pinMessage.className = ''; if (isActivation) { if (pin !== confirmPinInput.value) { pinMessage.textContent = 'PINs do not match'; pinMessage.className = 'message error'; return; } const result = await activateAccount(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); loadRecentShots(); } else { pinMessage.textContent = result.data.detail || 'Activation failed'; pinMessage.className = 'message error'; } } else { const result = await login(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); loadRecentShots(); } else { pinMessage.textContent = result.data.detail || 'Invalid PIN'; pinMessage.className = 'message error'; pinInput.value = ''; } } });
-        async function initAuth() { const auth = getStoredAuth(); if (auth) { const result = await login(auth.email, auth.pin); if (result.ok) { hideLoginScreen(); loadRecentShots(); return; } clearAuth(); } const legacyPin = localStorage.getItem('carryon_pin'); if (legacyPin && await verifyPin(legacyPin)) { hideLoginScreen(); loadRecentShots(); return; } localStorage.removeItem('carryon_pin'); showLoginScreen(); }
+        async function initAuth() { const auth = getStoredAuth(); if (auth) { const result = await login(auth.email, auth.pin); if (result.ok) { hideLoginScreen(); loadRecentShots(); return; } clearAuth(); } showLoginScreen(); }
         document.getElementById('date').valueAsDate = new Date();
         const failCheckbox = document.getElementById('fail'), distanceInput = document.getElementById('distance');
         failCheckbox.addEventListener('change', function() { distanceInput.disabled = this.checked; if (this.checked) distanceInput.value = ''; });
@@ -543,7 +525,7 @@ def get_ideas_html() -> str:
         function getStoredAuth() { const e = localStorage.getItem('carryon_email'), p = localStorage.getItem('carryon_pin'); return e && p ? { email: e, pin: p } : null; }
         function storeAuth(e, p) { localStorage.setItem('carryon_email', e); localStorage.setItem('carryon_pin', p); }
         function clearAuth() { localStorage.removeItem('carryon_email'); localStorage.removeItem('carryon_pin'); }
-        function getStoredPin() { const a = getStoredAuth(); return a ? a.pin : localStorage.getItem('carryon_pin'); }
+        function getStoredPin() { const a = getStoredAuth(); return a ? a.pin : ''; }
         function getStoredEmail() { const a = getStoredAuth(); return a ? a.email : ''; }
         function getAuthHeaders() { return { 'X-Pin': getStoredPin() || '', 'X-Email': getStoredEmail() }; }
         function showLoginScreen() { loginScreen.classList.remove('hidden'); showStep('email'); }
@@ -553,11 +535,10 @@ def get_ideas_html() -> str:
         function parseErrorDetail(d) { return Array.isArray(d) ? d.map(e => e.msg).join(', ') : d; }
         async function activateAccount(email, pin) { try { const r = await fetch('/api/activate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, pin }) }); const data = await r.json(); if (data.detail) data.detail = parseErrorDetail(data.detail); return { ok: r.ok, data }; } catch { return { ok: false, data: { detail: 'Network error' } }; } }
         async function login(email, pin) { try { const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, pin }) }); const data = await r.json(); if (data.detail) data.detail = parseErrorDetail(data.detail); return { ok: r.ok, data }; } catch { return { ok: false, data: { detail: 'Network error' } }; } }
-        async function verifyPin(pin) { try { const r = await fetch('/api/verify-pin', { method: 'POST', headers: { 'X-Pin': pin } }); return r.ok; } catch { return false; } }
         emailForm.addEventListener('submit', async function(e) { e.preventDefault(); const email = emailInput.value.trim().toLowerCase(); emailMessage.textContent = ''; emailMessage.className = ''; const result = await checkEmail(email); if (result.status === 'not_found') { emailMessage.textContent = 'Email not registered. Contact administrator.'; emailMessage.className = 'message error'; return; } if (result.status === 'error') { emailMessage.textContent = 'Connection error. Please try again.'; emailMessage.className = 'message error'; return; } currentEmail = email; isActivation = result.status === 'needs_activation'; welcomeName.textContent = 'Welcome, ' + (result.display_name || email); if (isActivation) { pinLabel.textContent = 'Create your PIN'; confirmPinGroup.style.display = 'block'; confirmPinInput.required = true; pinSubmitBtn.textContent = 'Activate'; } else { pinLabel.textContent = 'Enter PIN'; confirmPinGroup.style.display = 'none'; confirmPinInput.required = false; pinSubmitBtn.textContent = 'Login'; } pinInput.value = ''; confirmPinInput.value = ''; pinMessage.textContent = ''; showStep('pin'); });
         document.getElementById('backToEmail').addEventListener('click', function() { showStep('email'); });
         pinForm.addEventListener('submit', async function(e) { e.preventDefault(); const pin = pinInput.value; pinMessage.textContent = ''; pinMessage.className = ''; if (isActivation) { if (pin !== confirmPinInput.value) { pinMessage.textContent = 'PINs do not match'; pinMessage.className = 'message error'; return; } const result = await activateAccount(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); } else { pinMessage.textContent = result.data.detail || 'Activation failed'; pinMessage.className = 'message error'; } } else { const result = await login(currentEmail, pin); if (result.ok) { storeAuth(currentEmail, pin); hideLoginScreen(); } else { pinMessage.textContent = result.data.detail || 'Invalid PIN'; pinMessage.className = 'message error'; pinInput.value = ''; } } });
-        async function initAuth() { const auth = getStoredAuth(); if (auth) { const result = await login(auth.email, auth.pin); if (result.ok) { hideLoginScreen(); return; } clearAuth(); } const legacyPin = localStorage.getItem('carryon_pin'); if (legacyPin && await verifyPin(legacyPin)) { hideLoginScreen(); return; } localStorage.removeItem('carryon_pin'); showLoginScreen(); }
+        async function initAuth() { const auth = getStoredAuth(); if (auth) { const result = await login(auth.email, auth.pin); if (result.ok) { hideLoginScreen(); return; } clearAuth(); } showLoginScreen(); }
         const ideaForm = document.getElementById('ideaForm'), ideaDescription = document.getElementById('ideaDescription'), charCount = document.getElementById('charCount'), ideaMessage = document.getElementById('ideaMessage');
         ideaDescription.addEventListener('input', function() { const remaining = 1000 - this.value.length; charCount.textContent = remaining; charCount.parentElement.classList.toggle('warning', remaining < 100); });
         ideaForm.addEventListener('submit', async function(e) { e.preventDefault(); const submitBtn = this.querySelector('button[type="submit"]'); submitBtn.disabled = true; try { const response = await fetch('/api/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ description: ideaDescription.value }) }); if (response.ok) { ideaMessage.textContent = 'Idea submitted! Thank you for your feedback.'; ideaMessage.className = 'message success'; ideaDescription.value = ''; charCount.textContent = '1000'; charCount.parentElement.classList.remove('warning'); } else if (response.status === 401) { clearAuth(); showLoginScreen(); ideaMessage.textContent = 'Session expired'; ideaMessage.className = 'message error'; } else { const result = await response.json(); ideaMessage.textContent = result.detail || 'Error'; ideaMessage.className = 'message error'; } } catch (err) { ideaMessage.textContent = 'Network error: ' + err.message; ideaMessage.className = 'message error'; } submitBtn.disabled = false; });
