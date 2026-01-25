@@ -10,6 +10,9 @@ The act of a player positioning their body and club to prepare for a stroke.
 ### Fairway
 The manicured path between the tee and the green.
 
+### Green (Putting Green)
+The destination area containing the hole/cup. This is where different rules of movement (putting) apply.
+
 ### Handicap
 A numerical measure of a golfer's potential. It functions as a Value Object used to "normalize" scores between players of different skill levels.
 
