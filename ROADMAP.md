@@ -63,6 +63,17 @@ Allow users to use generated passwords from password managers.
 - [ ] Update password field validation to accept complex passwords
 - [ ] Update UI input field to allow all character types
 
+### 0h. Tab Navigation
+Implement tab-based navigation for better app structure.
+See [specification](docs/specs/navigation.md) for details.
+- [ ] Add tab bar component (bottom of screen)
+- [ ] Create Shots tab (current main page)
+- [ ] Create Ideas tab (current /ideas page)
+- [ ] Create Profile tab with user info and logout
+- [ ] Implement `/api/me` endpoint for profile data
+- [ ] Highlight active tab
+- [ ] Hide tab bar on login/activation screens
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
