@@ -37,6 +37,13 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [x] Add coverage check to CI pipeline
 - [x] Set minimum coverage threshold (70%)
 
+### 0f. Multi-User Support
+Transition from single-user to multi-user before adding more features:
+- [ ] User registration and authentication (replace PIN)
+- [ ] Associate shots/ideas with user accounts
+- [ ] User-specific data isolation
+- [ ] Migrate existing data to default user (if needed)
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
