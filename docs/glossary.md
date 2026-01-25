@@ -4,6 +4,9 @@ This glossary defines the domain terms used throughout the CarryOn application. 
 
 ## Terms
 
+### Handicap
+A numerical measure of a golfer's potential. It functions as a Value Object used to "normalize" scores between players of different skill levels.
+
 ### Round
 The primary Aggregate Root. It tracks the player's progress across 18 (or 9) holes.
 
