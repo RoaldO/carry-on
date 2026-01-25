@@ -503,10 +503,22 @@
             showLoginScreen();
         }
 
-        // Helper to get PIN for API calls (supports both old and new auth)
+        // Helpers to get credentials for API calls (supports both old and new auth)
         function getStoredPin() {
             const auth = getStoredAuth();
             return auth ? auth.pin : localStorage.getItem('carryon_pin');
+        }
+
+        function getStoredEmail() {
+            const auth = getStoredAuth();
+            return auth ? auth.email : '';
+        }
+
+        function getAuthHeaders() {
+            return {
+                'X-Pin': getStoredPin() || '',
+                'X-Email': getStoredEmail()
+            };
         }
 
         // Set default date to today
@@ -551,7 +563,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Pin': getStoredPin() || ''
+                        ...getAuthHeaders()
                     },
                     body: JSON.stringify(data)
                 });
@@ -590,7 +602,7 @@
         async function loadRecentShots() {
             try {
                 const response = await fetch('/api/shots?limit=5', {
-                    headers: { 'X-Pin': getStoredPin() || '' }
+                    headers: getAuthHeaders()
                 });
                 const data = await response.json();
 

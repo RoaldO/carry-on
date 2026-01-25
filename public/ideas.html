@@ -455,10 +455,22 @@
             showLoginScreen();
         }
 
-        // Helper to get PIN for API calls (supports both old and new auth)
+        // Helpers to get credentials for API calls (supports both old and new auth)
         function getStoredPin() {
             const auth = getStoredAuth();
             return auth ? auth.pin : localStorage.getItem('carryon_pin');
+        }
+
+        function getStoredEmail() {
+            const auth = getStoredAuth();
+            return auth ? auth.email : '';
+        }
+
+        function getAuthHeaders() {
+            return {
+                'X-Pin': getStoredPin() || '',
+                'X-Email': getStoredEmail()
+            };
         }
 
         // Ideas form handling
@@ -484,7 +496,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Pin': getStoredPin() || ''
+                        ...getAuthHeaders()
                     },
                     body: JSON.stringify({ description: ideaDescription.value })
                 });
