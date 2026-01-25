@@ -34,6 +34,9 @@ A single act of hitting the ball. This is the fundamental unit of the domain.
 ### Tee Box
 The designated starting area for a hole. In a digital model, this often carries attributes like "color" (pro, amateur, ladies) which dictate the total distance.
 
+### Whiff (Air Shot)
+If you swing with the intent to hit the ball but miss it entirely, it still counts as a stroke.
+
 ## Scoring Terminology
 
 | Term | Definition | Logic |
