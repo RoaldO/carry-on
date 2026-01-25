@@ -39,6 +39,26 @@ This format is self-describing:
 - `m=65536,t=3,p=4` - memory cost, time cost, parallelism
 - Salt and hash are base64-encoded
 
+### Salt
+
+A **salt** is a random value generated uniquely for each password hash. Argon2 automatically generates a cryptographically secure 16-byte salt for every hash operation.
+
+**Why salt is essential:**
+
+1. **Prevents rainbow table attacks**: Without salt, attackers can precompute hashes for common passwords. With unique salts, precomputation is infeasible.
+
+2. **Identical passwords produce different hashes**: If two users have the same PIN, their stored hashes will be completely different due to unique salts.
+
+3. **No additional implementation needed**: The `argon2-cffi` library handles salt generation automatically - developers never need to manage salts manually.
+
+**Example**: The same PIN "1234" hashed twice produces different results:
+```
+$argon2id$v=19$m=65536,t=3,p=4$abc123...$xyz789...  (first hash)
+$argon2id$v=19$m=65536,t=3,p=4$def456...$uvw012...  (second hash)
+```
+
+The salt is embedded in the hash string, so verification extracts it automatically.
+
 ### Migration Strategy
 
 The system supports transparent migration from plain text to hashed PINs:
