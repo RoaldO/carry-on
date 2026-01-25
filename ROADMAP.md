@@ -55,6 +55,7 @@ See [specification](docs/specs/multi-user.md) for details.
 ### 0g. Password Complexity Support
 Allow users to use generated passwords from password managers.
 - [ ] Rename "PIN" to "password" throughout codebase (API, UI, docs)
+- [ ] Remove 10 character limit on password field
 - [ ] Support special characters in password field (e.g., `!@#$%^&*`)
 - [ ] Support mixed case letters (uppercase and lowercase)
 - [ ] Support numbers
