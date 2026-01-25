@@ -58,3 +58,13 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
 
     with patch("api.index.get_ideas_collection", return_value=mock_collection):
         yield mock_collection
+
+
+@pytest.fixture
+def mock_users_collection() -> Generator[MagicMock, None, None]:
+    """Mock MongoDB users collection."""
+    mock_collection = MagicMock()
+    mock_collection.find_one.return_value = None
+
+    with patch("api.index.get_users_collection", return_value=mock_collection):
+        yield mock_collection
