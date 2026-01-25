@@ -38,6 +38,17 @@ def get_ideas_collection():
     return _client.carryon.ideas
 
 
+def get_users_collection():
+    """Get MongoDB users collection, initializing connection if needed."""
+    global _client
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        return None
+    if _client is None:
+        _client = MongoClient(uri)
+    return _client.carryon.users
+
+
 def verify_pin(x_pin: str = Header(None)):
     """Verify PIN from request header."""
     expected_pin = os.getenv("APP_PIN")
@@ -63,6 +74,99 @@ class Shot(BaseModel):
 
 class IdeaCreate(BaseModel):
     description: str = Field(..., min_length=1, max_length=1000)
+
+
+class EmailCheck(BaseModel):
+    email: str = Field(..., min_length=1)
+
+
+class ActivateRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    pin: str = Field(..., min_length=4, max_length=10)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    pin: str = Field(..., min_length=4, max_length=10)
+
+
+@app.post("/api/check-email")
+async def check_email(request: EmailCheck):
+    """Check if email exists and get activation status."""
+    users_collection = get_users_collection()
+    if users_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    user = users_collection.find_one({"email": request.email.lower()})
+    if not user:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    status = "activated" if user.get("activated_at") else "needs_activation"
+    return {
+        "status": status,
+        "display_name": user.get("display_name", ""),
+    }
+
+
+@app.post("/api/activate")
+async def activate_account(request: ActivateRequest):
+    """Activate account by setting PIN."""
+    users_collection = get_users_collection()
+    if users_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    user = users_collection.find_one({"email": request.email.lower()})
+    if not user:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    if user.get("activated_at"):
+        raise HTTPException(status_code=400, detail="Account already activated")
+
+    # Store PIN (temporary: plain text, will add hashing later)
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "pin_hash": request.pin,
+                "activated_at": datetime.now(UTC).isoformat(),
+            }
+        },
+    )
+
+    return {
+        "message": "Account activated successfully",
+        "user": {
+            "email": user["email"],
+            "display_name": user.get("display_name", ""),
+        },
+    }
+
+
+@app.post("/api/login")
+async def login(request: LoginRequest):
+    """Login with email and PIN."""
+    users_collection = get_users_collection()
+    if users_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    user = users_collection.find_one({"email": request.email.lower()})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+
+    if not user.get("activated_at"):
+        raise HTTPException(status_code=400, detail="Account not activated")
+
+    # Check PIN (temporary: plain comparison, will add hashing later)
+    if user.get("pin_hash") != request.pin:
+        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+
+    return {
+        "message": "Login successful",
+        "user": {
+            "email": user["email"],
+            "display_name": user.get("display_name", ""),
+        },
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
