@@ -3,7 +3,7 @@ from datetime import UTC, date as date_type, datetime
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
@@ -51,10 +51,21 @@ def get_users_collection():
     return _client.carryon.users
 
 
-def verify_pin(x_pin: str = Header(None), x_email: str = Header(None)):
-    """Verify PIN from request header.
+class AuthenticatedUser(BaseModel):
+    """Represents an authenticated user returned by verify_pin()."""
+
+    id: str
+    email: str
+    display_name: str
+
+
+def verify_pin(
+    x_pin: str = Header(None), x_email: str = Header(None)
+) -> AuthenticatedUser:
+    """Verify PIN from request header and return authenticated user.
 
     Authenticates user by verifying X-Email + X-Pin headers against user's PIN in database.
+    Returns AuthenticatedUser on success.
     """
     if not x_email or not x_pin:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -72,6 +83,12 @@ def verify_pin(x_pin: str = Header(None), x_email: str = Header(None)):
         users_collection.update_one(
             {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(x_pin)}}
         )
+
+    return AuthenticatedUser(
+        id=str(user["_id"]),
+        email=user["email"],
+        display_name=user.get("display_name", ""),
+    )
 
 
 class StrokeCreate(BaseModel):
@@ -217,10 +234,10 @@ async def serve_ideas():
 
 
 @app.post("/api/strokes")
-async def create_stroke(stroke: StrokeCreate, x_pin: str = Header(None), x_email: str = Header(None)):
+async def create_stroke(
+    stroke: StrokeCreate, user: AuthenticatedUser = Depends(verify_pin)
+):
     """Record a new golf stroke."""
-    verify_pin(x_pin, x_email)
-
     strokes_collection = get_strokes_collection()
     if strokes_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
@@ -234,6 +251,7 @@ async def create_stroke(stroke: StrokeCreate, x_pin: str = Header(None), x_email
         "fail": stroke.fail,
         "date": stroke.date.isoformat(),
         "created_at": datetime.now(UTC).isoformat(),
+        "user_id": user.id,
     }
 
     result = strokes_collection.insert_one(doc)
@@ -246,39 +264,44 @@ async def create_stroke(stroke: StrokeCreate, x_pin: str = Header(None), x_email
             "distance": stroke.distance,
             "fail": stroke.fail,
             "date": stroke.date.isoformat(),
-        }
+        },
     }
 
 
 @app.get("/api/strokes")
-async def list_strokes(limit: int = 20, x_pin: str = Header(None), x_email: str = Header(None)):
-    """List recent strokes."""
-    verify_pin(x_pin, x_email)
+async def list_strokes(
+    limit: int = 20, user: AuthenticatedUser = Depends(verify_pin)
+):
+    """List recent strokes for the authenticated user."""
     strokes_collection = get_strokes_collection()
     if strokes_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
 
     strokes = []
-    cursor = strokes_collection.find().sort("created_at", -1).limit(limit)
+    cursor = (
+        strokes_collection.find({"user_id": user.id})
+        .sort("created_at", -1)
+        .limit(limit)
+    )
 
     for doc in cursor:
-        strokes.append({
-            "id": str(doc["_id"]),
-            "club": doc["club"],
-            "distance": doc.get("distance"),
-            "fail": doc.get("fail", False),
-            "date": doc["date"],
-            "created_at": doc["created_at"],
-        })
+        strokes.append(
+            {
+                "id": str(doc["_id"]),
+                "club": doc["club"],
+                "distance": doc.get("distance"),
+                "fail": doc.get("fail", False),
+                "date": doc["date"],
+                "created_at": doc["created_at"],
+            }
+        )
 
     return {"strokes": strokes, "count": len(strokes)}
 
 
 @app.post("/api/ideas")
-async def create_idea(idea: IdeaCreate, x_pin: str = Header(None), x_email: str = Header(None)):
+async def create_idea(idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_pin)):
     """Submit a new idea."""
-    verify_pin(x_pin, x_email)
-
     ideas_collection = get_ideas_collection()
     if ideas_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
@@ -287,6 +310,7 @@ async def create_idea(idea: IdeaCreate, x_pin: str = Header(None), x_email: str 
     doc = {
         "description": idea.description,
         "created_at": created_at,
+        "user_id": user.id,
     }
 
     result = ideas_collection.insert_one(doc)
@@ -297,28 +321,30 @@ async def create_idea(idea: IdeaCreate, x_pin: str = Header(None), x_email: str 
         "idea": {
             "description": idea.description,
             "created_at": created_at,
-        }
+        },
     }
 
 
 @app.get("/api/ideas")
-async def list_ideas(limit: int = 50, x_pin: str = Header(None), x_email: str = Header(None)):
-    """List submitted ideas."""
-    verify_pin(x_pin, x_email)
-
+async def list_ideas(limit: int = 50, user: AuthenticatedUser = Depends(verify_pin)):
+    """List submitted ideas for the authenticated user."""
     ideas_collection = get_ideas_collection()
     if ideas_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
 
     ideas = []
-    cursor = ideas_collection.find().sort("created_at", -1).limit(limit)
+    cursor = (
+        ideas_collection.find({"user_id": user.id}).sort("created_at", -1).limit(limit)
+    )
 
     for doc in cursor:
-        ideas.append({
-            "id": str(doc["_id"]),
-            "description": doc["description"],
-            "created_at": doc["created_at"],
-        })
+        ideas.append(
+            {
+                "id": str(doc["_id"]),
+                "description": doc["description"],
+                "created_at": doc["created_at"],
+            }
+        )
 
     return {"ideas": ideas, "count": len(ideas)}
 
