@@ -119,3 +119,40 @@ class TestIdeasEndpoint:
         data = response.json()
         assert "ideas" in data
         assert "count" in data
+
+    def test_post_idea_stores_user_id(
+        self,
+        client: TestClient,
+        auth_headers: dict[str, str],
+        mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/ideas should store user_id in the document."""
+        response = client.post(
+            "/api/ideas",
+            json={"description": "Add dark mode"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+
+        # Verify insert_one was called with user_id
+        call_args = mock_ideas_collection.insert_one.call_args
+        inserted_doc = call_args[0][0]
+        assert "user_id" in inserted_doc
+        assert inserted_doc["user_id"] == "user123"
+
+    def test_get_ideas_filters_by_user_id(
+        self,
+        client: TestClient,
+        auth_headers: dict[str, str],
+        mock_ideas_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/ideas should filter by user_id."""
+        response = client.get("/api/ideas", headers=auth_headers)
+        assert response.status_code == 200
+
+        # Verify find was called with user_id filter
+        call_args = mock_ideas_collection.find.call_args
+        filter_query = call_args[0][0] if call_args[0] else call_args[1].get("filter")
+        assert filter_query == {"user_id": "user123"}

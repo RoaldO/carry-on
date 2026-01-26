@@ -1,8 +1,65 @@
 """Tests for CarryOn API endpoints."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
+
+from api.pin_security import hash_pin
+
+
+class TestVerifyPinReturnsAuthenticatedUser:
+    """Tests for verify_pin returning AuthenticatedUser."""
+
+    def test_verify_pin_returns_authenticated_user(self) -> None:
+        """verify_pin should return AuthenticatedUser with user data."""
+        from api.index import AuthenticatedUser, verify_pin
+
+        test_email = "test@example.com"
+        test_pin = "1234"
+        mock_user = {
+            "_id": "user123",
+            "email": test_email,
+            "display_name": "Test User",
+            "pin_hash": hash_pin(test_pin),
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        with patch("api.index.get_users_collection") as mock_get_collection:
+            mock_collection = MagicMock()
+            mock_collection.find_one.return_value = mock_user
+            mock_get_collection.return_value = mock_collection
+
+            result = verify_pin(x_pin=test_pin, x_email=test_email)
+
+            assert isinstance(result, AuthenticatedUser)
+            assert result.id == "user123"
+            assert result.email == test_email
+            assert result.display_name == "Test User"
+
+    def test_verify_pin_returns_user_without_display_name(self) -> None:
+        """verify_pin should handle users without display_name."""
+        from api.index import AuthenticatedUser, verify_pin
+
+        test_email = "test@example.com"
+        test_pin = "1234"
+        mock_user = {
+            "_id": "user456",
+            "email": test_email,
+            "pin_hash": hash_pin(test_pin),
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        with patch("api.index.get_users_collection") as mock_get_collection:
+            mock_collection = MagicMock()
+            mock_collection.find_one.return_value = mock_user
+            mock_get_collection.return_value = mock_collection
+
+            result = verify_pin(x_pin=test_pin, x_email=test_email)
+
+            assert isinstance(result, AuthenticatedUser)
+            assert result.id == "user456"
+            assert result.display_name == ""
 
 
 class TestRootEndpoint:
@@ -110,3 +167,40 @@ class TestStrokesEndpoint:
             headers=auth_headers,
         )
         assert response.status_code == 400
+
+    def test_post_stroke_stores_user_id(
+        self,
+        client: TestClient,
+        auth_headers: dict[str, str],
+        mock_strokes_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/strokes should store user_id in the document."""
+        response = client.post(
+            "/api/strokes",
+            json={"club": "i7", "distance": 150},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+
+        # Verify insert_one was called with user_id
+        call_args = mock_strokes_collection.insert_one.call_args
+        inserted_doc = call_args[0][0]
+        assert "user_id" in inserted_doc
+        assert inserted_doc["user_id"] == "user123"
+
+    def test_get_strokes_filters_by_user_id(
+        self,
+        client: TestClient,
+        auth_headers: dict[str, str],
+        mock_strokes_collection: MagicMock,
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/strokes should filter by user_id."""
+        response = client.get("/api/strokes", headers=auth_headers)
+        assert response.status_code == 200
+
+        # Verify find was called with user_id filter
+        call_args = mock_strokes_collection.find.call_args
+        filter_query = call_args[0][0] if call_args[0] else call_args[1].get("filter")
+        assert filter_query == {"user_id": "user123"}
