@@ -29,7 +29,8 @@ We will follow **OWASP (Open Web Application Security Project)** best practices,
 
 **Mitigations**:
 - HTTPS only (enforced by Vercel)
-- Environment variables for secrets (MONGODB_URI, APP_PIN)
+- Environment variables for secrets (MONGODB_URI)
+- User PINs hashed with Argon2id and stored in database (see ADR-0009)
 - Never log sensitive data
 - No secrets in git (use `.env` + `.gitignore`)
 
@@ -82,8 +83,9 @@ class ShotCreate(BaseModel):
 **Risk**: Weak authentication mechanisms.
 
 **Mitigations**:
-- PIN required for all data access
-- PIN stored securely in environment variables
+- Email + PIN authentication required for all data access
+- PINs hashed with Argon2id and stored per-user in database
+- User isolation ensures users can only access their own data
 - Rate limiting (future: implement for brute-force protection)
 
 #### A08: Software and Data Integrity Failures

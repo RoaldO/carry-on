@@ -35,4 +35,3 @@ Please read these ADRs before contributing to understand our development practic
 | Variable | Description |
 |----------|-------------|
 | `MONGODB_URI` | MongoDB Atlas connection string |
-| `APP_PIN` | PIN for API authentication |
