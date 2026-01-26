@@ -1,0 +1,102 @@
+"""Tests for ClubType value object."""
+
+import json
+from enum import Enum
+
+import pytest
+
+from domain.value_objects.club_type import ClubType
+
+
+class TestClubTypeEnum:
+    """Tests for ClubType enum definition."""
+
+    def test_club_type_is_enum(self) -> None:
+        """ClubType should be an Enum."""
+        assert issubclass(ClubType, Enum)
+
+    def test_club_type_is_str_enum(self) -> None:
+        """ClubType should inherit from str for JSON serialization."""
+        assert issubclass(ClubType, str)
+
+    def test_driver_value(self) -> None:
+        """Driver should have value 'd'."""
+        assert ClubType.DRIVER.value == "d"
+
+    def test_woods_values(self) -> None:
+        """Woods should have correct values."""
+        assert ClubType.WOOD_3.value == "3w"
+        assert ClubType.WOOD_5.value == "5w"
+
+    def test_hybrids_values(self) -> None:
+        """Hybrids should have correct values."""
+        assert ClubType.HYBRID_4.value == "h4"
+        assert ClubType.HYBRID_5.value == "h5"
+
+    def test_irons_values(self) -> None:
+        """Irons should have correct values."""
+        assert ClubType.IRON_5.value == "i5"
+        assert ClubType.IRON_6.value == "i6"
+        assert ClubType.IRON_7.value == "i7"
+        assert ClubType.IRON_8.value == "i8"
+        assert ClubType.IRON_9.value == "i9"
+
+    def test_wedges_values(self) -> None:
+        """Wedges should have correct values."""
+        assert ClubType.PITCHING_WEDGE.value == "pw"
+        assert ClubType.GAP_WEDGE.value == "gw"
+        assert ClubType.SAND_WEDGE.value == "sw"
+        assert ClubType.LOB_WEDGE.value == "lw"
+
+
+class TestClubTypeStringComparison:
+    """Tests for ClubType string comparison behavior."""
+
+    def test_club_type_equals_string_value(self) -> None:
+        """ClubType should equal its string value."""
+        assert ClubType.DRIVER == "d"
+        assert ClubType.IRON_7 == "i7"
+
+    def test_club_type_value_attribute(self) -> None:
+        """ClubType.value should return the string value."""
+        assert ClubType.DRIVER.value == "d"
+        assert ClubType.IRON_7.value == "i7"
+
+
+class TestClubTypeJsonSerialization:
+    """Tests for ClubType JSON serialization."""
+
+    def test_json_serialize(self) -> None:
+        """ClubType should serialize to JSON as its string value."""
+        data = {"club": ClubType.DRIVER}
+        serialized = json.dumps(data)
+        assert serialized == '{"club": "d"}'
+
+    def test_json_deserialize_to_club_type(self) -> None:
+        """JSON string value should convert to ClubType."""
+        club = ClubType("d")
+        assert club == ClubType.DRIVER
+
+    def test_invalid_value_raises_error(self) -> None:
+        """Invalid string value should raise ValueError."""
+        with pytest.raises(ValueError):
+            ClubType("invalid")
+
+
+class TestClubTypeLookup:
+    """Tests for ClubType lookup by value."""
+
+    def test_lookup_by_value(self) -> None:
+        """Should be able to look up ClubType by string value."""
+        assert ClubType("d") == ClubType.DRIVER
+        assert ClubType("3w") == ClubType.WOOD_3
+        assert ClubType("pw") == ClubType.PITCHING_WEDGE
+
+    def test_all_clubs_are_unique(self) -> None:
+        """All club type values should be unique."""
+        values = [club.value for club in ClubType]
+        assert len(values) == len(set(values))
+
+    def test_total_club_count(self) -> None:
+        """Should have 14 club types (standard golf bag)."""
+        assert len(ClubType) == 14

@@ -21,10 +21,10 @@
 ### 0c. Refactor to DDD/SOLID (ADR Compliance)
 Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [x] Create ubiquitous language glossary (`docs/glossary.md`)
-- [ ] Create domain layer (`domain/stroke.py`) with Stroke entity and value objects
+- [x] Create domain layer with Stroke entity and value objects (ClubType, Distance)
 - [ ] Create repository layer (`repositories/stroke_repository.py`) with abstract interface
 - [ ] Create service layer (`services/stroke_service.py`) for business logic
-- [ ] Refactor `api/index.py` to only handle routing, delegate to services
+- [ ] Refactor `api/index.py` to use domain layer and delegate to services
 - [ ] Update tests to use dependency injection
 
 ### 0d. Dependency Version Audit (ADR-0007 Compliance)
@@ -48,8 +48,8 @@ See [specification](docs/specs/multi-user.md) for details.
 - [x] Update UI with email/PIN login flow
 - [x] Remove legacy APP_PIN authentication
 - [x] Secure PIN hashing with Argon2id (see [ADR-0009](docs/adr/0009-password-hashing.md))
-- [ ] Add user_id to strokes and ideas
-- [ ] Filter strokes/ideas by logged-in user
+- [x] Add user_id to strokes and ideas
+- [x] Filter strokes/ideas by logged-in user
 - [ ] Migrate existing data to default user
 
 ### 0g. Password Complexity Support
