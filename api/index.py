@@ -51,6 +51,14 @@ def get_users_collection():
     return _client.carryon.users
 
 
+class AuthenticatedUser(BaseModel):
+    """Represents an authenticated user returned by verify_pin()."""
+
+    id: str
+    email: str
+    display_name: str
+
+
 def verify_pin(
     x_pin: str = Header(None), x_email: str = Header(None)
 ) -> AuthenticatedUser:
@@ -81,14 +89,6 @@ def verify_pin(
         email=user["email"],
         display_name=user.get("display_name", ""),
     )
-
-
-class AuthenticatedUser(BaseModel):
-    """Represents an authenticated user returned by verify_pin()."""
-
-    id: str
-    email: str
-    display_name: str
 
 
 class StrokeCreate(BaseModel):
