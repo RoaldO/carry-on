@@ -1,7 +1,7 @@
 """Stroke entity representing a golf stroke."""
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 from domain.value_objects.club_type import ClubType
 from domain.value_objects.distance import Distance
@@ -31,6 +31,7 @@ class Stroke:
         fail: Whether the stroke was a failure.
         stroke_date: Date when the stroke occurred.
         distance: Distance achieved (None for failed strokes).
+        created_at: Timestamp when the stroke was created (None for new strokes).
     """
 
     id: StrokeId | None
@@ -38,6 +39,7 @@ class Stroke:
     fail: bool
     stroke_date: date
     distance: Distance | None = None
+    created_at: datetime | None = None
 
     def __post_init__(self) -> None:
         """Validate and enforce business rules."""
@@ -63,6 +65,7 @@ class Stroke:
         distance: Distance,
         stroke_date: date,
         id: StrokeId | None = None,
+        created_at: datetime | None = None,
     ) -> "Stroke":
         """Factory method for creating successful strokes.
 
@@ -71,6 +74,7 @@ class Stroke:
             distance: Distance achieved.
             stroke_date: Date of the stroke.
             id: Optional identifier (None for new strokes).
+            created_at: Optional timestamp when the stroke was created.
 
         Returns:
             A new Stroke instance marked as successful.
@@ -81,6 +85,7 @@ class Stroke:
             fail=False,
             stroke_date=stroke_date,
             distance=distance,
+            created_at=created_at,
         )
 
     @classmethod
@@ -89,6 +94,7 @@ class Stroke:
         club: ClubType,
         stroke_date: date,
         id: StrokeId | None = None,
+        created_at: datetime | None = None,
     ) -> "Stroke":
         """Factory method for creating failed strokes.
 
@@ -96,6 +102,7 @@ class Stroke:
             club: Type of golf club used.
             stroke_date: Date of the stroke.
             id: Optional identifier (None for new strokes).
+            created_at: Optional timestamp when the stroke was created.
 
         Returns:
             A new Stroke instance marked as failed (no distance).
@@ -106,4 +113,5 @@ class Stroke:
             fail=True,
             stroke_date=stroke_date,
             distance=None,
+            created_at=created_at,
         )

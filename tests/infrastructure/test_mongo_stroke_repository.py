@@ -1,6 +1,6 @@
 """Tests for MongoStrokeRepository."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
@@ -110,7 +110,7 @@ class TestMongoStrokeRepositoryFindByUser:
                 "fail": False,
                 "date": "2024-01-15",
                 "user_id": "user123",
-                "created_at": "2024-01-15T10:00:00",
+                "created_at": "2024-01-15T10:00:00+00:00",
             }
         ]
         collection = MagicMock()
@@ -127,6 +127,7 @@ class TestMongoStrokeRepositoryFindByUser:
         assert stroke.distance == Distance(meters=150)
         assert stroke.fail is False
         assert stroke.stroke_date == date(2024, 1, 15)
+        assert stroke.created_at == datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
 
     def test_find_by_user_queries_correct_user(self) -> None:
         """Should query MongoDB with correct user_id filter."""
@@ -228,6 +229,29 @@ class TestMongoStrokeRepositoryFindByUser:
 
         assert result == []
 
+    def test_find_by_user_handles_missing_created_at(self) -> None:
+        """Should handle documents without created_at field."""
+        doc_id = ObjectId()
+        docs = [
+            {
+                "_id": doc_id,
+                "club": "i7",
+                "distance": 150,
+                "fail": False,
+                "date": "2024-01-15",
+                "user_id": "user123",
+                # No created_at field
+            }
+        ]
+        collection = MagicMock()
+        collection.find.return_value = self._create_mock_cursor(docs)
+        repo = MongoStrokeRepository(collection)
+
+        result = repo.find_by_user("user123")
+
+        assert len(result) == 1
+        assert result[0].created_at is None
+
 
 class TestMongoStrokeRepositoryMapping:
     """Tests for document-to-entity and entity-to-document mapping."""
@@ -265,6 +289,8 @@ class TestMongoStrokeRepositoryMapping:
         assert retrieved.distance == original.distance
         assert retrieved.fail == original.fail
         assert retrieved.stroke_date == original.stroke_date
+        # created_at is set during save, so it should be present after roundtrip
+        assert retrieved.created_at is not None
 
     def test_roundtrip_failed_stroke(self) -> None:
         """Mapping should preserve all data for failed strokes."""
