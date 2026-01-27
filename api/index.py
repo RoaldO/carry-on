@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 from pymongo import MongoClient
 
 from api.pin_security import hash_pin, needs_rehash, verify_pin as verify_pin_hash
+from infrastructure.repositories.mongo_stroke_repository import MongoStrokeRepository
+from services.stroke_service import StrokeService
 
 load_dotenv()
 
@@ -49,6 +51,15 @@ def get_users_collection():
     if _client is None:
         _client = MongoClient(uri)
     return _client.carryon.users
+
+
+def get_stroke_service() -> StrokeService:
+    """Get StrokeService with MongoDB repository."""
+    collection = get_strokes_collection()
+    if collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    repository = MongoStrokeRepository(collection)
+    return StrokeService(repository)
 
 
 class AuthenticatedUser(BaseModel):
@@ -235,33 +246,29 @@ async def serve_ideas():
 
 @app.post("/api/strokes")
 async def create_stroke(
-    stroke: StrokeCreate, user: AuthenticatedUser = Depends(verify_pin)
+    stroke: StrokeCreate,
+    user: AuthenticatedUser = Depends(verify_pin),
+    service: StrokeService = Depends(get_stroke_service),
 ):
     """Record a new golf stroke."""
-    strokes_collection = get_strokes_collection()
-    if strokes_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
-
-    if not stroke.fail and stroke.distance is None:
-        raise HTTPException(status_code=400, detail="Distance required when not a fail")
-
-    doc = {
-        "club": stroke.club,
-        "distance": stroke.distance if not stroke.fail else None,
-        "fail": stroke.fail,
-        "date": stroke.date.isoformat(),
-        "created_at": datetime.now(UTC).isoformat(),
-        "user_id": user.id,
-    }
-
-    result = strokes_collection.insert_one(doc)
+    try:
+        stroke_id = service.record_stroke(
+            user_id=user.id,
+            club=stroke.club,
+            stroke_date=stroke.date,
+            distance=stroke.distance,
+            fail=stroke.fail,
+        )
+    except ValueError as e:
+        # Invalid club or missing distance
+        raise HTTPException(status_code=400, detail=str(e))
 
     return {
-        "id": str(result.inserted_id),
+        "id": stroke_id.value,
         "message": "Stroke recorded successfully",
         "stroke": {
             "club": stroke.club,
-            "distance": stroke.distance,
+            "distance": stroke.distance if not stroke.fail else None,
             "fail": stroke.fail,
             "date": stroke.date.isoformat(),
         },
