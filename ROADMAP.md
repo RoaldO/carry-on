@@ -52,7 +52,7 @@ See [specification](docs/specs/multi-user.md) for details.
 - [x] Secure PIN hashing with Argon2id (see [ADR-0009](docs/adr/0009-password-hashing.md))
 - [x] Add user_id to strokes and ideas
 - [x] Filter strokes/ideas by logged-in user
-- [ ] Migrate existing data to default user
+- [x] Migrate existing data to default user
 
 ### 0g. Password Complexity Support
 Allow users to use generated passwords from password managers.
