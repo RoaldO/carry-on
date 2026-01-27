@@ -135,7 +135,6 @@ Mark tests with Allure decorators for better test organization and reporting.
 - [x] Install allure-pytest package
 - [ ] Add `@allure.feature()` decorators to group tests by feature
 - [ ] Add `@allure.story()` decorators for user stories within features
-- [ ] Add `@allure.severity()` decorators for test priority
 - [ ] Ensure BDD tests automatically inherit feature names from .feature files
 
 ### 0n. HTML Rendering Refactor
