@@ -39,7 +39,7 @@ class TestStrokeServiceRecordStroke:
 
         result = service.record_stroke(
             user_id="user123",
-            club="i7",
+            club="7i",
             stroke_date=date(2024, 1, 15),
             distance=150,
         )
@@ -54,7 +54,7 @@ class TestStrokeServiceRecordStroke:
 
         service.record_stroke(
             user_id="user123",
-            club="i7",
+            club="7i",
             stroke_date=date(2024, 1, 15),
             distance=150,
         )
@@ -131,7 +131,7 @@ class TestStrokeServiceRecordStroke:
         with pytest.raises(ValueError, match="Distance required when not a fail"):
             service.record_stroke(
                 user_id="user123",
-                club="i7",
+                club="7i",
                 stroke_date=date(2024, 1, 15),
                 # distance is None by default, fail is False by default
             )
