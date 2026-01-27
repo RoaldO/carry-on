@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 
 import allure
-import pytest
 from fastapi.testclient import TestClient
 
 from api.pin_security import hash_pin

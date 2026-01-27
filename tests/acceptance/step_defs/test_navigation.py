@@ -47,7 +47,9 @@ def user_with_pin(
         return None
 
     mock_collections["users"].find_one.side_effect = find_one
-    mock_collections["strokes"].find.return_value.sort.return_value.limit.return_value = []
+    mock_collections[
+        "strokes"
+    ].find.return_value.sort.return_value.limit.return_value = []
 
     return {**user, "pin": pin}
 
@@ -195,7 +197,9 @@ def url_contains_hash(nav_page: NavigationPage, hash_value: str) -> None:
     """Verify URL contains the expected hash."""
     nav_page.page.wait_for_timeout(300)
     current_hash = nav_page.get_current_url_hash()
-    assert hash_value in current_hash, f"Expected '{hash_value}' in URL, got '{current_hash}'"
+    assert hash_value in current_hash, (
+        f"Expected '{hash_value}' in URL, got '{current_hash}'"
+    )
 
 
 @then("I should see the login screen")

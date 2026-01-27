@@ -133,9 +133,21 @@ Modernize test suite by converting unittest-style tests to idiomatic pytest.
 ### 0m. Allure Feature Decorators
 Mark tests with Allure decorators for better test organization and reporting.
 - [x] Install allure-pytest package
-- [ ] Add `@allure.feature()` decorators to group tests by feature
-- [ ] Add `@allure.story()` decorators for user stories within features
-- [ ] Ensure BDD tests automatically inherit feature names from .feature files
+- [x] Add `@allure.feature()` decorators to group tests by feature
+- [x] Add `@allure.story()` decorators for user stories within features
+- [x] BDD tests automatically inherit feature names from .feature files
+
+### 0o. Task Automation with Nox
+Set up nox for consistent test running and other development tasks.
+- [x] Install nox and nox-uv packages
+- [x] Configure nox to use uv backend (`nox.options.default_venv_backend = "uv"`)
+- [x] Add `tests` session (full test suite with coverage)
+- [x] Add `tests_fast` session (skip acceptance tests)
+- [x] Add `tests_acceptance` session (acceptance tests only)
+- [x] Add `lint` session (ruff check)
+- [x] Add `format` session (ruff format)
+- [x] Add `typecheck` session (mypy)
+- [x] Add `dev` session (run development server)
 
 ### 0n. HTML Rendering Refactor
 Remove duplication between `public/index.html` and inline HTML in `api/index.py`.

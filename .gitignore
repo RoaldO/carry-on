@@ -28,3 +28,10 @@ htmlcov/
 # Allure
 allure-results/
 allure-report/
+
+# Nox
+.nox/
+
+# Build artifacts
+build/
+*.egg-info/

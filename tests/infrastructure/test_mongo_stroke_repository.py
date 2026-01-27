@@ -1,11 +1,10 @@
 """Tests for MongoStrokeRepository."""
 
-from datetime import UTC, date, datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import allure
-import pytest
 from bson import ObjectId
 
 from domain.entities.stroke import Stroke, StrokeId

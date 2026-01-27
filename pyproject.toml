@@ -20,6 +20,8 @@ dev = [
     "pytest-bdd>=8.1.0",
     "pytest-playwright>=0.6.2",
     "allure-pytest>=2.15.3",
+    "nox>=2025.11.12",
+    "nox-uv>=0.7.0",
 ]
 
 [tool.pytest.ini_options]
@@ -39,3 +41,6 @@ exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
 ]
+
+[tool.setuptools.packages.find]
+include = ["api*", "domain*", "infrastructure*", "services*"]

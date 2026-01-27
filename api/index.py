@@ -301,7 +301,9 @@ async def list_strokes(
                 "distance": stroke.distance.meters if stroke.distance else None,
                 "fail": stroke.fail,
                 "date": stroke.stroke_date.isoformat(),
-                "created_at": stroke.created_at.isoformat() if stroke.created_at else None,
+                "created_at": stroke.created_at.isoformat()
+                if stroke.created_at
+                else None,
             }
             for stroke in strokes
         ],
@@ -542,5 +544,3 @@ def get_inline_html() -> str:
     </script>
 </body>
 </html>"""
-
-

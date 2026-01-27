@@ -16,7 +16,9 @@ class FakeStrokeRepository(StrokeRepository):
 
     def __init__(self) -> None:
         """Initialize with empty storage."""
-        self._strokes: list[tuple[Stroke, str, datetime]] = []  # (stroke, user_id, created_at)
+        self._strokes: list[
+            tuple[Stroke, str, datetime]
+        ] = []  # (stroke, user_id, created_at)
 
     def save(self, stroke: Stroke, user_id: str) -> StrokeId:
         """Save a stroke and return its ID.
