@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
+
       - name: Run tests with coverage
         run: uv run pytest -v --cov-report=xml
         env:
