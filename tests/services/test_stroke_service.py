@@ -3,6 +3,7 @@
 from datetime import date
 from unittest.mock import MagicMock
 
+import allure
 import pytest
 
 from domain.entities.stroke import Stroke, StrokeId
@@ -12,6 +13,8 @@ from domain.value_objects.distance import Distance
 from services.stroke_service import StrokeService
 
 
+@allure.feature("Application Services")
+@allure.story("Stroke Service")
 class TestStrokeServiceInit:
     """Tests for StrokeService initialization."""
 
@@ -22,6 +25,8 @@ class TestStrokeServiceInit:
         assert service._repository is repository
 
 
+@allure.feature("Application Services")
+@allure.story("Stroke Service")
 class TestStrokeServiceRecordStroke:
     """Tests for StrokeService.record_stroke() method."""
 
@@ -134,6 +139,8 @@ class TestStrokeServiceRecordStroke:
         repository.save.assert_not_called()
 
 
+@allure.feature("Application Services")
+@allure.story("Stroke Service")
 class TestStrokeServiceGetUserStrokes:
     """Tests for StrokeService.get_user_strokes() method."""
 

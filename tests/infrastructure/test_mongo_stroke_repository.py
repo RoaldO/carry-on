@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
+import allure
 import pytest
 from bson import ObjectId
 
@@ -14,6 +15,8 @@ from domain.value_objects.distance import Distance
 from infrastructure.repositories.mongo_stroke_repository import MongoStrokeRepository
 
 
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Stroke Repository")
 class TestStrokeRepositoryProtocol:
     """Tests for StrokeRepository protocol compliance."""
 
@@ -24,6 +27,8 @@ class TestStrokeRepositoryProtocol:
         assert isinstance(repo, StrokeRepository)
 
 
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Stroke Repository")
 class TestMongoStrokeRepositorySave:
     """Tests for MongoStrokeRepository.save() method."""
 
@@ -88,6 +93,8 @@ class TestMongoStrokeRepositorySave:
         assert doc["fail"] is True
 
 
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Stroke Repository")
 class TestMongoStrokeRepositoryFindByUser:
     """Tests for MongoStrokeRepository.find_by_user() method."""
 
@@ -253,6 +260,8 @@ class TestMongoStrokeRepositoryFindByUser:
         assert result[0].created_at is None
 
 
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Stroke Repository")
 class TestMongoStrokeRepositoryMapping:
     """Tests for document-to-entity and entity-to-document mapping."""
 

@@ -2,12 +2,15 @@
 
 from unittest.mock import MagicMock, patch
 
+import allure
 import pytest
 from fastapi.testclient import TestClient
 
 from api.pin_security import hash_pin
 
 
+@allure.feature("REST API")
+@allure.story("Authentication")
 class TestVerifyPinReturnsAuthenticatedUser:
     """Tests for verify_pin returning AuthenticatedUser."""
 
@@ -62,6 +65,8 @@ class TestVerifyPinReturnsAuthenticatedUser:
             assert result.display_name == ""
 
 
+@allure.feature("REST API")
+@allure.story("Root Endpoint")
 class TestRootEndpoint:
     """Tests for the root endpoint."""
 
@@ -73,6 +78,8 @@ class TestRootEndpoint:
         assert "CarryOn" in response.text
 
 
+@allure.feature("REST API")
+@allure.story("Strokes API")
 class TestStrokesEndpoint:
     """Tests for strokes API endpoints."""
 
@@ -206,6 +213,8 @@ class TestStrokesEndpoint:
         assert filter_query == {"user_id": "user123"}
 
 
+@allure.feature("REST API")
+@allure.story("Profile API")
 class TestMeEndpoint:
     """Tests for /api/me endpoint."""
 

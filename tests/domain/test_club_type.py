@@ -3,11 +3,14 @@
 import json
 from enum import Enum
 
+import allure
 import pytest
 
 from domain.value_objects.club_type import ClubType
 
 
+@allure.feature("Domain Model")
+@allure.story("ClubType Value Object")
 class TestClubTypeEnum:
     """Tests for ClubType enum definition."""
 
@@ -49,6 +52,8 @@ class TestClubTypeEnum:
         assert ClubType.LOB_WEDGE.value == "lw"
 
 
+@allure.feature("Domain Model")
+@allure.story("ClubType Value Object")
 class TestClubTypeStringComparison:
     """Tests for ClubType string comparison behavior."""
 
@@ -63,6 +68,8 @@ class TestClubTypeStringComparison:
         assert ClubType.IRON_7.value == "i7"
 
 
+@allure.feature("Domain Model")
+@allure.story("ClubType Value Object")
 class TestClubTypeJsonSerialization:
     """Tests for ClubType JSON serialization."""
 
@@ -83,6 +90,8 @@ class TestClubTypeJsonSerialization:
             ClubType("invalid")
 
 
+@allure.feature("Domain Model")
+@allure.story("ClubType Value Object")
 class TestClubTypeLookup:
     """Tests for ClubType lookup by value."""
 

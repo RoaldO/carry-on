@@ -7,12 +7,15 @@ MongoDB internals.
 
 from unittest.mock import MagicMock
 
+import allure
 import pytest
 from fastapi.testclient import TestClient
 
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
 
+@allure.feature("REST API")
+@allure.story("Strokes API")
 class TestStrokesWithDependencyInjection:
     """Tests for strokes endpoints using DI with fake repository."""
 

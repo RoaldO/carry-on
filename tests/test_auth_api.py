@@ -2,11 +2,14 @@
 
 from unittest.mock import MagicMock
 
+import allure
 from fastapi.testclient import TestClient
 
 from api.pin_security import hash_pin
 
 
+@allure.feature("REST API")
+@allure.story("Authentication")
 class TestCheckEmailEndpoint:
     """Tests for POST /api/check-email endpoint."""
 
@@ -71,6 +74,8 @@ class TestCheckEmailEndpoint:
         assert data["display_name"] == "Test User"
 
 
+@allure.feature("REST API")
+@allure.story("Authentication")
 class TestActivateEndpoint:
     """Tests for POST /api/activate endpoint."""
 
@@ -156,6 +161,8 @@ class TestActivateEndpoint:
         assert stored_hash.startswith("$argon2id$")
 
 
+@allure.feature("REST API")
+@allure.story("Authentication")
 class TestLoginEndpoint:
     """Tests for POST /api/login endpoint."""
 

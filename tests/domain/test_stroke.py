@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timezone
 
+import allure
 import pytest
 
 from domain.entities.stroke import Stroke, StrokeId
@@ -9,6 +10,8 @@ from domain.value_objects.club_type import ClubType
 from domain.value_objects.distance import Distance
 
 
+@allure.feature("Domain Model")
+@allure.story("Stroke Entity")
 class TestStrokeId:
     """Tests for StrokeId value object."""
 
@@ -30,6 +33,8 @@ class TestStrokeId:
             stroke_id.value = "new"  # type: ignore[misc]
 
 
+@allure.feature("Domain Model")
+@allure.story("Stroke Entity")
 class TestStrokeCreationSuccessful:
     """Tests for creating successful strokes."""
 
@@ -69,6 +74,8 @@ class TestStrokeCreationSuccessful:
             )
 
 
+@allure.feature("Domain Model")
+@allure.story("Stroke Entity")
 class TestStrokeCreationFailed:
     """Tests for creating failed strokes."""
 
@@ -105,6 +112,8 @@ class TestStrokeCreationFailed:
         assert stroke.distance is None
 
 
+@allure.feature("Domain Model")
+@allure.story("Stroke Entity")
 class TestStrokeAttributes:
     """Tests for Stroke attribute access."""
 
@@ -122,6 +131,8 @@ class TestStrokeAttributes:
         assert hasattr(stroke, "distance")
 
 
+@allure.feature("Domain Model")
+@allure.story("Stroke Entity")
 class TestStrokeEquality:
     """Tests for Stroke equality (if applicable)."""
 
@@ -143,6 +154,8 @@ class TestStrokeEquality:
         assert stroke1 == stroke2
 
 
+@allure.feature("Domain Model")
+@allure.story("Stroke Entity")
 class TestStrokeCreatedAt:
     """Tests for created_at field on strokes."""
 
