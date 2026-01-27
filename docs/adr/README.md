@@ -18,6 +18,7 @@ All contributors MUST adhere to these decisions.
 | [0008](0008-feature-specifications.md) | Feature Specifications | Accepted |
 | [0009](0009-password-hashing.md) | Password Hashing with Argon2 | Accepted |
 | [0010](0010-two-click-navigation.md) | Usability - Navigation and Interaction Limits | Accepted |
+| [0011](0011-specification-acceptance-tests.md) | Specification Acceptance Tests | Accepted |
 
 ## What is an ADR?
 
