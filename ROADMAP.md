@@ -12,6 +12,7 @@
 - [x] Add API endpoint tests
 - [x] CI/CD pipeline (GitHub Actions)
 - [x] Automated deployment to Vercel on push
+- [x] Add BDD acceptance tests with pytest-bdd and Playwright
 
 ### 0b. In-App Idea Capture
 - [x] Submit new feature ideas/feedback from within the app
