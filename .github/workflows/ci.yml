@@ -65,11 +65,12 @@ jobs:
 
       - name: Fix Allure report permissions
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: sudo chown -R $USER:$USER allure-report allure-history || true
+        run: sudo chown -R $USER:$USER allure-report allure-history gh-pages || true
 
       - name: Prepare GitHub Pages content
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
+          rm -rf gh-pages
           mkdir -p gh-pages
           cp -r htmlcov gh-pages/coverage
           cp -r allure-report gh-pages/allure
