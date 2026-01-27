@@ -123,7 +123,7 @@ class TestStrokeServiceRecordStroke:
         repository = MagicMock(spec=StrokeRepository)
         service = StrokeService(repository)
 
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError, match="Distance required when not a fail"):
             service.record_stroke(
                 user_id="user123",
                 club="i7",

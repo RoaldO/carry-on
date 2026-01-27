@@ -48,6 +48,9 @@ class StrokeService:
         """
         club_type = ClubType(club)  # Raises ValueError if invalid
 
+        if not fail and distance is None:
+            raise ValueError("Distance required when not a fail")
+
         if fail:
             stroke = Stroke.create_failed(
                 club=club_type,
