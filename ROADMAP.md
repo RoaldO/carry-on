@@ -106,10 +106,11 @@ See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing appr
 
 ### 0j. Code Coverage Report
 Generate detailed code coverage reports for visibility into test coverage.
-- [ ] Generate HTML coverage report locally (`uv run pytest --cov-report=html`)
-- [ ] Add coverage report to CI artifacts
-- [ ] Configure coverage report to exclude test files
-- [ ] Add coverage badge to README
+- [x] Generate HTML coverage report locally (`uv run pytest --cov-report=html`)
+- [x] Add coverage report to CI artifacts
+- [x] Configure coverage report to exclude test files
+- [x] Add coverage badge to README
+- [x] Deploy coverage report to GitHub Pages (https://roaldo.github.io/carry-on/)
 
 ### 0k. Test Result Report
 Generate detailed test result reports for visibility into test execution.

@@ -1,5 +1,7 @@
 # CarryOn
 
+[![Coverage Report](https://img.shields.io/badge/coverage-report-blue)](https://roaldo.github.io/carry-on/)
+
 Golf stroke tracking web application.
 
 ## Tech Stack
