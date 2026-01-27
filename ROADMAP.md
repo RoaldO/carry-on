@@ -77,6 +77,32 @@ See [specification](docs/specs/navigation.md) for details.
 - [ ] Create Profile tab with user info and logout
 - [ ] Implement `/api/me` endpoint for profile data
 
+### 0i. Acceptance Tests for Current Specifications
+Add BDD acceptance tests covering all existing specifications.
+See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing approach.
+
+**Multi-User (`docs/specs/multi-user.md`):**
+- [x] Login feature (`tests/acceptance/features/auth/login.feature`)
+- [x] Registration feature (`tests/acceptance/features/auth/registration.feature`)
+- [ ] Session persistence tests
+- [ ] Logout tests
+
+**Stroke Tracking (`docs/specs/stroke-tracking.md`):**
+- [ ] Record successful stroke
+- [ ] Record failed stroke
+- [ ] View recent strokes
+- [ ] Stroke validation (club, distance)
+
+**Idea Capture (`docs/specs/idea-capture.md`):**
+- [ ] Submit idea
+- [ ] View submitted ideas
+- [ ] Character limit validation
+
+**Navigation (`docs/specs/navigation.md`):**
+- [ ] Tab switching between Strokes and Ideas
+- [ ] URL hash routing
+- [ ] Tab bar visibility (hidden on login)
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
