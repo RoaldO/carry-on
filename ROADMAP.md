@@ -84,7 +84,7 @@ See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing appr
 **Multi-User (`docs/specs/multi-user.md`):**
 - [x] Login feature (`tests/acceptance/features/auth/login.feature`)
 - [x] Registration feature (`tests/acceptance/features/auth/registration.feature`)
-- [ ] Session persistence tests
+- [x] Session persistence tests (`tests/acceptance/features/auth/session.feature`)
 - [ ] Logout tests
 
 **Stroke Tracking (`docs/specs/stroke-tracking.md`):**

@@ -79,7 +79,8 @@ class LoginPage:
 
     def is_login_screen_visible(self) -> bool:
         """Check if the login screen is visible."""
-        return not self.login_screen.get_attribute("class", "").find("hidden") >= 0
+        classes = self.login_screen.get_attribute("class") or ""
+        return "hidden" not in classes
 
     def is_login_screen_hidden(self) -> bool:
         """Check if the login screen is hidden (user is logged in)."""
