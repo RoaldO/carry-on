@@ -1,7 +1,6 @@
 """Tests for PIN security module."""
 
 import allure
-import pytest
 
 from api.pin_security import hash_pin, needs_rehash, verify_pin
 

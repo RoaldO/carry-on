@@ -16,6 +16,9 @@ from pytest_bdd import given, parsers, then, when
 from api.pin_security import hash_pin
 from tests.acceptance.pages.login_page import LoginPage
 
+# Mark all tests in this directory as acceptance tests
+pytestmark = pytest.mark.acceptance
+
 
 def find_free_port() -> int:
     """Find a free port to run the test server on."""
@@ -103,7 +106,9 @@ def app_server(
 
 
 @pytest.fixture
-def page(browser: Any, base_url: str, app_server: ServerThread) -> Generator[Page, None, None]:
+def page(
+    browser: Any, base_url: str, app_server: ServerThread
+) -> Generator[Page, None, None]:
     """Create a Playwright page with mobile viewport."""
     context = browser.new_context(viewport={"width": 400, "height": 800})
     page = context.new_page()
@@ -154,7 +159,9 @@ def activated_user(mock_collections: dict[str, MagicMock]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def clear_mock_users(mock_collections: dict[str, MagicMock]) -> Generator[None, None, None]:
+def clear_mock_users(
+    mock_collections: dict[str, MagicMock],
+) -> Generator[None, None, None]:
     """Reset mock user collection between tests."""
     yield
     mock_collections["users"].reset_mock()

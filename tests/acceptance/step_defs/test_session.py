@@ -40,7 +40,9 @@ def user_with_pin(
     mock_collections["users"].find_one.side_effect = find_one
 
     # Also set up the strokes collection to return empty for this user
-    mock_collections["strokes"].find.return_value.sort.return_value.limit.return_value = []
+    mock_collections[
+        "strokes"
+    ].find.return_value.sort.return_value.limit.return_value = []
 
     return {**user, "pin": pin}
 

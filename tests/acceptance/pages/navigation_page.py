@@ -92,7 +92,11 @@ class NavigationPage:
     def navigate_to_hash(self, hash_value: str) -> None:
         """Navigate to a specific URL hash."""
         # Handle both "/#ideas" and "#ideas" formats
-        url = f"{self.base_url}{hash_value}" if hash_value.startswith("/") else f"{self.base_url}/{hash_value}"
+        url = (
+            f"{self.base_url}{hash_value}"
+            if hash_value.startswith("/")
+            else f"{self.base_url}/{hash_value}"
+        )
         self.page.goto(url)
         # Wait for page to load and login to complete (tab bar becomes visible)
         self.page.wait_for_function(

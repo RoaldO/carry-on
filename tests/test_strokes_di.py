@@ -8,7 +8,6 @@ MongoDB internals.
 from unittest.mock import MagicMock
 
 import allure
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository

@@ -19,10 +19,37 @@ Golf stroke tracking web application.
 uv sync --dev
 
 # Run locally
-uv run uvicorn api.index:app --port 8787
+uv run nox -s dev
+```
 
-# Run tests
-uv run pytest -v
+## Development with Nox
+
+This project uses [nox](https://nox.thea.codes/) for task automation. All sessions use uv for fast, consistent environments.
+
+```bash
+# List available sessions
+uv run nox --list
+
+# Run tests (full suite with coverage)
+uv run nox -s tests
+
+# Run tests without acceptance tests (faster)
+uv run nox -s tests_fast
+
+# Run only acceptance tests
+uv run nox -s tests_acceptance
+
+# Run linter
+uv run nox -s lint
+
+# Format code
+uv run nox -s format
+
+# Type checking
+uv run nox -s typecheck
+
+# Run development server
+uv run nox -s dev
 ```
 
 ## Testing
