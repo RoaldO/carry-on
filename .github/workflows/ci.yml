@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -27,12 +32,37 @@ jobs:
         run: uv run playwright install chromium --with-deps
 
       - name: Run tests with coverage
-        run: uv run pytest -v --cov-report=xml
+        run: uv run pytest -v --cov-report=xml --cov-report=html
         env:
           MONGODB_URI: "mongodb://test"
 
-      - name: Upload coverage report
+      - name: Upload coverage XML
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-xml
           path: coverage.xml
+
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
+
+      - name: Upload pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: htmlcov/
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
