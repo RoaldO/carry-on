@@ -1,6 +1,7 @@
 # CarryOn
 
-[![Coverage Report](https://img.shields.io/badge/coverage-report-blue)](https://roaldo.github.io/carry-on/)
+[![Coverage Report](https://img.shields.io/badge/coverage-report-blue)](https://roaldo.github.io/carry-on/coverage/)
+[![Test Results](https://img.shields.io/badge/test%20results-allure-orange)](https://roaldo.github.io/carry-on/allure/)
 
 Golf stroke tracking web application.
 

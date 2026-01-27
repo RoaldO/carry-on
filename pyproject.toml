@@ -19,6 +19,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-bdd>=8.1.0",
     "pytest-playwright>=0.6.2",
+    "allure-pytest>=2.15.3",
 ]
 
 [tool.pytest.ini_options]

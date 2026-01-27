@@ -24,3 +24,7 @@ venv/
 .coverage
 coverage.xml
 htmlcov/
+
+# Allure
+allure-results/
+allure-report/
