@@ -26,8 +26,8 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [x] Create repository layer (`domain/repositories/`, `infrastructure/repositories/`)
 - [x] Create service layer (`services/stroke_service.py`) for business logic
 - [x] Refactor POST /api/strokes to use StrokeService
-- [ ] Refactor GET /api/strokes to use StrokeService (requires created_at in domain)
-- [ ] Update tests to use dependency injection
+- [x] Refactor GET /api/strokes to use StrokeService (requires created_at in domain)
+- [x] Update tests to use dependency injection
 
 ### 0d. Dependency Version Audit (ADR-0007 Compliance)
 - [x] Check all dependencies are on latest patch version
