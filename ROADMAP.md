@@ -85,7 +85,7 @@ See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing appr
 - [x] Login feature (`tests/acceptance/features/auth/login.feature`)
 - [x] Registration feature (`tests/acceptance/features/auth/registration.feature`)
 - [x] Session persistence tests (`tests/acceptance/features/auth/session.feature`)
-- [ ] Logout tests
+- [x] Logout tests (`tests/acceptance/features/navigation/profile.feature`)
 
 **Stroke Tracking (`docs/specs/stroke-tracking.md`):**
 - [ ] Record successful stroke
@@ -99,9 +99,50 @@ See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing appr
 - [ ] Character limit validation
 
 **Navigation (`docs/specs/navigation.md`):**
-- [ ] Tab switching between Strokes and Ideas
-- [ ] URL hash routing
-- [ ] Tab bar visibility (hidden on login)
+- [x] Tab switching between Strokes, Ideas, and Profile (`tests/acceptance/features/navigation/tabs.feature`)
+- [x] URL hash routing (`tests/acceptance/features/navigation/tabs.feature`)
+- [x] Tab bar visibility (hidden on login) (`tests/acceptance/features/navigation/tabs.feature`)
+- [x] Profile display (`tests/acceptance/features/navigation/profile.feature`)
+
+### 0j. Code Coverage Report
+Generate detailed code coverage reports for visibility into test coverage.
+- [ ] Generate HTML coverage report locally (`uv run pytest --cov-report=html`)
+- [ ] Add coverage report to CI artifacts
+- [ ] Configure coverage report to exclude test files
+- [ ] Add coverage badge to README
+
+### 0k. Test Result Report
+Generate detailed test result reports for visibility into test execution.
+- [ ] Evaluate reporting options (pytest-html, Allure, JUnit XML)
+- [ ] Install and configure chosen reporting tool
+- [ ] Generate HTML test report locally
+- [ ] Add test report to CI artifacts
+- [ ] Include BDD scenario names in report output
+
+### 0l. Convert unittest Style Tests to pytest
+Modernize test suite by converting unittest-style tests to idiomatic pytest.
+- [ ] Replace `unittest.TestCase` classes with plain test functions
+- [ ] Replace `self.assert*` methods with plain `assert` statements
+- [ ] Replace `setUp`/`tearDown` with pytest fixtures
+- [ ] Use `@pytest.fixture` instead of `setUpClass`/`tearDownClass`
+- [ ] Use `@pytest.mark.parametrize` for data-driven tests
+- [ ] Remove unnecessary test class inheritance
+
+### 0m. Allure Feature Decorators
+Mark tests with Allure decorators for better test organization and reporting.
+- [ ] Install allure-pytest package
+- [ ] Add `@allure.feature()` decorators to group tests by feature
+- [ ] Add `@allure.story()` decorators for user stories within features
+- [ ] Add `@allure.severity()` decorators for test priority
+- [ ] Ensure BDD tests automatically inherit feature names from .feature files
+
+### 0n. HTML Rendering Refactor
+Remove duplication between `public/index.html` and inline HTML in `api/index.py`.
+- [ ] Audit differences between `public/index.html` and `get_inline_html()`
+- [ ] Decide on single source of truth (file vs inline)
+- [ ] Remove duplicate HTML code
+- [ ] Ensure Vercel deployment still works correctly
+- [ ] Add tests to verify HTML serving behavior
 
 ### 1. Golf Course Management
 Store golf course information including:
