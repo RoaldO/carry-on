@@ -16,6 +16,8 @@ All contributors MUST adhere to these decisions.
 | [0006](0006-owasp-security.md) | OWASP Security Best Practices | Accepted |
 | [0007](0007-dependency-versioning.md) | Dependency Versioning Strategy | Accepted |
 | [0008](0008-feature-specifications.md) | Feature Specifications | Accepted |
+| [0009](0009-password-hashing.md) | Password Hashing with Argon2 | Accepted |
+| [0010](0010-two-click-navigation.md) | Usability - Navigation and Interaction Limits | Accepted |
 
 ## What is an ADR?
 
