@@ -118,7 +118,7 @@ class TestStrokesEndpoint:
         """POST /api/strokes without authentication should return 401."""
         response = client.post(
             "/api/strokes",
-            json={"club": "i7", "distance": 150},
+            json={"club": "7i", "distance": 150},
         )
         assert response.status_code == 401
 
@@ -132,13 +132,13 @@ class TestStrokesEndpoint:
         """POST /api/strokes with valid authentication should create stroke."""
         response = client.post(
             "/api/strokes",
-            json={"club": "i7", "distance": 150},
+            json={"club": "7i", "distance": 150},
             headers=auth_headers,
         )
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Stroke recorded successfully"
-        assert data["stroke"]["club"] == "i7"
+        assert data["stroke"]["club"] == "7i"
         assert data["stroke"]["distance"] == 150
 
     def test_post_failed_stroke(
@@ -169,7 +169,7 @@ class TestStrokesEndpoint:
         """POST /api/strokes without distance and fail=false should return 400."""
         response = client.post(
             "/api/strokes",
-            json={"club": "i7"},
+            json={"club": "7i"},
             headers=auth_headers,
         )
         assert response.status_code == 400
@@ -184,7 +184,7 @@ class TestStrokesEndpoint:
         """POST /api/strokes should store user_id in the document."""
         response = client.post(
             "/api/strokes",
-            json={"club": "i7", "distance": 150},
+            json={"club": "7i", "distance": 150},
             headers=auth_headers,
         )
         assert response.status_code == 200

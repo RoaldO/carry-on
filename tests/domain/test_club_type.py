@@ -22,34 +22,25 @@ class TestClubTypeEnum:
         """ClubType should inherit from str for JSON serialization."""
         assert issubclass(ClubType, str)
 
-    def test_driver_value(self) -> None:
-        """Driver should have value 'd'."""
-        assert ClubType.DRIVER.value == "d"
-
-    def test_woods_values(self) -> None:
-        """Woods should have correct values."""
-        assert ClubType.WOOD_3.value == "3w"
-        assert ClubType.WOOD_5.value == "5w"
-
-    def test_hybrids_values(self) -> None:
-        """Hybrids should have correct values."""
-        assert ClubType.HYBRID_4.value == "h4"
-        assert ClubType.HYBRID_5.value == "h5"
-
-    def test_irons_values(self) -> None:
-        """Irons should have correct values."""
-        assert ClubType.IRON_5.value == "i5"
-        assert ClubType.IRON_6.value == "i6"
-        assert ClubType.IRON_7.value == "i7"
-        assert ClubType.IRON_8.value == "i8"
-        assert ClubType.IRON_9.value == "i9"
-
-    def test_wedges_values(self) -> None:
-        """Wedges should have correct values."""
-        assert ClubType.PITCHING_WEDGE.value == "pw"
-        assert ClubType.GAP_WEDGE.value == "gw"
-        assert ClubType.SAND_WEDGE.value == "sw"
-        assert ClubType.LOB_WEDGE.value == "lw"
+    @pytest.mark.parametrize('enum_value, expectation', [
+        (ClubType.DRIVER, "d"),
+        (ClubType.WOOD_3, "3w"),
+        (ClubType.WOOD_5, "5w"),
+        (ClubType.HYBRID_4, "4h"),
+        (ClubType.HYBRID_5, "5h"),
+        (ClubType.IRON_5, "5i"),
+        (ClubType.IRON_6, "6i"),
+        (ClubType.IRON_7, "7i"),
+        (ClubType.IRON_8, "8i"),
+        (ClubType.IRON_9, "9i"),
+        (ClubType.PITCHING_WEDGE, "pw"),
+        (ClubType.GAP_WEDGE, "gw"),
+        (ClubType.SAND_WEDGE, "sw"),
+        (ClubType.LOB_WEDGE, "lw"),
+    ])
+    def test_club_type_enum_values(self, enum_value, expectation) -> None:
+        """Club types should have correct values."""
+        assert enum_value.value == expectation
 
 
 @allure.feature("Domain Model")
@@ -60,12 +51,12 @@ class TestClubTypeStringComparison:
     def test_club_type_equals_string_value(self) -> None:
         """ClubType should equal its string value."""
         assert ClubType.DRIVER == "d"
-        assert ClubType.IRON_7 == "i7"
+        assert ClubType.IRON_7 == "7i"
 
     def test_club_type_value_attribute(self) -> None:
         """ClubType.value should return the string value."""
         assert ClubType.DRIVER.value == "d"
-        assert ClubType.IRON_7.value == "i7"
+        assert ClubType.IRON_7.value == "7i"
 
 
 @allure.feature("Domain Model")

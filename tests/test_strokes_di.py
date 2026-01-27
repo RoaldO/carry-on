@@ -29,7 +29,7 @@ class TestStrokesWithDependencyInjection:
 
         response = client.post(
             "/api/strokes",
-            json={"club": "i7", "distance": 150},
+            json={"club": "7i", "distance": 150},
             headers=auth_headers,
         )
 
@@ -40,7 +40,7 @@ class TestStrokesWithDependencyInjection:
         # Verify stroke was saved to the fake repository
         assert len(fake_repo.strokes) == 1
         saved_stroke, user_id = fake_repo.strokes[0]
-        assert saved_stroke.club.value == "i7"
+        assert saved_stroke.club.value == "7i"
         assert saved_stroke.distance is not None
         assert saved_stroke.distance.meters == 150
         assert saved_stroke.fail is False
@@ -82,7 +82,7 @@ class TestStrokesWithDependencyInjection:
         # First, create some strokes
         client.post(
             "/api/strokes",
-            json={"club": "i7", "distance": 150},
+            json={"club": "7i", "distance": 150},
             headers=auth_headers,
         )
         client.post(
@@ -101,7 +101,7 @@ class TestStrokesWithDependencyInjection:
 
         # Strokes should be newest first
         clubs = [s["club"] for s in data["strokes"]]
-        assert "i7" in clubs
+        assert "7i" in clubs
         assert "d" in clubs
 
     def test_get_strokes_filters_by_user(
@@ -116,7 +116,7 @@ class TestStrokesWithDependencyInjection:
         # Create a stroke for authenticated user
         client.post(
             "/api/strokes",
-            json={"club": "i7", "distance": 150},
+            json={"club": "7i", "distance": 150},
             headers=auth_headers,
         )
 
@@ -143,7 +143,7 @@ class TestStrokesWithDependencyInjection:
         assert response.status_code == 200
         data = response.json()
         assert data["count"] == 1
-        assert data["strokes"][0]["club"] == "i7"
+        assert data["strokes"][0]["club"] == "7i"
 
     def test_get_strokes_respects_limit(
         self,
@@ -158,7 +158,7 @@ class TestStrokesWithDependencyInjection:
         for i in range(5):
             client.post(
                 "/api/strokes",
-                json={"club": "i7", "distance": 100 + i * 10},
+                json={"club": "7i", "distance": 100 + i * 10},
                 headers=auth_headers,
             )
 

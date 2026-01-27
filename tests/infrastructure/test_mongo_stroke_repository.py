@@ -66,7 +66,7 @@ class TestMongoStrokeRepositorySave:
         collection.insert_one.assert_called_once()
         doc = collection.insert_one.call_args[0][0]
 
-        assert doc["club"] == "i7"
+        assert doc["club"] == "7i"
         assert doc["distance"] == 150
         assert doc["fail"] is False
         assert doc["date"] == "2024-01-15"
@@ -111,7 +111,7 @@ class TestMongoStrokeRepositoryFindByUser:
         docs = [
             {
                 "_id": doc_id,
-                "club": "i7",
+                "club": "7i",
                 "distance": 150,
                 "fail": False,
                 "date": "2024-01-15",
@@ -209,7 +209,7 @@ class TestMongoStrokeRepositoryFindByUser:
         docs = [
             {
                 "_id": doc_id,
-                "club": "i7",
+                "club": "7i",
                 "distance": 150,
                 "date": "2024-01-15",
                 "user_id": "user123",
@@ -241,7 +241,7 @@ class TestMongoStrokeRepositoryFindByUser:
         docs = [
             {
                 "_id": doc_id,
-                "club": "i7",
+                "club": "7i",
                 "distance": 150,
                 "fail": False,
                 "date": "2024-01-15",
