@@ -223,6 +223,40 @@
         .back-button:hover {
             text-decoration: underline;
         }
+        .profile-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+        .profile-section h2 {
+            margin: 0 0 20px 0;
+            color: #2d5a27;
+        }
+        .profile-info {
+            margin-bottom: 30px;
+        }
+        .profile-field {
+            margin-bottom: 16px;
+        }
+        .profile-field label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .profile-field div {
+            font-size: 18px;
+            color: #333;
+        }
+        .logout-btn {
+            background: #dc3545;
+        }
+        .logout-btn:active {
+            background: #a71d2a;
+        }
     </style>
 </head>
 <body>
@@ -330,6 +364,24 @@
         <div id="ideaMessage"></div>
     </div>
 
+    <!-- Profile Tab Content -->
+    <div id="profileContent" class="tab-content">
+        <div class="profile-section">
+            <h2>Your Profile</h2>
+            <div class="profile-info">
+                <div class="profile-field">
+                    <label>Display Name</label>
+                    <div id="profileName">Loading...</div>
+                </div>
+                <div class="profile-field">
+                    <label>Email</label>
+                    <div id="profileEmail">Loading...</div>
+                </div>
+            </div>
+            <button id="logoutBtn" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
     <!-- Tab Bar -->
     <div id="tabBar" class="tab-bar hidden">
         <button class="tab active" data-tab="strokes">
@@ -339,6 +391,10 @@
         <button class="tab" data-tab="ideas">
             <span class="tab-icon">&#128161;</span>
             Ideas
+        </button>
+        <button class="tab" data-tab="profile">
+            <span class="tab-icon">&#128100;</span>
+            Profile
         </button>
     </div>
 
@@ -368,6 +424,12 @@
         const tabs = document.querySelectorAll('.tab');
         const strokesContent = document.getElementById('strokesContent');
         const ideasContent = document.getElementById('ideasContent');
+        const profileContent = document.getElementById('profileContent');
+
+        // Profile elements
+        const profileName = document.getElementById('profileName');
+        const profileEmail = document.getElementById('profileEmail');
+        const logoutBtn = document.getElementById('logoutBtn');
 
         // Storage helpers
         function getStoredAuth() {
@@ -698,6 +760,7 @@
             // Update content visibility
             strokesContent.classList.toggle('active', tabName === 'strokes');
             ideasContent.classList.toggle('active', tabName === 'ideas');
+            profileContent.classList.toggle('active', tabName === 'profile');
 
             // Update tab states
             tabs.forEach(tab => {
@@ -706,6 +769,11 @@
 
             // Update URL hash without scrolling
             history.replaceState(null, '', '#' + tabName);
+
+            // Load profile data when switching to profile tab
+            if (tabName === 'profile') {
+                loadProfile();
+            }
         }
 
         // Tab click handlers
@@ -716,7 +784,7 @@
         // Handle URL hash changes
         function handleHashChange() {
             const hash = window.location.hash.slice(1);
-            if (hash === 'ideas' || hash === 'strokes') {
+            if (hash === 'ideas' || hash === 'strokes' || hash === 'profile') {
                 showTab(hash);
             } else {
                 showTab('strokes');
@@ -775,6 +843,32 @@
             }
 
             submitBtn.disabled = false;
+        });
+
+        // Profile loading
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/me', {
+                    headers: getAuthHeaders()
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    profileName.textContent = data.display_name || 'Not set';
+                    profileEmail.textContent = data.email;
+                } else if (response.status === 401) {
+                    clearAuth();
+                    showLoginScreen();
+                }
+            } catch (err) {
+                profileName.textContent = 'Error loading';
+                profileEmail.textContent = 'Error loading';
+            }
+        }
+
+        // Logout handler
+        logoutBtn.addEventListener('click', function() {
+            clearAuth();
+            showLoginScreen();
         });
 
         // Initialize: check hash and auth
