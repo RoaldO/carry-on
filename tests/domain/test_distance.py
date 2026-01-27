@@ -1,10 +1,13 @@
 """Tests for Distance value object."""
 
+import allure
 import pytest
 
 from domain.value_objects.distance import Distance
 
 
+@allure.feature("Domain Model")
+@allure.story("Distance Value Object")
 class TestDistanceCreation:
     """Tests for Distance creation and validation."""
 
@@ -34,6 +37,8 @@ class TestDistanceCreation:
             Distance(meters=401)
 
 
+@allure.feature("Domain Model")
+@allure.story("Distance Value Object")
 class TestDistanceImmutability:
     """Tests for Distance immutability (value object property)."""
 
@@ -44,6 +49,8 @@ class TestDistanceImmutability:
             distance.meters = 200  # type: ignore[misc]
 
 
+@allure.feature("Domain Model")
+@allure.story("Distance Value Object")
 class TestDistanceEquality:
     """Tests for Distance equality comparison."""
 
@@ -67,6 +74,8 @@ class TestDistanceEquality:
         assert len(distance_set) == 1
 
 
+@allure.feature("Domain Model")
+@allure.story("Distance Value Object")
 class TestDistanceConstants:
     """Tests for Distance class constants."""
 

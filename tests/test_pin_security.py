@@ -1,10 +1,13 @@
 """Tests for PIN security module."""
 
+import allure
 import pytest
 
 from api.pin_security import hash_pin, needs_rehash, verify_pin
 
 
+@allure.feature("Security")
+@allure.story("PIN Hashing")
 class TestHashPin:
     """Tests for hash_pin function."""
 
@@ -29,6 +32,8 @@ class TestHashPin:
         assert "$m=" in hashed
 
 
+@allure.feature("Security")
+@allure.story("PIN Verification")
 class TestVerifyPin:
     """Tests for verify_pin function."""
 
@@ -64,6 +69,8 @@ class TestVerifyPin:
         assert verify_pin("1234", invalid_hash) is False
 
 
+@allure.feature("Security")
+@allure.story("PIN Rehashing")
 class TestNeedsRehash:
     """Tests for needs_rehash function."""
 

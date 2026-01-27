@@ -2,9 +2,12 @@
 
 from unittest.mock import MagicMock
 
+import allure
 from fastapi.testclient import TestClient
 
 
+@allure.feature("REST API")
+@allure.story("Ideas API")
 class TestIdeasEndpoint:
     """Tests for ideas API endpoints."""
 
