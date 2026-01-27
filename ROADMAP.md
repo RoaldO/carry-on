@@ -114,11 +114,12 @@ Generate detailed code coverage reports for visibility into test coverage.
 
 ### 0k. Test Result Report
 Generate detailed test result reports for visibility into test execution.
-- [ ] Evaluate reporting options (pytest-html, Allure, JUnit XML)
-- [ ] Install and configure chosen reporting tool
-- [ ] Generate HTML test report locally
-- [ ] Add test report to CI artifacts
-- [ ] Include BDD scenario names in report output
+- [x] Evaluate reporting options (pytest-html, Allure, JUnit XML) → Chose Allure
+- [x] Install and configure chosen reporting tool (allure-pytest)
+- [x] Generate HTML test report locally
+- [x] Add test report to CI artifacts
+- [x] Include BDD scenario names in report output
+- [x] Deploy test report to GitHub Pages (https://roaldo.github.io/carry-on/allure/)
 
 ### 0l. Convert unittest Style Tests to pytest
 Modernize test suite by converting unittest-style tests to idiomatic pytest.
@@ -131,7 +132,7 @@ Modernize test suite by converting unittest-style tests to idiomatic pytest.
 
 ### 0m. Allure Feature Decorators
 Mark tests with Allure decorators for better test organization and reporting.
-- [ ] Install allure-pytest package
+- [x] Install allure-pytest package
 - [ ] Add `@allure.feature()` decorators to group tests by feature
 - [ ] Add `@allure.story()` decorators for user stories within features
 - [ ] Add `@allure.severity()` decorators for test priority
