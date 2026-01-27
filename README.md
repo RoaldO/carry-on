@@ -18,6 +18,9 @@ Golf stroke tracking web application.
 # Install dependencies
 uv sync --dev
 
+# install playwright
+uv run playwright install
+
 # Run locally
 uv run nox -s dev
 ```
