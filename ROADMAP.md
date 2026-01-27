@@ -23,7 +23,7 @@ Refactor codebase to follow ADR-0001 (DDD) and ADR-0003 (SOLID):
 - [x] Create ubiquitous language glossary (`docs/glossary.md`)
 - [x] Create domain layer with Stroke entity and value objects (ClubType, Distance)
 - [x] Create repository layer (`domain/repositories/`, `infrastructure/repositories/`)
-- [ ] Create service layer (`services/stroke_service.py`) for business logic
+- [x] Create service layer (`services/stroke_service.py`) for business logic
 - [ ] Refactor `api/index.py` to use domain layer and delegate to services
 - [ ] Update tests to use dependency injection
 
