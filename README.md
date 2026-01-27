@@ -22,6 +22,10 @@ uv run uvicorn api.index:app --port 8787
 uv run pytest -v
 ```
 
+## Testing
+
+See the [Testing Guide](docs/testing.md) for detailed information on running tests, including unit tests, integration tests, and BDD acceptance tests with Playwright.
+
 ## Development Guidelines
 
 All contributors MUST adhere to the Architecture Decision Records (ADRs).
