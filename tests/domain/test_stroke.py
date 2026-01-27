@@ -1,6 +1,6 @@
 """Tests for Stroke entity."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -141,3 +141,50 @@ class TestStrokeEquality:
             stroke_date=date(2024, 1, 15),
         )
         assert stroke1 == stroke2
+
+
+class TestStrokeCreatedAt:
+    """Tests for created_at field on strokes."""
+
+    def test_successful_stroke_with_created_at(self) -> None:
+        """Should preserve created_at in successful stroke factory."""
+        created = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        stroke = Stroke.create_successful(
+            club=ClubType.IRON_7,
+            distance=Distance(meters=150),
+            stroke_date=date(2024, 1, 15),
+            created_at=created,
+        )
+        assert stroke.created_at == created
+
+    def test_failed_stroke_with_created_at(self) -> None:
+        """Should preserve created_at in failed stroke factory."""
+        created = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        stroke = Stroke.create_failed(
+            club=ClubType.DRIVER,
+            stroke_date=date(2024, 1, 15),
+            created_at=created,
+        )
+        assert stroke.created_at == created
+
+    def test_created_at_defaults_to_none(self) -> None:
+        """New strokes should have created_at as None by default."""
+        stroke = Stroke.create_successful(
+            club=ClubType.IRON_7,
+            distance=Distance(meters=150),
+            stroke_date=date(2024, 1, 15),
+        )
+        assert stroke.created_at is None
+
+    def test_stroke_direct_construction_with_created_at(self) -> None:
+        """Should allow created_at via direct construction."""
+        created = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        stroke = Stroke(
+            id=None,
+            club=ClubType.PITCHING_WEDGE,
+            fail=False,
+            stroke_date=date(2024, 6, 1),
+            distance=Distance(meters=100),
+            created_at=created,
+        )
+        assert stroke.created_at == created

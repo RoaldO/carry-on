@@ -277,33 +277,27 @@ async def create_stroke(
 
 @app.get("/api/strokes")
 async def list_strokes(
-    limit: int = 20, user: AuthenticatedUser = Depends(verify_pin)
+    limit: int = 20,
+    user: AuthenticatedUser = Depends(verify_pin),
+    service: StrokeService = Depends(get_stroke_service),
 ):
     """List recent strokes for the authenticated user."""
-    strokes_collection = get_strokes_collection()
-    if strokes_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
+    strokes = service.get_user_strokes(user.id, limit)
 
-    strokes = []
-    cursor = (
-        strokes_collection.find({"user_id": user.id})
-        .sort("created_at", -1)
-        .limit(limit)
-    )
-
-    for doc in cursor:
-        strokes.append(
+    return {
+        "strokes": [
             {
-                "id": str(doc["_id"]),
-                "club": doc["club"],
-                "distance": doc.get("distance"),
-                "fail": doc.get("fail", False),
-                "date": doc["date"],
-                "created_at": doc["created_at"],
+                "id": stroke.id.value if stroke.id else None,
+                "club": stroke.club.value,
+                "distance": stroke.distance.meters if stroke.distance else None,
+                "fail": stroke.fail,
+                "date": stroke.stroke_date.isoformat(),
+                "created_at": stroke.created_at.isoformat() if stroke.created_at else None,
             }
-        )
-
-    return {"strokes": strokes, "count": len(strokes)}
+            for stroke in strokes
+        ],
+        "count": len(strokes),
+    }
 
 
 @app.post("/api/ideas")

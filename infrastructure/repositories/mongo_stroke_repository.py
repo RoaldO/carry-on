@@ -86,12 +86,16 @@ class MongoStrokeRepository:
         """
         distance = Distance(meters=doc["distance"]) if doc.get("distance") else None
         fail = doc.get("fail", False)
+        created_at = (
+            datetime.fromisoformat(doc["created_at"]) if doc.get("created_at") else None
+        )
 
         if fail:
             return Stroke.create_failed(
                 id=StrokeId(value=str(doc["_id"])),
                 club=ClubType(doc["club"]),
                 stroke_date=date.fromisoformat(doc["date"]),
+                created_at=created_at,
             )
         else:
             return Stroke.create_successful(
@@ -99,4 +103,5 @@ class MongoStrokeRepository:
                 club=ClubType(doc["club"]),
                 distance=distance,  # type: ignore[arg-type]
                 stroke_date=date.fromisoformat(doc["date"]),
+                created_at=created_at,
             )
