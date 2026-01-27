@@ -244,6 +244,15 @@ async def serve_ideas():
     return RedirectResponse(url="/#ideas", status_code=302)
 
 
+@app.get("/api/me")
+async def get_current_user(user: AuthenticatedUser = Depends(verify_pin)):
+    """Get current authenticated user's profile information."""
+    return {
+        "email": user.email,
+        "display_name": user.display_name,
+    }
+
+
 @app.post("/api/strokes")
 async def create_stroke(
     stroke: StrokeCreate,
@@ -399,6 +408,14 @@ def get_inline_html() -> str:
         .welcome-name { text-align: center; color: #2d5a27; font-size: 14px; margin-bottom: 15px; }
         .back-button { background: none; border: none; color: #2d5a27; cursor: pointer; font-size: 14px; margin-bottom: 15px; padding: 0; width: auto; }
         .back-button:hover { text-decoration: underline; }
+        .profile-section { background: white; border-radius: 12px; padding: 24px; margin-top: 20px; }
+        .profile-section h2 { margin: 0 0 20px 0; color: #2d5a27; }
+        .profile-info { margin-bottom: 30px; }
+        .profile-field { margin-bottom: 16px; }
+        .profile-field label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .profile-field div { font-size: 18px; color: #333; }
+        .logout-btn { background: #dc3545; }
+        .logout-btn:active { background: #a71d2a; }
     </style>
 </head>
 <body>
@@ -451,9 +468,20 @@ def get_inline_html() -> str:
         </form>
         <div id="ideaMessage"></div>
     </div>
+    <div id="profileContent" class="tab-content">
+        <div class="profile-section">
+            <h2>Your Profile</h2>
+            <div class="profile-info">
+                <div class="profile-field"><label>Display Name</label><div id="profileName">Loading...</div></div>
+                <div class="profile-field"><label>Email</label><div id="profileEmail">Loading...</div></div>
+            </div>
+            <button id="logoutBtn" class="logout-btn">Logout</button>
+        </div>
+    </div>
     <div id="tabBar" class="tab-bar hidden">
         <button class="tab active" data-tab="strokes"><span class="tab-icon">&#9971;</span>Strokes</button>
         <button class="tab" data-tab="ideas"><span class="tab-icon">&#128161;</span>Ideas</button>
+        <button class="tab" data-tab="profile"><span class="tab-icon">&#128100;</span>Profile</button>
     </div>
     <script>
         const loginScreen = document.getElementById('loginScreen'), stepEmail = document.getElementById('stepEmail'), stepPin = document.getElementById('stepPin');
@@ -462,7 +490,8 @@ def get_inline_html() -> str:
         const confirmPinGroup = document.getElementById('confirmPinGroup'), pinMessage = document.getElementById('pinMessage');
         const pinLabel = document.getElementById('pinLabel'), pinSubmitBtn = document.getElementById('pinSubmitBtn'), welcomeName = document.getElementById('welcomeName');
         const tabBar = document.getElementById('tabBar'), tabs = document.querySelectorAll('.tab');
-        const strokesContent = document.getElementById('strokesContent'), ideasContent = document.getElementById('ideasContent');
+        const strokesContent = document.getElementById('strokesContent'), ideasContent = document.getElementById('ideasContent'), profileContent = document.getElementById('profileContent');
+        const profileName = document.getElementById('profileName'), profileEmail = document.getElementById('profileEmail'), logoutBtn = document.getElementById('logoutBtn');
         let currentEmail = '', isActivation = false;
         function getStoredAuth() { const e = localStorage.getItem('carryon_email'), p = localStorage.getItem('carryon_pin'); return e && p ? { email: e, pin: p } : null; }
         function storeAuth(e, p) { localStorage.setItem('carryon_email', e); localStorage.setItem('carryon_pin', p); }
@@ -473,9 +502,9 @@ def get_inline_html() -> str:
         function showLoginScreen() { loginScreen.classList.remove('hidden'); tabBar.classList.add('hidden'); showStep('email'); }
         function hideLoginScreen() { loginScreen.classList.add('hidden'); tabBar.classList.remove('hidden'); }
         function showStep(s) { stepEmail.classList.remove('active'); stepPin.classList.remove('active'); (s === 'email' ? stepEmail : stepPin).classList.add('active'); }
-        function showTab(tabName) { strokesContent.classList.toggle('active', tabName === 'strokes'); ideasContent.classList.toggle('active', tabName === 'ideas'); tabs.forEach(tab => { tab.classList.toggle('active', tab.dataset.tab === tabName); }); history.replaceState(null, '', '#' + tabName); }
+        function showTab(tabName) { strokesContent.classList.toggle('active', tabName === 'strokes'); ideasContent.classList.toggle('active', tabName === 'ideas'); profileContent.classList.toggle('active', tabName === 'profile'); tabs.forEach(tab => { tab.classList.toggle('active', tab.dataset.tab === tabName); }); history.replaceState(null, '', '#' + tabName); if (tabName === 'profile') loadProfile(); }
         tabs.forEach(tab => { tab.addEventListener('click', () => showTab(tab.dataset.tab)); });
-        function handleHashChange() { const hash = window.location.hash.slice(1); if (hash === 'ideas' || hash === 'strokes') { showTab(hash); } else { showTab('strokes'); } }
+        function handleHashChange() { const hash = window.location.hash.slice(1); if (hash === 'ideas' || hash === 'strokes' || hash === 'profile') { showTab(hash); } else { showTab('strokes'); } }
         window.addEventListener('hashchange', handleHashChange);
         async function checkEmail(email) { try { const r = await fetch('/api/check-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); if (r.status === 404) return { status: 'not_found' }; return await r.json(); } catch { return { status: 'error' }; } }
         function parseErrorDetail(d) { return Array.isArray(d) ? d.map(e => e.msg).join(', ') : d; }
@@ -506,6 +535,8 @@ def get_inline_html() -> str:
         const ideaForm = document.getElementById('ideaForm'), ideaDescription = document.getElementById('ideaDescription'), charCount = document.getElementById('charCount'), ideaMessage = document.getElementById('ideaMessage');
         ideaDescription.addEventListener('input', function() { const remaining = 1000 - this.value.length; charCount.textContent = remaining; charCount.parentElement.classList.toggle('warning', remaining < 100); });
         ideaForm.addEventListener('submit', async function(e) { e.preventDefault(); const submitBtn = this.querySelector('button[type="submit"]'); submitBtn.disabled = true; try { const response = await fetch('/api/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ description: ideaDescription.value }) }); if (response.ok) { ideaMessage.textContent = 'Idea submitted! Thank you for your feedback.'; ideaMessage.className = 'message success'; ideaDescription.value = ''; charCount.textContent = '1000'; charCount.parentElement.classList.remove('warning'); } else if (response.status === 401) { clearAuth(); showLoginScreen(); ideaMessage.textContent = 'Session expired'; ideaMessage.className = 'message error'; } else { const result = await response.json(); ideaMessage.textContent = result.detail || 'Error'; ideaMessage.className = 'message error'; } } catch (err) { ideaMessage.textContent = 'Network error: ' + err.message; ideaMessage.className = 'message error'; } submitBtn.disabled = false; });
+        async function loadProfile() { try { const response = await fetch('/api/me', { headers: getAuthHeaders() }); if (response.ok) { const data = await response.json(); profileName.textContent = data.display_name || 'Not set'; profileEmail.textContent = data.email; } else if (response.status === 401) { clearAuth(); showLoginScreen(); } } catch (err) { profileName.textContent = 'Error loading'; profileEmail.textContent = 'Error loading'; } }
+        logoutBtn.addEventListener('click', function() { clearAuth(); showLoginScreen(); });
         handleHashChange();
         initAuth();
     </script>
