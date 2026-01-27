@@ -204,3 +204,36 @@ class TestStrokesEndpoint:
         call_args = mock_strokes_collection.find.call_args
         filter_query = call_args[0][0] if call_args[0] else call_args[1].get("filter")
         assert filter_query == {"user_id": "user123"}
+
+
+class TestMeEndpoint:
+    """Tests for /api/me endpoint."""
+
+    def test_get_me_without_auth_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """GET /api/me without authentication should return 401."""
+        response = client.get("/api/me")
+        assert response.status_code == 401
+
+    def test_get_me_with_valid_auth(
+        self,
+        client: TestClient,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/me with valid authentication should return user info."""
+        response = client.get("/api/me", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["email"] == "test@example.com"
+        assert data["display_name"] == "Test User"
+
+    def test_get_me_with_invalid_credentials_returns_401(
+        self, client: TestClient, mock_users_collection: MagicMock
+    ) -> None:
+        """GET /api/me with invalid credentials should return 401."""
+        response = client.get(
+            "/api/me", headers={"X-Email": "wrong@example.com", "X-Pin": "wrong"}
+        )
+        assert response.status_code == 401

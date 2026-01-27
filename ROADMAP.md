@@ -74,8 +74,8 @@ See [specification](docs/specs/navigation.md) for details.
 - [x] Highlight active tab
 - [x] Hide tab bar on login/activation screens
 - [x] URL hash routing (#strokes, #ideas)
-- [ ] Create Profile tab with user info and logout
-- [ ] Implement `/api/me` endpoint for profile data
+- [x] Create Profile tab with user info and logout
+- [x] Implement `/api/me` endpoint for profile data
 
 ### 0i. Acceptance Tests for Current Specifications
 Add BDD acceptance tests covering all existing specifications.
