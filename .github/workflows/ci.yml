@@ -31,8 +31,8 @@ jobs:
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
 
-      - name: Run tests with coverage
-        run: uv run pytest -v --cov-report=xml --cov-report=html
+      - name: Run tests with coverage and Allure
+        run: uv run pytest -v --cov-report=xml --cov-report=html --alluredir=allure-results
         env:
           MONGODB_URI: "mongodb://test"
 
@@ -48,11 +48,52 @@ jobs:
           name: coverage-html
           path: htmlcov/
 
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+
+      - name: Generate Allure report
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        with:
+          allure_results: allure-results
+          allure_report: allure-report
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Prepare GitHub Pages content
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p gh-pages
+          cp -r htmlcov gh-pages/coverage
+          cp -r allure-report gh-pages/allure
+          cat > gh-pages/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>CarryOn Reports</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+              h1 { color: #2d5a27; }
+              a { display: block; padding: 15px; margin: 10px 0; background: #f5f5f5; border-radius: 8px; text-decoration: none; color: #333; }
+              a:hover { background: #e8f5e6; }
+            </style>
+          </head>
+          <body>
+            <h1>CarryOn Reports</h1>
+            <a href="coverage/">Coverage Report</a>
+            <a href="allure/">Test Results (Allure)</a>
+          </body>
+          </html>
+          EOF
+
       - name: Upload pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: htmlcov/
+          path: gh-pages/
 
   deploy:
     needs: test
