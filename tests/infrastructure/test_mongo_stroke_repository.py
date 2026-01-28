@@ -7,11 +7,11 @@ from unittest.mock import MagicMock, Mock
 import allure
 from bson import ObjectId
 
-from domain.entities.stroke import Stroke, StrokeId
-from domain.repositories.stroke_repository import StrokeRepository
-from domain.value_objects.club_type import ClubType
-from domain.value_objects.distance import Distance
-from infrastructure.repositories.mongo_stroke_repository import MongoStrokeRepository
+from carry_on.domain.entities.stroke import Stroke, StrokeId
+from carry_on.domain.repositories.stroke_repository import StrokeRepository
+from carry_on.domain.value_objects.club_type import ClubType
+from carry_on.domain.value_objects.distance import Distance
+from carry_on.infrastructure.repositories.mongo_stroke_repository import MongoStrokeRepository
 
 
 @allure.feature("Infrastructure")

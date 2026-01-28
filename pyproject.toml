@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "carry-on"
 version = "0.1.0"
@@ -27,13 +31,13 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--cov=api --cov-report=term-missing --cov-fail-under=70"
+addopts = "--cov=carry_on --cov-report=term-missing --cov-fail-under=70"
 markers = [
     "acceptance: marks tests as acceptance tests (deselect with '-m \"not acceptance\"')",
 ]
 
 [tool.coverage.run]
-source = ["api"]
+source = ["carry_on"]
 omit = ["**/test_*"]
 
 [tool.coverage.report]
@@ -42,5 +46,9 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools.packages.find]
-include = ["api*", "domain*", "infrastructure*", "services*"]
+where = ["src"]
+include = ["carry_on*"]

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import allure
 from fastapi.testclient import TestClient
 
-from api.pin_security import hash_pin
+from carry_on.api.pin_security import hash_pin
 
 
 @allure.feature("REST API")

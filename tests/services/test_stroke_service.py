@@ -6,11 +6,11 @@ from unittest.mock import MagicMock
 import allure
 import pytest
 
-from domain.entities.stroke import Stroke, StrokeId
-from domain.repositories.stroke_repository import StrokeRepository
-from domain.value_objects.club_type import ClubType
-from domain.value_objects.distance import Distance
-from services.stroke_service import StrokeService
+from carry_on.domain.entities.stroke import Stroke, StrokeId
+from carry_on.domain.repositories.stroke_repository import StrokeRepository
+from carry_on.domain.value_objects.club_type import ClubType
+from carry_on.domain.value_objects.distance import Distance
+from carry_on.services.stroke_service import StrokeService
 
 
 @allure.feature("Application Services")

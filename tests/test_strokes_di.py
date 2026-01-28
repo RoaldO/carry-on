@@ -123,9 +123,9 @@ class TestStrokesWithDependencyInjection:
         # Manually add a stroke for different user directly to repository
         from datetime import date
 
-        from domain.entities.stroke import Stroke
-        from domain.value_objects.club_type import ClubType
-        from domain.value_objects.distance import Distance
+        from carry_on.domain.entities.stroke import Stroke
+        from carry_on.domain.value_objects.club_type import ClubType
+        from carry_on.domain.value_objects.distance import Distance
 
         other_user_stroke = Stroke.create_successful(
             club=ClubType.DRIVER,

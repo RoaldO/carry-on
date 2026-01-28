@@ -1,5 +1,5 @@
 """Application services layer."""
 
-from services.stroke_service import StrokeService
+from carry_on.services.stroke_service import StrokeService
 
 __all__ = ["StrokeService"]
