@@ -142,7 +142,7 @@ wheels = [
 [[package]]
 name = "carry-on"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "argon2-cffi" },
     { name = "fastapi", extra = ["standard"] },
