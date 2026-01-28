@@ -151,11 +151,11 @@ Set up nox for consistent test running and other development tasks.
 
 ### 0n. HTML Rendering Refactor
 Remove duplication between `public/index.html` and inline HTML in `api/index.py`.
-- [ ] Audit differences between `public/index.html` and `get_inline_html()`
-- [ ] Decide on single source of truth (file vs inline)
-- [ ] Remove duplicate HTML code
-- [ ] Ensure Vercel deployment still works correctly
-- [ ] Add tests to verify HTML serving behavior
+- [x] Audit differences between `public/index.html` and `get_inline_html()`
+- [x] Decide on single source of truth (file vs inline)
+- [x] Remove duplicate HTML code
+- [x] Ensure Vercel deployment still works correctly
+- [x] Add tests to verify HTML serving behavior
 
 ### 1. Golf Course Management
 Store golf course information including:
