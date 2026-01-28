@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Flag pole -->
+  <line x1="8" y1="4" x2="8" y2="30" stroke="#2d5a27" stroke-width="2" stroke-linecap="round"/>
+  <!-- Flag -->
+  <polygon points="10,4 26,9 10,14" fill="#2d5a27"/>
+  <!-- Hole/shadow at base -->
+  <ellipse cx="8" cy="30" rx="6" ry="2" fill="#2d5a27" opacity="0.3"/>
+</svg>
