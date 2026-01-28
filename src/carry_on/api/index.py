@@ -1,5 +1,6 @@
 from datetime import UTC, date as date_type, datetime
 from importlib.resources import files
+import os
 from typing import Optional
 
 from dotenv import load_dotenv
