@@ -9,8 +9,14 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
 
-from carry_on.api.pin_security import hash_pin, needs_rehash, verify_pin as verify_pin_hash
-from carry_on.infrastructure.repositories.mongo_stroke_repository import MongoStrokeRepository
+from carry_on.api.pin_security import (
+    hash_pin,
+    needs_rehash,
+    verify_pin as verify_pin_hash,
+)
+from carry_on.infrastructure.repositories.mongo_stroke_repository import (
+    MongoStrokeRepository,
+)
 from carry_on.services.stroke_service import StrokeService
 
 load_dotenv()

@@ -82,11 +82,18 @@ def app_server(
 
     # Mock the collection getters before importing the app
     with (
-        patch("carry_on.api.index.get_users_collection", return_value=mock_collections["users"]),
         patch(
-            "carry_on.api.index.get_strokes_collection", return_value=mock_collections["strokes"]
+            "carry_on.api.index.get_users_collection",
+            return_value=mock_collections["users"],
         ),
-        patch("carry_on.api.index.get_ideas_collection", return_value=mock_collections["ideas"]),
+        patch(
+            "carry_on.api.index.get_strokes_collection",
+            return_value=mock_collections["strokes"],
+        ),
+        patch(
+            "carry_on.api.index.get_ideas_collection",
+            return_value=mock_collections["ideas"],
+        ),
     ):
         # Import app inside the patch context
         from carry_on.api.index import app
