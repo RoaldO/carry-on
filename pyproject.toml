@@ -52,3 +52,6 @@ exclude_lines = [
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["carry_on*"]
+
+[tool.setuptools.package-data]
+"carry_on.static" = ["*.html"]
