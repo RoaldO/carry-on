@@ -12,7 +12,27 @@ permissions:
   id-token: write
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Run linter
+        run: uv run nox -s lint
+
+      - name: Check formatting
+        run: uv run nox -s format_check
+
   test:
+    needs: lint
     runs-on: ubuntu-latest
 
     steps:
