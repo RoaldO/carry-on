@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from api.pin_security import hash_pin
+from carry_on.api.pin_security import hash_pin
 from tests.acceptance.pages.login_page import LoginPage
 
 # Link this file to the feature file

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from api.pin_security import hash_pin
-from services.stroke_service import StrokeService
+from carry_on.api.pin_security import hash_pin
+from carry_on.services.stroke_service import StrokeService
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
 
@@ -35,7 +35,7 @@ def mock_strokes_collection() -> Generator[MagicMock, None, None]:
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_id_123"
 
-    with patch("api.index.get_strokes_collection", return_value=mock_collection):
+    with patch("carry_on.api.index.get_strokes_collection", return_value=mock_collection):
         yield mock_collection
 
 
@@ -67,7 +67,7 @@ def client() -> Generator[TestClient, None, None]:
     os.environ["MONGODB_URI"] = "mongodb://test"
 
     # Import app after setting env vars
-    from api.index import app
+    from carry_on.api.index import app
 
     with TestClient(app) as client:
         yield client
@@ -87,7 +87,7 @@ def client_with_fake_repo(
     """
     os.environ["MONGODB_URI"] = "mongodb://test"
 
-    from api.index import app, get_stroke_service
+    from carry_on.api.index import app, get_stroke_service
 
     # Override the dependency to use our fake service
     app.dependency_overrides[get_stroke_service] = lambda: fake_stroke_service
@@ -113,7 +113,7 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_idea_123"
 
-    with patch("api.index.get_ideas_collection", return_value=mock_collection):
+    with patch("carry_on.api.index.get_ideas_collection", return_value=mock_collection):
         yield mock_collection
 
 
@@ -123,7 +123,7 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
     mock_collection = MagicMock()
     mock_collection.find_one.return_value = None
 
-    with patch("api.index.get_users_collection", return_value=mock_collection):
+    with patch("carry_on.api.index.get_users_collection", return_value=mock_collection):
         yield mock_collection
 
 

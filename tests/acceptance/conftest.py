@@ -13,7 +13,7 @@ import uvicorn
 from playwright.sync_api import Page
 from pytest_bdd import given, parsers, then, when
 
-from api.pin_security import hash_pin
+from carry_on.api.pin_security import hash_pin
 from tests.acceptance.pages.login_page import LoginPage
 
 # Mark all tests in this directory as acceptance tests
@@ -82,14 +82,14 @@ def app_server(
 
     # Mock the collection getters before importing the app
     with (
-        patch("api.index.get_users_collection", return_value=mock_collections["users"]),
+        patch("carry_on.api.index.get_users_collection", return_value=mock_collections["users"]),
         patch(
-            "api.index.get_strokes_collection", return_value=mock_collections["strokes"]
+            "carry_on.api.index.get_strokes_collection", return_value=mock_collections["strokes"]
         ),
-        patch("api.index.get_ideas_collection", return_value=mock_collections["ideas"]),
+        patch("carry_on.api.index.get_ideas_collection", return_value=mock_collections["ideas"]),
     ):
         # Import app inside the patch context
-        from api.index import app
+        from carry_on.api.index import app
 
         server = ServerThread(app, "127.0.0.1", app_port)
         server.start()

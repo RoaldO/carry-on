@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import allure
 from fastapi.testclient import TestClient
 
-from api.pin_security import hash_pin
+from carry_on.api.pin_security import hash_pin
 
 
 @allure.feature("REST API")
@@ -15,7 +15,7 @@ class TestVerifyPinReturnsAuthenticatedUser:
 
     def test_verify_pin_returns_authenticated_user(self) -> None:
         """verify_pin should return AuthenticatedUser with user data."""
-        from api.index import AuthenticatedUser, verify_pin
+        from carry_on.api.index import AuthenticatedUser, verify_pin
 
         test_email = "test@example.com"
         test_pin = "1234"
@@ -27,7 +27,7 @@ class TestVerifyPinReturnsAuthenticatedUser:
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
-        with patch("api.index.get_users_collection") as mock_get_collection:
+        with patch("carry_on.api.index.get_users_collection") as mock_get_collection:
             mock_collection = MagicMock()
             mock_collection.find_one.return_value = mock_user
             mock_get_collection.return_value = mock_collection
@@ -41,7 +41,7 @@ class TestVerifyPinReturnsAuthenticatedUser:
 
     def test_verify_pin_returns_user_without_display_name(self) -> None:
         """verify_pin should handle users without display_name."""
-        from api.index import AuthenticatedUser, verify_pin
+        from carry_on.api.index import AuthenticatedUser, verify_pin
 
         test_email = "test@example.com"
         test_pin = "1234"
@@ -52,7 +52,7 @@ class TestVerifyPinReturnsAuthenticatedUser:
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
-        with patch("api.index.get_users_collection") as mock_get_collection:
+        with patch("carry_on.api.index.get_users_collection") as mock_get_collection:
             mock_collection = MagicMock()
             mock_collection.find_one.return_value = mock_user
             mock_get_collection.return_value = mock_collection

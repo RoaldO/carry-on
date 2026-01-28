@@ -90,21 +90,21 @@ def coverage_html(session: nox.Session) -> None:
 def lint(session: nox.Session) -> None:
     """Run ruff linter."""
     session.install("ruff")
-    session.run("ruff", "check", "api", "tests", "domain", "infrastructure", "services", *session.posargs)
+    session.run("ruff", "check", "src/carry_on", "tests", *session.posargs)
 
 
 @nox.session(python="3.12")
 def format(session: nox.Session) -> None:
     """Run ruff formatter."""
     session.install("ruff")
-    session.run("ruff", "format", "api", "tests", "domain", "infrastructure", "services", *session.posargs)
+    session.run("ruff", "format", "src/carry_on", "tests", *session.posargs)
 
 
 @nox.session(python="3.12")
 def format_check(session: nox.Session) -> None:
     """Check code formatting without making changes."""
     session.install("ruff")
-    session.run("ruff", "format", "--check", "api", "tests", "domain", "infrastructure", "services")
+    session.run("ruff", "format", "--check", "src/carry_on", "tests")
 
 
 @nox.session(python="3.12")
@@ -112,11 +112,11 @@ def typecheck(session: nox.Session) -> None:
     """Run mypy type checker."""
     session.install(".", "--group", "dev")
     session.install("mypy", "types-requests")
-    session.run("mypy", "api", "domain", "infrastructure", "services", *session.posargs)
+    session.run("mypy", "src/carry_on", *session.posargs)
 
 
 @nox.session(python="3.12")
 def dev(session: nox.Session) -> None:
     """Run the development server."""
     session.install(".", "--group", "dev")
-    session.run("uvicorn", "api.index:app", "--port", "8787", "--reload")
+    session.run("uvicorn", "carry_on.api.index:app", "--port", "8787", "--reload")

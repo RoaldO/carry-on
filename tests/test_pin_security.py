@@ -2,7 +2,7 @@
 
 import allure
 
-from api.pin_security import hash_pin, needs_rehash, verify_pin
+from carry_on.api.pin_security import hash_pin, needs_rehash, verify_pin
 
 
 @allure.feature("Security")

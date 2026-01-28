@@ -3,7 +3,7 @@
 import allure
 import pytest
 
-from domain.value_objects.distance import Distance
+from carry_on.domain.value_objects.distance import Distance
 
 
 @allure.feature("Domain Model")
