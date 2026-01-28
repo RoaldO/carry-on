@@ -369,6 +369,7 @@ def get_inline_html() -> str:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CarryOn - Golf Stroke Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><line x1='8' y1='4' x2='8' y2='30' stroke='%232d5a27' stroke-width='2' stroke-linecap='round'/><polygon points='10,4 26,9 10,14' fill='%232d5a27'/><ellipse cx='8' cy='30' rx='6' ry='2' fill='%232d5a27' opacity='0.3'/></svg>">
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; padding-bottom: 80px; background: #f5f5f5; }
