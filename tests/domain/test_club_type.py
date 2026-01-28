@@ -22,22 +22,25 @@ class TestClubTypeEnum:
         """ClubType should inherit from str for JSON serialization."""
         assert issubclass(ClubType, str)
 
-    @pytest.mark.parametrize('enum_value, expectation', [
-        (ClubType.DRIVER, "d"),
-        (ClubType.WOOD_3, "3w"),
-        (ClubType.WOOD_5, "5w"),
-        (ClubType.HYBRID_4, "4h"),
-        (ClubType.HYBRID_5, "5h"),
-        (ClubType.IRON_5, "5i"),
-        (ClubType.IRON_6, "6i"),
-        (ClubType.IRON_7, "7i"),
-        (ClubType.IRON_8, "8i"),
-        (ClubType.IRON_9, "9i"),
-        (ClubType.PITCHING_WEDGE, "pw"),
-        (ClubType.GAP_WEDGE, "gw"),
-        (ClubType.SAND_WEDGE, "sw"),
-        (ClubType.LOB_WEDGE, "lw"),
-    ])
+    @pytest.mark.parametrize(
+        "enum_value, expectation",
+        [
+            (ClubType.DRIVER, "d"),
+            (ClubType.WOOD_3, "3w"),
+            (ClubType.WOOD_5, "5w"),
+            (ClubType.HYBRID_4, "4h"),
+            (ClubType.HYBRID_5, "5h"),
+            (ClubType.IRON_5, "5i"),
+            (ClubType.IRON_6, "6i"),
+            (ClubType.IRON_7, "7i"),
+            (ClubType.IRON_8, "8i"),
+            (ClubType.IRON_9, "9i"),
+            (ClubType.PITCHING_WEDGE, "pw"),
+            (ClubType.GAP_WEDGE, "gw"),
+            (ClubType.SAND_WEDGE, "sw"),
+            (ClubType.LOB_WEDGE, "lw"),
+        ],
+    )
     def test_club_type_enum_values(self, enum_value, expectation) -> None:
         """Club types should have correct values."""
         assert enum_value.value == expectation

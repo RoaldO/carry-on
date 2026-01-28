@@ -35,7 +35,9 @@ def mock_strokes_collection() -> Generator[MagicMock, None, None]:
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_id_123"
 
-    with patch("carry_on.api.index.get_strokes_collection", return_value=mock_collection):
+    with patch(
+        "carry_on.api.index.get_strokes_collection", return_value=mock_collection
+    ):
         yield mock_collection
 
 

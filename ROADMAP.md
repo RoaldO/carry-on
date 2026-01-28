@@ -157,6 +157,13 @@ Remove duplication between `public/index.html` and inline HTML in `api/index.py`
 - [x] Ensure Vercel deployment still works correctly
 - [x] Add tests to verify HTML serving behavior
 
+### 0p. CI Code Quality Checks
+Add linting, formatting, and type checking to CI pipeline.
+- [x] Add ruff lint check to CI (`nox -s lint`)
+- [x] Add ruff format check to CI (`nox -s format_check`)
+- [x] Add mypy type check to CI (`nox -s typecheck`)
+- [x] Run quality checks before tests in pipeline
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
