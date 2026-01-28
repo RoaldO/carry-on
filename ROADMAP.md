@@ -123,12 +123,12 @@ Generate detailed test result reports for visibility into test execution.
 
 ### 0l. Convert unittest Style Tests to pytest
 Modernize test suite by converting unittest-style tests to idiomatic pytest.
-- [ ] Replace `unittest.TestCase` classes with plain test functions
-- [ ] Replace `self.assert*` methods with plain `assert` statements
-- [ ] Replace `setUp`/`tearDown` with pytest fixtures
-- [ ] Use `@pytest.fixture` instead of `setUpClass`/`tearDownClass`
-- [ ] Use `@pytest.mark.parametrize` for data-driven tests
-- [ ] Remove unnecessary test class inheritance
+- [x] Replace `unittest.TestCase` classes with plain test functions
+- [x] Replace `self.assert*` methods with plain `assert` statements
+- [x] Replace `setUp`/`tearDown` with pytest fixtures
+- [x] Use `@pytest.fixture` instead of `setUpClass`/`tearDownClass`
+- [x] Use `@pytest.mark.parametrize` for data-driven tests
+- [x] Remove unnecessary test class inheritance
 
 ### 0m. Allure Feature Decorators
 Mark tests with Allure decorators for better test organization and reporting.
