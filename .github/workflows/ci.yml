@@ -85,6 +85,9 @@ jobs:
             cp -r allure/history allure-results/
           fi
 
+      - name: Copy Allure categories
+        run: cp allure-categories.json allure-results/categories.json
+
       - name: Generate Allure report
         uses: simple-elf/allure-report-action@master
         if: always()
@@ -99,7 +102,13 @@ jobs:
           mkdir -p gh-pages
           cp -r htmlcov gh-pages/coverage
           cp -r allure-report gh-pages/allure
-          cat > gh-pages/index.html << 'EOF'
+          if [ -f warnings.txt ]; then
+            cp warnings.txt gh-pages/warnings.txt
+            WARNINGS_LINK='<a href="warnings.txt">Test Warnings</a>'
+          else
+            WARNINGS_LINK='<span style="color:#999;padding:15px;display:block;">No warnings</span>'
+          fi
+          cat > gh-pages/index.html << EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -115,6 +124,7 @@ jobs:
             <h1>CarryOn Reports</h1>
             <a href="coverage/">Coverage Report</a>
             <a href="allure/">Test Results (Allure)</a>
+            $WARNINGS_LINK
           </body>
           </html>
           EOF

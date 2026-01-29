@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Generator
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,6 +11,27 @@ from fastapi.testclient import TestClient
 from carry_on.api.pin_security import hash_pin
 from carry_on.services.stroke_service import StrokeService
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
+
+
+def pytest_terminal_summary(
+    terminalreporter: pytest.TerminalReporter,
+    exitstatus: int,
+    config: pytest.Config,
+) -> None:
+    """Write warnings to a file after test session completes."""
+    warnings_file = Path("warnings.txt")
+
+    # Get warnings from pytest's warning summary
+    warning_reports = terminalreporter.stats.get("warnings", [])
+
+    if warning_reports:
+        with warnings_file.open("w") as f:
+            f.write(f"# Test Warnings ({len(warning_reports)} total)\n\n")
+            for i, warning in enumerate(warning_reports, 1):
+                f.write(f"## Warning {i}\n")
+                f.write(f"```\n{warning.message}\n```\n\n")
+    elif warnings_file.exists():
+        warnings_file.unlink()
 
 
 @pytest.fixture

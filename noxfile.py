@@ -58,15 +58,21 @@ def allure(session: nox.Session) -> None:
     Run tests first with: nox -s tests -- --alluredir=allure-results
     Then run: nox -s allure
     """
+    import os
+    import shutil
+
     session.install(".", "--group", "dev")
     # Generate results if not present
-    import os
     if not os.path.exists("allure-results"):
         session.run(
             "pytest",
             "-v",
             "--alluredir=allure-results",
         )
+    # Copy categories configuration
+    if os.path.exists("allure-categories.json"):
+        shutil.copy("allure-categories.json", "allure-results/categories.json")
+        session.log("Copied allure-categories.json to allure-results/")
     session.log("Allure results generated in allure-results/")
     session.log("To view the report, install Allure CLI and run:")
     session.log("  allure serve allure-results")

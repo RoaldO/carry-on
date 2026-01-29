@@ -34,6 +34,9 @@ htmlcov/
 allure-results/
 allure-report/
 
+# Test warnings
+warnings.txt
+
 # Nox
 .nox/
 
