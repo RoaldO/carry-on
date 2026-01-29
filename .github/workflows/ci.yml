@@ -77,12 +77,19 @@ jobs:
           name: allure-results
           path: allure-results/
 
-      - name: Get Allure history from gh-pages
+      - name: Restore Allure history cache
+        uses: actions/cache/restore@v4
+        with:
+          path: allure-history
+          key: allure-history-${{ github.ref_name }}
+          restore-keys: |
+            allure-history-main
+            allure-history-
+
+      - name: Copy history to allure-results
         run: |
-          git fetch origin gh-pages --depth=1 || true
-          git checkout origin/gh-pages -- allure/history || true
-          if [ -d allure/history ]; then
-            cp -r allure/history allure-results/
+          if [ -d allure-history/history ]; then
+            cp -r allure-history/history allure-results/
           fi
 
       - name: Copy Allure categories
@@ -94,6 +101,20 @@ jobs:
         with:
           allure_results: allure-results
           allure_report: allure-report
+
+      - name: Save Allure history for next run
+        run: |
+          mkdir -p allure-history
+          if [ -d allure-report/history ]; then
+            cp -r allure-report/history allure-history/
+          fi
+
+      - name: Save Allure history cache
+        uses: actions/cache/save@v4
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        with:
+          path: allure-history
+          key: allure-history-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Prepare GitHub Pages content
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
