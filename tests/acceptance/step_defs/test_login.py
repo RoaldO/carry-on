@@ -73,4 +73,5 @@ def still_logged_in(login_page: LoginPage) -> None:
     """Verify user is still logged in after reload."""
     # Wait a moment for the page to check localStorage and auto-login
     login_page.page.wait_for_timeout(1000)
-    assert login_page.is_login_screen_hidden(), "Should still be logged in after reload"
+    # DELIBERATELY BROKEN: This will fail to test screenshot capture
+    assert not login_page.is_login_screen_hidden(), "DELIBERATE FAILURE for screenshot test"

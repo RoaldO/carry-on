@@ -8,6 +8,7 @@ from collections.abc import Generator
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import allure
 import pytest
 import uvicorn
 from playwright.sync_api import Page
@@ -114,14 +115,38 @@ def app_server(
 
 @pytest.fixture
 def page(
-    browser: Any, base_url: str, app_server: ServerThread
+    browser: Any, base_url: str, app_server: ServerThread, request: pytest.FixtureRequest
 ) -> Generator[Page, None, None]:
     """Create a Playwright page with mobile viewport."""
     context = browser.new_context(viewport={"width": 400, "height": 800})
     page = context.new_page()
     page.goto(base_url)
+    # Store page on request node so we can access it in hooks for screenshots
+    request.node._page = page  # type: ignore[attr-defined]
     yield page
     context.close()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]) -> Any:
+    """Capture screenshot on test failure and attach to Allure."""
+    outcome = yield
+    report = outcome.get_result()
+
+    # Only capture on test call phase (not setup/teardown) and on failure
+    if report.when == "call" and report.failed:
+        page = getattr(item, "_page", None)
+        if page is not None:
+            try:
+                screenshot = page.screenshot()
+                allure.attach(
+                    screenshot,
+                    name="failure_screenshot",
+                    attachment_type=allure.attachment_type.PNG,
+                )
+            except Exception:
+                # Page might be closed or in bad state
+                pass
 
 
 @pytest.fixture
