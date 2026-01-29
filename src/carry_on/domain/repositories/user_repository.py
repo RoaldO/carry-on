@@ -25,7 +25,6 @@ class UserRepository(Protocol):
         Returns:
             The UserId of the saved user.
         """
-        ...
 
     def find_by_id(self, user_id: UserId) -> User | None:
         """Find a user by their ID.
@@ -36,7 +35,6 @@ class UserRepository(Protocol):
         Returns:
             The User if found, None otherwise.
         """
-        ...
 
     def find_by_email(self, email: str) -> User | None:
         """Find a user by their email address.
@@ -49,4 +47,3 @@ class UserRepository(Protocol):
         Returns:
             The User if found, None otherwise.
         """
-        ...

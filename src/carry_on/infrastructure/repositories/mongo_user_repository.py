@@ -7,6 +7,7 @@ from bson.objectid import ObjectId
 from pymongo.collection import Collection
 
 from carry_on.domain.entities.user import User, UserId
+from carry_on.infrastructure.mongodb import get_database
 
 
 class UserDoc(TypedDict):
@@ -127,3 +128,8 @@ class MongoUserRepository:
             pin_hash=doc.get("pin_hash"),
             activated_at=activated_at,
         )
+
+
+def get_users_collection() -> Collection:
+    """Get MongoDB users collection, initializing connection if needed."""
+    return get_database().users

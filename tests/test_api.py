@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import allure
 from fastapi.testclient import TestClient
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.pin_security import hash_pin, AuthenticatedUser
 
 
 @allure.feature("REST API")
@@ -15,7 +15,7 @@ class TestVerifyPinReturnsAuthenticatedUser:
 
     def test_verify_pin_returns_authenticated_user(self) -> None:
         """verify_pin should return AuthenticatedUser with user data."""
-        from carry_on.api.index import AuthenticatedUser, verify_pin
+        from carry_on.api.index import verify_pin
 
         test_email = "test@example.com"
         test_pin = "1234"

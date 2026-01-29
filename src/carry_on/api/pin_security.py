@@ -2,6 +2,7 @@
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
+from pydantic import BaseModel, Field
 
 # Current preferred hasher
 _hasher = PasswordHasher()
@@ -30,3 +31,25 @@ def needs_rehash(stored_hash: str) -> bool:
     if not stored_hash.startswith("$argon2"):
         return True  # Plain text needs hashing
     return _hasher.check_needs_rehash(stored_hash)
+
+
+class AuthenticatedUser(BaseModel):
+    """Represents an authenticated user returned by verify_pin()."""
+
+    id: str
+    email: str
+    display_name: str
+
+
+class EmailCheck(BaseModel):
+    email: str = Field(..., min_length=1)
+
+
+class ActivateRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    pin: str = Field(..., min_length=4, max_length=10)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    pin: str = Field(..., min_length=4, max_length=10)

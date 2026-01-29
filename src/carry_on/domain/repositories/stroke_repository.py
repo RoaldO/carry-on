@@ -27,7 +27,6 @@ class StrokeRepository(Protocol):
         Returns:
             The StrokeId of the saved stroke.
         """
-        ...
 
     def find_by_user(self, user_id: str, limit: int = 20) -> list[Stroke]:
         """Find strokes for a user, newest first.
@@ -39,4 +38,3 @@ class StrokeRepository(Protocol):
         Returns:
             List of Stroke entities, ordered by creation time descending.
         """
-        ...

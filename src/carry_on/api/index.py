@@ -1,73 +1,26 @@
-import os
-from datetime import UTC, date as date_type, datetime
+from datetime import UTC, datetime
 from importlib.resources import files
-from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
-from pydantic import BaseModel, Field
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from pymongo.database import Database
+from fastapi.responses import HTMLResponse
 
 from carry_on.api.pin_security import (
     hash_pin,
     needs_rehash,
     verify_pin as verify_pin_hash,
+    AuthenticatedUser,
+    EmailCheck,
+    ActivateRequest,
+    LoginRequest,
 )
-from carry_on.infrastructure.repositories.mongo_stroke_repository import (
-    MongoStrokeRepository,
-    StrokeDoc,
+from carry_on.infrastructure.repositories.mongo_user_repository import (
+    get_users_collection,
 )
-from carry_on.services.stroke_service import StrokeService
 
 load_dotenv()
 
 app = FastAPI(title="CarryOn - Golf Stroke Tracker")
-
-# MongoDB connection (lazy initialization for serverless)
-_client: Optional[MongoClient] = None
-
-
-def get_database() -> Database:
-    global _client
-    uri = os.getenv("MONGODB_URI")
-    if not uri:
-        raise HTTPException(status_code=500, detail="Database not configured")
-    if _client is None:
-        _client = MongoClient(uri)
-    return _client.carryon
-
-
-def get_strokes_collection() -> Collection[StrokeDoc]:
-    """Get MongoDB collection, initializing connection if needed."""
-    return get_database().strokes
-
-
-def get_ideas_collection() -> Collection:
-    """Get MongoDB ideas collection, initializing connection if needed."""
-    return get_database().ideas
-
-
-def get_users_collection() -> Collection:
-    """Get MongoDB users collection, initializing connection if needed."""
-    return get_database().users
-
-
-def get_stroke_service() -> StrokeService:
-    """Get StrokeService with MongoDB repository."""
-    collection = get_strokes_collection()
-    repository = MongoStrokeRepository(collection)
-    return StrokeService(repository)
-
-
-class AuthenticatedUser(BaseModel):
-    """Represents an authenticated user returned by verify_pin()."""
-
-    id: str
-    email: str
-    display_name: str
 
 
 def verify_pin(
@@ -99,38 +52,6 @@ def verify_pin(
         email=user["email"],
         display_name=user.get("display_name", ""),
     )
-
-
-class StrokeCreate(BaseModel):
-    club: str
-    distance: Optional[int] = None
-    fail: bool = False
-    date: date_type = Field(default_factory=date_type.today)
-
-
-class Stroke(BaseModel):
-    id: str
-    club: str
-    distance: Optional[int] = None
-    fail: bool = False
-
-
-class IdeaCreate(BaseModel):
-    description: str = Field(..., min_length=1, max_length=1000)
-
-
-class EmailCheck(BaseModel):
-    email: str = Field(..., min_length=1)
-
-
-class ActivateRequest(BaseModel):
-    email: str = Field(..., min_length=1)
-    pin: str = Field(..., min_length=4, max_length=10)
-
-
-class LoginRequest(BaseModel):
-    email: str = Field(..., min_length=1)
-    pin: str = Field(..., min_length=4, max_length=10)
 
 
 @app.post("/api/check-email")
@@ -219,12 +140,6 @@ async def serve_form() -> str:
     return (static_files / "index.html").read_text(encoding="utf-8")
 
 
-@app.get("/ideas")
-async def serve_ideas() -> RedirectResponse:
-    """Redirect /ideas to /#ideas for tab navigation."""
-    return RedirectResponse(url="/#ideas", status_code=302)
-
-
 @app.get("/api/me")
 async def get_current_user(user: AuthenticatedUser = Depends(verify_pin)) -> dict:
     """Get current authenticated user's profile information."""
@@ -232,111 +147,3 @@ async def get_current_user(user: AuthenticatedUser = Depends(verify_pin)) -> dic
         "email": user.email,
         "display_name": user.display_name,
     }
-
-
-@app.post("/api/strokes")
-async def create_stroke(
-    stroke: StrokeCreate,
-    user: AuthenticatedUser = Depends(verify_pin),
-    service: StrokeService = Depends(get_stroke_service),
-) -> dict:
-    """Record a new golf stroke."""
-    try:
-        stroke_id = service.record_stroke(
-            user_id=user.id,
-            club=stroke.club,
-            stroke_date=stroke.date,
-            distance=stroke.distance,
-            fail=stroke.fail,
-        )
-    except ValueError as e:
-        # Invalid club or missing distance
-        raise HTTPException(status_code=400, detail=str(e))
-
-    return {
-        "id": stroke_id.value,
-        "message": "Stroke recorded successfully",
-        "stroke": {
-            "club": stroke.club,
-            "distance": stroke.distance if not stroke.fail else None,
-            "fail": stroke.fail,
-            "date": stroke.date.isoformat(),
-        },
-    }
-
-
-@app.get("/api/strokes")
-async def list_strokes(
-    limit: int = 20,
-    user: AuthenticatedUser = Depends(verify_pin),
-    service: StrokeService = Depends(get_stroke_service),
-) -> dict:
-    """List recent strokes for the authenticated user."""
-    strokes = service.get_user_strokes(user.id, limit)
-
-    return {
-        "strokes": [
-            {
-                "id": stroke.id.value if stroke.id else None,
-                "club": stroke.club.value,
-                "distance": stroke.distance.meters if stroke.distance else None,
-                "fail": stroke.fail,
-                "date": stroke.stroke_date.isoformat(),
-                "created_at": stroke.created_at.isoformat()
-                if stroke.created_at
-                else None,
-            }
-            for stroke in strokes
-        ],
-        "count": len(strokes),
-    }
-
-
-@app.post("/api/ideas")
-async def create_idea(
-    idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_pin)
-) -> dict:
-    """Submit a new idea."""
-    ideas_collection = get_ideas_collection()
-
-    created_at = datetime.now(UTC).isoformat()
-    doc = {
-        "description": idea.description,
-        "created_at": created_at,
-        "user_id": user.id,
-    }
-
-    result = ideas_collection.insert_one(doc)
-
-    return {
-        "id": str(result.inserted_id),
-        "message": "Idea submitted successfully",
-        "idea": {
-            "description": idea.description,
-            "created_at": created_at,
-        },
-    }
-
-
-@app.get("/api/ideas")
-async def list_ideas(
-    limit: int = 50, user: AuthenticatedUser = Depends(verify_pin)
-) -> dict:
-    """List submitted ideas for the authenticated user."""
-    ideas_collection = get_ideas_collection()
-
-    ideas = []
-    cursor = (
-        ideas_collection.find({"user_id": user.id}).sort("created_at", -1).limit(limit)
-    )
-
-    for doc in cursor:
-        ideas.append(
-            {
-                "id": str(doc["_id"]),
-                "description": doc["description"],
-                "created_at": doc["created_at"],
-            }
-        )
-
-    return {"ideas": ideas, "count": len(ideas)}
