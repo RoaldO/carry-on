@@ -89,7 +89,8 @@ jobs:
       - name: Copy history to allure-results
         run: |
           if [ -d allure-history/history ]; then
-            cp -r allure-history/history allure-results/
+            sudo cp -r allure-history/history allure-results/
+            sudo chown -R $USER:$USER allure-results/history
           fi
 
       - name: Copy Allure categories
@@ -104,6 +105,7 @@ jobs:
 
       - name: Save Allure history for next run
         run: |
+          sudo rm -rf allure-history
           mkdir -p allure-history
           if [ -d allure-report/history ]; then
             cp -r allure-report/history allure-history/
