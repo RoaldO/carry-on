@@ -5,6 +5,11 @@ Run `nox -s <session>` to run a specific session.
 """
 
 import nox
+import sys
+import subprocess
+import re
+import tomllib
+
 
 # Use uv for all package management
 nox.options.default_venv_backend = "uv"
@@ -126,3 +131,105 @@ def dev(session: nox.Session) -> None:
     """Run the development server."""
     session.install(".", "--group", "dev")
     session.run("uvicorn", "carry_on.api.index:app", "--port", "8787", "--reload")
+
+
+@nox.session(python="3.12")
+def outdated_all(session: nox.Session) -> None:
+    """
+    Show all outdated dependencies and where they come from
+    using reverse dependency trees.
+    """
+    session.install("uv")
+
+    # Get outdated packages
+    result = subprocess.run(
+        ["uv", "pip", "list", "--outdated"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        session.error(result.stderr)
+
+    lines = result.stdout.strip().splitlines()
+    if len(lines) <= 2:
+        session.log("No outdated dependencies found ✅")
+        return
+
+    header, separator, *rows = lines
+
+    session.log("Outdated dependencies and their origins:\n")
+
+    for row in rows:
+        pkg = row.split()[0]
+        session.log(f"\n=== {pkg} ===")
+        tree = subprocess.run(
+            ["uv", "pip", "tree", "--reverse", "--package", pkg],
+            capture_output=True,
+            text=True,
+        )
+        if tree.returncode == 0:
+            session.log(tree.stdout.rstrip())
+        else:
+            session.log("  (could not determine dependency tree)")
+
+@nox.session(python="3.12")
+def outdated_direct(session: nox.Session) -> None:
+    """
+    Show outdated *direct* dependencies from pyproject.toml.
+    Fails the session if any are found.
+    """
+    session.install("uv")
+
+    # --- parse direct deps from pyproject.toml ---
+
+    with open("pyproject.toml", "rb") as f:
+        pyproject = tomllib.load(f)
+
+    deps = pyproject.get("project", {}).get("dependencies", [])
+    if not deps:
+        session.log("No direct dependencies found.")
+        return
+
+    def normalize(dep: str) -> str:
+        # strip extras, version specifiers, markers
+        name = re.split(r"[<>=!~ ;]", dep, 1)[0]
+        return name.split("[", 1)[0].lower()
+
+    direct_names = {normalize(d) for d in deps}
+
+    # --- run uv pip list --outdated ---
+    result = subprocess.run(
+        ["uv", "pip", "list", "--outdated"],
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        session.error(result.stderr)
+
+    lines = result.stdout.strip().splitlines()
+    if len(lines) <= 2:
+        session.log("No outdated dependencies found.")
+        return
+
+    header, separator, *rows = lines
+
+    outdated_direct = []
+    for row in rows:
+        pkg = row.split()[0].lower()
+        if pkg in direct_names:
+            outdated_direct.append(row)
+
+    if not outdated_direct:
+        session.log("All direct dependencies are up to date ✅")
+        return
+
+    session.log("Outdated direct dependencies:")
+    session.log(header)
+    session.log(separator)
+    for row in outdated_direct:
+        session.log(row)
+
+    session.error(
+        f"{len(outdated_direct)} direct dependencies are outdated."
+    )

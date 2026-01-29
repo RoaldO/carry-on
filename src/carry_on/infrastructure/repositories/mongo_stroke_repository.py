@@ -86,7 +86,6 @@ class MongoStrokeRepository:
         """
         return {
             "club": stroke.club.value,
-            #            "distance": stroke.distance.meters if stroke.distance else None,
             "distance": stroke.distance.meters
             if is_not_none(stroke.distance)
             else None,

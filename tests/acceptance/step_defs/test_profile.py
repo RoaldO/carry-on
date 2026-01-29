@@ -23,7 +23,8 @@ def nav_page(page: Page, base_url: str) -> NavigationPage:
 
 @given(
     parsers.parse(
-        'a user exists with email "{email}" and PIN "{pin}" and display name "{display_name}"'
+        'a user exists with email "{email}" and PIN "{pin}" and display name '
+        '"{display_name}"'
     ),
     target_fixture="test_user",
 )

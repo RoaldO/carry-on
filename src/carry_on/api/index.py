@@ -75,7 +75,8 @@ def verify_pin(
 ) -> AuthenticatedUser:
     """Verify PIN from request header and return authenticated user.
 
-    Authenticates user by verifying X-Email + X-Pin headers against user's PIN in database.
+    Authenticates user by verifying X-Email + X-Pin headers against user's PIN in
+    database.
     Returns AuthenticatedUser on success.
     """
     if not x_email or not x_pin:
