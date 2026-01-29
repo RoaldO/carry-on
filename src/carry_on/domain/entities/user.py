@@ -1,0 +1,88 @@
+"""User entity representing an application user."""
+
+from dataclasses import dataclass
+from datetime import datetime
+
+
+@dataclass(frozen=True, slots=True)
+class UserId:
+    """Value object representing a unique user identifier."""
+
+    value: str
+
+
+@dataclass
+class User:
+    """Entity representing an application user.
+
+    Users authenticate with email and PIN. New users must activate their
+    account by setting a PIN before they can log in.
+    """
+
+    email: str
+    display_name: str
+    pin_hash: str | None = None
+    activated_at: datetime | None = None
+    id: UserId | None = None
+
+    def __post_init__(self) -> None:
+        """Validate user state."""
+        if not self.email:
+            raise ValueError("Email is required")
+        if self.activated_at and not self.pin_hash:
+            raise ValueError("Activated users must have a PIN hash")
+
+    @property
+    def is_activated(self) -> bool:
+        """Check if user has completed activation."""
+        return self.activated_at is not None
+
+    @classmethod
+    def create_pending(cls, email: str, display_name: str = "") -> "User":
+        """Create a new user pending activation.
+
+        Args:
+            email: User's email address.
+            display_name: User's display name (optional).
+
+        Returns:
+            New User instance awaiting activation.
+        """
+        return cls(email=email.lower(), display_name=display_name)
+
+    def activate(self, pin_hash: str, activated_at: datetime) -> "User":
+        """Activate the user with a PIN.
+
+        Args:
+            pin_hash: Hashed PIN for authentication.
+            activated_at: Timestamp of activation.
+
+        Returns:
+            New User instance with activation complete.
+        """
+        if self.is_activated:
+            raise ValueError("User is already activated")
+        return User(
+            id=self.id,
+            email=self.email,
+            display_name=self.display_name,
+            pin_hash=pin_hash,
+            activated_at=activated_at,
+        )
+
+    def update_pin_hash(self, new_pin_hash: str) -> "User":
+        """Update the user's PIN hash (for rehashing).
+
+        Args:
+            new_pin_hash: New hashed PIN.
+
+        Returns:
+            New User instance with updated PIN hash.
+        """
+        return User(
+            id=self.id,
+            email=self.email,
+            display_name=self.display_name,
+            pin_hash=new_pin_hash,
+            activated_at=self.activated_at,
+        )
