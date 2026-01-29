@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, Mock
 
 import allure
 from bson import ObjectId
+from pymongo.collection import Collection
+import pytest
 
 from carry_on.domain.entities.stroke import Stroke, StrokeId
 from carry_on.domain.repositories.stroke_repository import StrokeRepository
@@ -16,15 +18,26 @@ from carry_on.infrastructure.repositories.mongo_stroke_repository import (
 )
 
 
+@pytest.fixture
+def collection() -> Collection[Stroke]:
+    return MagicMock(spec=Collection)
+
+
+@pytest.fixture
+def repo(collection: Collection[Stroke]) -> StrokeRepository:
+    return MongoStrokeRepository(collection)
+
+
 @allure.feature("Infrastructure")
 @allure.story("MongoDB Stroke Repository")
 class TestStrokeRepositoryProtocol:
     """Tests for StrokeRepository protocol compliance."""
 
-    def test_mongo_repository_implements_protocol(self) -> None:
+    def test_mongo_repository_implements_protocol(
+        self,
+        repo: StrokeRepository,
+    ) -> None:
         """MongoStrokeRepository should implement StrokeRepository protocol."""
-        collection = MagicMock()
-        repo: StrokeRepository = MongoStrokeRepository(collection)
         assert isinstance(repo, StrokeRepository)
 
 
@@ -33,12 +46,14 @@ class TestStrokeRepositoryProtocol:
 class TestMongoStrokeRepositorySave:
     """Tests for MongoStrokeRepository.save() method."""
 
-    def test_save_successful_stroke_returns_stroke_id(self) -> None:
+    def test_save_successful_stroke_returns_stroke_id(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should return StrokeId with inserted document ID."""
-        collection = MagicMock()
         inserted_id = ObjectId()
         collection.insert_one.return_value = Mock(inserted_id=inserted_id)
-        repo = MongoStrokeRepository(collection)
 
         stroke = Stroke.create_successful(
             club=ClubType.IRON_7,
@@ -51,11 +66,13 @@ class TestMongoStrokeRepositorySave:
         assert isinstance(result, StrokeId)
         assert result.value == str(inserted_id)
 
-    def test_save_successful_stroke_creates_correct_document(self) -> None:
+    def test_save_successful_stroke_creates_correct_document(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should create MongoDB document with correct structure."""
-        collection = MagicMock()
         collection.insert_one.return_value = Mock(inserted_id=ObjectId())
-        repo = MongoStrokeRepository(collection)
 
         stroke = Stroke.create_successful(
             club=ClubType.IRON_7,
@@ -75,11 +92,13 @@ class TestMongoStrokeRepositorySave:
         assert doc["user_id"] == "user123"
         assert "created_at" in doc
 
-    def test_save_failed_stroke_has_no_distance(self) -> None:
+    def test_save_failed_stroke_has_no_distance(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should save failed stroke with null distance."""
-        collection = MagicMock()
         collection.insert_one.return_value = Mock(inserted_id=ObjectId())
-        repo = MongoStrokeRepository(collection)
 
         stroke = Stroke.create_failed(
             club=ClubType.DRIVER,
@@ -107,7 +126,11 @@ class TestMongoStrokeRepositoryFindByUser:
         cursor.__iter__ = Mock(return_value=iter(docs))
         return cursor
 
-    def test_find_by_user_returns_strokes(self) -> None:
+    def test_find_by_user_returns_strokes(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should return list of Stroke entities for user."""
         doc_id = ObjectId()
         docs = [
@@ -121,9 +144,7 @@ class TestMongoStrokeRepositoryFindByUser:
                 "created_at": "2024-01-15T10:00:00+00:00",
             }
         ]
-        collection = MagicMock()
         collection.find.return_value = self._create_mock_cursor(docs)
-        repo = MongoStrokeRepository(collection)
 
         result = repo.find_by_user("user123")
 
@@ -137,50 +158,62 @@ class TestMongoStrokeRepositoryFindByUser:
         assert stroke.stroke_date == date(2024, 1, 15)
         assert stroke.created_at == datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
 
-    def test_find_by_user_queries_correct_user(self) -> None:
+    def test_find_by_user_queries_correct_user(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should query MongoDB with correct user_id filter."""
-        collection = MagicMock()
         collection.find.return_value = self._create_mock_cursor([])
-        repo = MongoStrokeRepository(collection)
 
         repo.find_by_user("user123")
 
         collection.find.assert_called_once_with({"user_id": "user123"})
 
-    def test_find_by_user_sorts_by_created_at_descending(self) -> None:
+    def test_find_by_user_sorts_by_created_at_descending(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should sort results by created_at descending (newest first)."""
-        collection = MagicMock()
         cursor = self._create_mock_cursor([])
         collection.find.return_value = cursor
-        repo = MongoStrokeRepository(collection)
 
         repo.find_by_user("user123")
 
         cursor.sort.assert_called_once_with("created_at", -1)
 
-    def test_find_by_user_respects_limit(self) -> None:
+    def test_find_by_user_respects_limit(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should limit results to specified count."""
-        collection = MagicMock()
         cursor = self._create_mock_cursor([])
         collection.find.return_value = cursor
-        repo = MongoStrokeRepository(collection)
 
         repo.find_by_user("user123", limit=10)
 
         cursor.limit.assert_called_once_with(10)
 
-    def test_find_by_user_default_limit_is_20(self) -> None:
+    def test_find_by_user_default_limit_is_20(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should default to limit of 20."""
-        collection = MagicMock()
         cursor = self._create_mock_cursor([])
         collection.find.return_value = cursor
-        repo = MongoStrokeRepository(collection)
 
         repo.find_by_user("user123")
 
         cursor.limit.assert_called_once_with(20)
 
-    def test_find_by_user_handles_failed_strokes(self) -> None:
+    def test_find_by_user_handles_failed_strokes(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should correctly map failed strokes (no distance)."""
         doc_id = ObjectId()
         docs = [
@@ -194,9 +227,7 @@ class TestMongoStrokeRepositoryFindByUser:
                 "created_at": "2024-01-15T10:00:00",
             }
         ]
-        collection = MagicMock()
         collection.find.return_value = self._create_mock_cursor(docs)
-        repo = MongoStrokeRepository(collection)
 
         result = repo.find_by_user("user123")
 
@@ -205,7 +236,11 @@ class TestMongoStrokeRepositoryFindByUser:
         assert stroke.fail is True
         assert stroke.distance is None
 
-    def test_find_by_user_handles_missing_fail_field(self) -> None:
+    def test_find_by_user_handles_missing_fail_field(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should default fail to False when not present in document."""
         doc_id = ObjectId()
         docs = [
@@ -218,26 +253,30 @@ class TestMongoStrokeRepositoryFindByUser:
                 "created_at": "2024-01-15T10:00:00",
             }
         ]
-        collection = MagicMock()
         collection.find.return_value = self._create_mock_cursor(docs)
-        repo = MongoStrokeRepository(collection)
 
         result = repo.find_by_user("user123")
 
         assert len(result) == 1
         assert result[0].fail is False
 
-    def test_find_by_user_returns_empty_list_when_no_results(self) -> None:
+    def test_find_by_user_returns_empty_list_when_no_results(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should return empty list when user has no strokes."""
-        collection = MagicMock()
         collection.find.return_value = self._create_mock_cursor([])
-        repo = MongoStrokeRepository(collection)
 
         result = repo.find_by_user("nonexistent_user")
 
         assert result == []
 
-    def test_find_by_user_handles_missing_created_at(self) -> None:
+    def test_find_by_user_handles_missing_created_at(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Should handle documents without created_at field."""
         doc_id = ObjectId()
         docs = [
@@ -251,9 +290,7 @@ class TestMongoStrokeRepositoryFindByUser:
                 # No created_at field
             }
         ]
-        collection = MagicMock()
         collection.find.return_value = self._create_mock_cursor(docs)
-        repo = MongoStrokeRepository(collection)
 
         result = repo.find_by_user("user123")
 
@@ -266,9 +303,12 @@ class TestMongoStrokeRepositoryFindByUser:
 class TestMongoStrokeRepositoryMapping:
     """Tests for document-to-entity and entity-to-document mapping."""
 
-    def test_roundtrip_successful_stroke(self) -> None:
+    def test_roundtrip_successful_stroke(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Mapping should preserve all data for successful strokes."""
-        collection = MagicMock()
         inserted_id = ObjectId()
         collection.insert_one.return_value = Mock(inserted_id=inserted_id)
 
@@ -278,7 +318,6 @@ class TestMongoStrokeRepositoryMapping:
             stroke_date=date(2024, 6, 15),
         )
 
-        repo = MongoStrokeRepository(collection)
         repo.save(original, user_id="user123")
 
         doc = collection.insert_one.call_args[0][0]
@@ -302,9 +341,12 @@ class TestMongoStrokeRepositoryMapping:
         # created_at is set during save, so it should be present after roundtrip
         assert retrieved.created_at is not None
 
-    def test_roundtrip_failed_stroke(self) -> None:
+    def test_roundtrip_failed_stroke(
+        self,
+        collection: Collection[Stroke],
+        repo: StrokeRepository,
+    ) -> None:
         """Mapping should preserve all data for failed strokes."""
-        collection = MagicMock()
         inserted_id = ObjectId()
         collection.insert_one.return_value = Mock(inserted_id=inserted_id)
 
@@ -313,7 +355,6 @@ class TestMongoStrokeRepositoryMapping:
             stroke_date=date(2024, 6, 15),
         )
 
-        repo = MongoStrokeRepository(collection)
         repo.save(original, user_id="user123")
 
         doc = collection.insert_one.call_args[0][0]

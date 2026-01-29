@@ -1,13 +1,31 @@
 """MongoDB implementation of StrokeRepository."""
 
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import NotRequired, TypedDict, TypeGuard, TypeVar
 
+from bson.objectid import ObjectId
 from pymongo.collection import Collection
 
 from carry_on.domain.entities.stroke import Stroke, StrokeId
 from carry_on.domain.value_objects.club_type import ClubType
 from carry_on.domain.value_objects.distance import Distance
+
+
+class StrokeDoc(TypedDict):
+    _id: NotRequired[ObjectId]
+    club: str
+    distance: int | None
+    fail: bool
+    date: str
+    created_at: str
+    user_id: str
+
+
+T = TypeVar("T")
+
+
+def is_not_none(value: T | None) -> TypeGuard[T]:
+    return value is not None
 
 
 class MongoStrokeRepository:
@@ -17,7 +35,7 @@ class MongoStrokeRepository:
     persistence operations.
     """
 
-    def __init__(self, collection: Collection[dict[str, Any]]) -> None:
+    def __init__(self, collection: Collection[StrokeDoc]) -> None:
         """Initialize repository with MongoDB collection.
 
         Args:
@@ -56,7 +74,7 @@ class MongoStrokeRepository:
         )
         return [self._to_entity(doc) for doc in cursor]
 
-    def _to_document(self, stroke: Stroke, user_id: str) -> dict[str, Any]:
+    def _to_document(self, stroke: Stroke, user_id: str) -> StrokeDoc:
         """Map domain entity to MongoDB document.
 
         Args:
@@ -68,14 +86,17 @@ class MongoStrokeRepository:
         """
         return {
             "club": stroke.club.value,
-            "distance": stroke.distance.meters if stroke.distance else None,
+            #            "distance": stroke.distance.meters if stroke.distance else None,
+            "distance": stroke.distance.meters
+            if is_not_none(stroke.distance)
+            else None,
             "fail": stroke.fail,
             "date": stroke.stroke_date.isoformat(),
             "created_at": datetime.now(UTC).isoformat(),
             "user_id": user_id,
         }
 
-    def _to_entity(self, doc: dict[str, Any]) -> Stroke:
+    def _to_entity(self, doc: StrokeDoc) -> Stroke:
         """Map MongoDB document to domain entity.
 
         Args:
@@ -84,7 +105,13 @@ class MongoStrokeRepository:
         Returns:
             Stroke entity with data from the document.
         """
-        distance = Distance(meters=doc["distance"]) if doc.get("distance") else None
+        optional_distance = doc.get("distance")
+        is_not_none(optional_distance)
+        distance = (
+            Distance(meters=optional_distance)
+            if is_not_none(optional_distance)
+            else None
+        )
         fail = doc.get("fail", False)
         created_at = (
             datetime.fromisoformat(doc["created_at"]) if doc.get("created_at") else None
