@@ -11,11 +11,16 @@ venv/
 # Vercel
 .vercel/
 
-# IDE
+# IDE / Editor
 .idea/
 .vscode/
 *.swp
 *.swo
+*.swn
+*~
+*.bak
+*.orig
+.*.swp
 
 # Vercel (duplicate removed)
 .vercel

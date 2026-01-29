@@ -5,9 +5,11 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.database import Database
 
 from carry_on.api.pin_security import (
     hash_pin,
@@ -16,6 +18,7 @@ from carry_on.api.pin_security import (
 )
 from carry_on.infrastructure.repositories.mongo_stroke_repository import (
     MongoStrokeRepository,
+    StrokeDoc,
 )
 from carry_on.services.stroke_service import StrokeService
 
@@ -27,44 +30,34 @@ app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 _client: Optional[MongoClient] = None
 
 
-def get_strokes_collection():
+def get_database() -> Database:
+    global _client
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    if _client is None:
+        _client = MongoClient(uri)
+    return _client.carryon
+
+
+def get_strokes_collection() -> Collection[StrokeDoc]:
     """Get MongoDB collection, initializing connection if needed."""
-    global _client
-    uri = os.getenv("MONGODB_URI")
-    if not uri:
-        return None
-    if _client is None:
-        _client = MongoClient(uri)
-    return _client.carryon.strokes
+    return get_database().strokes
 
 
-def get_ideas_collection():
+def get_ideas_collection() -> Collection:
     """Get MongoDB ideas collection, initializing connection if needed."""
-    global _client
-    uri = os.getenv("MONGODB_URI")
-    if not uri:
-        return None
-    if _client is None:
-        _client = MongoClient(uri)
-    return _client.carryon.ideas
+    return get_database().ideas
 
 
-def get_users_collection():
+def get_users_collection() -> Collection:
     """Get MongoDB users collection, initializing connection if needed."""
-    global _client
-    uri = os.getenv("MONGODB_URI")
-    if not uri:
-        return None
-    if _client is None:
-        _client = MongoClient(uri)
-    return _client.carryon.users
+    return get_database().users
 
 
 def get_stroke_service() -> StrokeService:
     """Get StrokeService with MongoDB repository."""
     collection = get_strokes_collection()
-    if collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
     repository = MongoStrokeRepository(collection)
     return StrokeService(repository)
 
@@ -89,8 +82,6 @@ def verify_pin(
         raise HTTPException(status_code=401, detail="Authentication required")
 
     users_collection = get_users_collection()
-    if users_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
 
     user = users_collection.find_one({"email": x_email.lower()})
     if not user or not verify_pin_hash(x_pin, user.get("pin_hash", "")):
@@ -142,11 +133,9 @@ class LoginRequest(BaseModel):
 
 
 @app.post("/api/check-email")
-async def check_email(request: EmailCheck):
+async def check_email(request: EmailCheck) -> dict:
     """Check if email exists and get activation status."""
     users_collection = get_users_collection()
-    if users_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
@@ -160,11 +149,9 @@ async def check_email(request: EmailCheck):
 
 
 @app.post("/api/activate")
-async def activate_account(request: ActivateRequest):
+async def activate_account(request: ActivateRequest) -> dict:
     """Activate account by setting PIN."""
     users_collection = get_users_collection()
-    if users_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
@@ -194,11 +181,9 @@ async def activate_account(request: ActivateRequest):
 
 
 @app.post("/api/login")
-async def login(request: LoginRequest):
+async def login(request: LoginRequest) -> dict:
     """Login with email and PIN."""
     users_collection = get_users_collection()
-    if users_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
@@ -227,22 +212,20 @@ async def login(request: LoginRequest):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_form():
+async def serve_form() -> str:
     """Serve the golf stroke entry form."""
     static_files = files("carry_on.static")
     return (static_files / "index.html").read_text(encoding="utf-8")
 
 
 @app.get("/ideas")
-async def serve_ideas():
+async def serve_ideas() -> RedirectResponse:
     """Redirect /ideas to /#ideas for tab navigation."""
-    from fastapi.responses import RedirectResponse
-
     return RedirectResponse(url="/#ideas", status_code=302)
 
 
 @app.get("/api/me")
-async def get_current_user(user: AuthenticatedUser = Depends(verify_pin)):
+async def get_current_user(user: AuthenticatedUser = Depends(verify_pin)) -> dict:
     """Get current authenticated user's profile information."""
     return {
         "email": user.email,
@@ -255,7 +238,7 @@ async def create_stroke(
     stroke: StrokeCreate,
     user: AuthenticatedUser = Depends(verify_pin),
     service: StrokeService = Depends(get_stroke_service),
-):
+) -> dict:
     """Record a new golf stroke."""
     try:
         stroke_id = service.record_stroke(
@@ -286,7 +269,7 @@ async def list_strokes(
     limit: int = 20,
     user: AuthenticatedUser = Depends(verify_pin),
     service: StrokeService = Depends(get_stroke_service),
-):
+) -> dict:
     """List recent strokes for the authenticated user."""
     strokes = service.get_user_strokes(user.id, limit)
 
@@ -309,11 +292,11 @@ async def list_strokes(
 
 
 @app.post("/api/ideas")
-async def create_idea(idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_pin)):
+async def create_idea(
+    idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_pin)
+) -> dict:
     """Submit a new idea."""
     ideas_collection = get_ideas_collection()
-    if ideas_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
 
     created_at = datetime.now(UTC).isoformat()
     doc = {
@@ -335,11 +318,11 @@ async def create_idea(idea: IdeaCreate, user: AuthenticatedUser = Depends(verify
 
 
 @app.get("/api/ideas")
-async def list_ideas(limit: int = 50, user: AuthenticatedUser = Depends(verify_pin)):
+async def list_ideas(
+    limit: int = 50, user: AuthenticatedUser = Depends(verify_pin)
+) -> dict:
     """List submitted ideas for the authenticated user."""
     ideas_collection = get_ideas_collection()
-    if ideas_collection is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
 
     ideas = []
     cursor = (
