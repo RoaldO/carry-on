@@ -4,6 +4,7 @@ import os
 from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import warnings
 
 import pytest
 from fastapi.testclient import TestClient
@@ -53,6 +54,7 @@ def mock_strokes_collection() -> Generator[MagicMock, None, None]:
     DEPRECATED: Use fake_stroke_repository instead for proper DI.
     Kept for backward compatibility with existing tests.
     """
+    warnings.warn('Use fake_stroke_repository instead for proper DI', DeprecationWarning)
     mock_collection = MagicMock()
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_id_123"
@@ -88,6 +90,7 @@ def client() -> Generator[TestClient, None, None]:
     DEPRECATED: Use client_with_fake_repo for proper DI.
     Kept for backward compatibility with existing tests.
     """
+    warnings.warn('Use client_with_fake_repo instead for proper DI', DeprecationWarning)
     os.environ["MONGODB_URI"] = "mongodb://test"
 
     # Import app after setting env vars

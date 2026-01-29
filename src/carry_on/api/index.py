@@ -1,4 +1,3 @@
-import os
 from datetime import UTC, date as date_type, datetime
 from importlib.resources import files
 from typing import Optional
@@ -7,52 +6,29 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
-from pymongo import MongoClient
 from pymongo.collection import Collection
-from pymongo.database import Database
 
 from carry_on.api.pin_security import (
     hash_pin,
     needs_rehash,
     verify_pin as verify_pin_hash,
 )
+from carry_on.infrastructure.mongodb import get_database
 from carry_on.infrastructure.repositories.mongo_stroke_repository import (
     MongoStrokeRepository,
-    StrokeDoc,
+    get_strokes_collection,
 )
+from carry_on.infrastructure.repositories.mongo_user_repository import get_users_collection
 from carry_on.services.stroke_service import StrokeService
 
 load_dotenv()
 
 app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 
-# MongoDB connection (lazy initialization for serverless)
-_client: Optional[MongoClient] = None
-
-
-def get_database() -> Database:
-    global _client
-    uri = os.getenv("MONGODB_URI")
-    if not uri:
-        raise HTTPException(status_code=500, detail="Database not configured")
-    if _client is None:
-        _client = MongoClient(uri)
-    return _client.carryon
-
-
-def get_strokes_collection() -> Collection[StrokeDoc]:
-    """Get MongoDB collection, initializing connection if needed."""
-    return get_database().strokes
-
 
 def get_ideas_collection() -> Collection:
     """Get MongoDB ideas collection, initializing connection if needed."""
     return get_database().ideas
-
-
-def get_users_collection() -> Collection:
-    """Get MongoDB users collection, initializing connection if needed."""
-    return get_database().users
 
 
 def get_stroke_service() -> StrokeService:
@@ -64,7 +40,6 @@ def get_stroke_service() -> StrokeService:
 
 class AuthenticatedUser(BaseModel):
     """Represents an authenticated user returned by verify_pin()."""
-
     id: str
     email: str
     display_name: str
