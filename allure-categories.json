@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Deprecation Warnings",
+    "description": "Tests affected by deprecation warnings",
+    "messageRegex": ".*[Dd]eprecation.*|.*[Dd]eprecated.*",
+    "matchedStatuses": ["failed", "broken"]
+  },
+  {
+    "name": "Product Defects",
+    "description": "Actual bugs in the application",
+    "messageRegex": ".*AssertionError.*",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Test Defects",
+    "description": "Problems with test implementation",
+    "messageRegex": ".*fixture.*|.*TypeError.*|.*AttributeError.*",
+    "matchedStatuses": ["broken"]
+  },
+  {
+    "name": "Infrastructure Issues",
+    "description": "Environment or infrastructure problems",
+    "messageRegex": ".*[Tt]imeout.*|.*[Cc]onnection.*",
+    "matchedStatuses": ["broken", "failed"]
+  }
+]
