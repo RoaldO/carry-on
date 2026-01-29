@@ -120,6 +120,7 @@ Generate detailed test result reports for visibility into test execution.
 - [x] Add test report to CI artifacts
 - [x] Include BDD scenario names in report output
 - [x] Deploy test report to GitHub Pages (https://roaldo.github.io/carry-on/allure/)
+- [x] Add build history support (test duration trends, pass/fail history per test)
 
 ### 0l. Convert unittest Style Tests to pytest
 Modernize test suite by converting unittest-style tests to idiomatic pytest.
