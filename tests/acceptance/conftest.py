@@ -87,11 +87,11 @@ def app_server(
             return_value=mock_collections["users"],
         ),
         patch(
-            "carry_on.api.index.get_strokes_collection",
+            "carry_on.api.strokes.get_strokes_collection",
             return_value=mock_collections["strokes"],
         ),
         patch(
-            "carry_on.api.index.get_ideas_collection",
+            "carry_on.api.ideas.get_ideas_collection",
             return_value=mock_collections["ideas"],
         ),
     ):

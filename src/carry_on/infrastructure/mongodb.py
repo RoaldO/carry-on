@@ -3,11 +3,12 @@ from typing import Optional
 
 from fastapi import HTTPException
 from pymongo import MongoClient
-from pymongo.synchronous.database import Database
+from pymongo.database import Database
 
 
 # MongoDB connection (lazy initialization for serverless)
 _client: Optional[MongoClient] = None
+
 
 def get_database() -> Database:
     global _client

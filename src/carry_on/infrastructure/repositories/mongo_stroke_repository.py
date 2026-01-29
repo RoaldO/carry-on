@@ -5,7 +5,6 @@ from typing import NotRequired, TypedDict, TypeGuard, TypeVar
 
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
-from pymongo.synchronous.collection import Collection
 
 from carry_on.domain.entities.stroke import Stroke, StrokeId
 from carry_on.domain.value_objects.club_type import ClubType

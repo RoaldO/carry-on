@@ -5,7 +5,6 @@ from typing import NotRequired, TypedDict
 
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
-from pymongo.synchronous.collection import Collection
 
 from carry_on.domain.entities.user import User, UserId
 from carry_on.infrastructure.mongodb import get_database

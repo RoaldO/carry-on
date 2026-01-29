@@ -54,13 +54,15 @@ def mock_strokes_collection() -> Generator[MagicMock, None, None]:
     DEPRECATED: Use fake_stroke_repository instead for proper DI.
     Kept for backward compatibility with existing tests.
     """
-    warnings.warn('Use fake_stroke_repository instead for proper DI', DeprecationWarning)
+    warnings.warn(
+        "Use fake_stroke_repository instead for proper DI", DeprecationWarning
+    )
     mock_collection = MagicMock()
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_id_123"
 
     with patch(
-        "carry_on.api.index.get_strokes_collection", return_value=mock_collection
+        "carry_on.api.strokes.get_strokes_collection", return_value=mock_collection
     ):
         yield mock_collection
 
@@ -90,7 +92,7 @@ def client() -> Generator[TestClient, None, None]:
     DEPRECATED: Use client_with_fake_repo for proper DI.
     Kept for backward compatibility with existing tests.
     """
-    warnings.warn('Use client_with_fake_repo instead for proper DI', DeprecationWarning)
+    warnings.warn("Use client_with_fake_repo instead for proper DI", DeprecationWarning)
     os.environ["MONGODB_URI"] = "mongodb://test"
 
     # Import app after setting env vars
@@ -114,7 +116,8 @@ def client_with_fake_repo(
     """
     os.environ["MONGODB_URI"] = "mongodb://test"
 
-    from carry_on.api.index import app, get_stroke_service
+    from carry_on.api.index import app
+    from carry_on.api.strokes import get_stroke_service
 
     # Override the dependency to use our fake service
     app.dependency_overrides[get_stroke_service] = lambda: fake_stroke_service
@@ -140,7 +143,7 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_idea_123"
 
-    with patch("carry_on.api.index.get_ideas_collection", return_value=mock_collection):
+    with patch("carry_on.api.ideas.get_ideas_collection", return_value=mock_collection):
         yield mock_collection
 
 
