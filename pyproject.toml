@@ -51,7 +51,6 @@ plugins = "pydantic.mypy"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_any_explicit = true
-# disallow_any_generics = true
 disallow_any_unimported = true
 disallow_subclassing_any = true
 strict_optional = true
