@@ -32,6 +32,10 @@ dev = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "--cov=carry_on --cov-report=term-missing --cov-fail-under=70"
+#filterwarnings = [
+#    "error::DeprecationWarning",
+#    "error::PendingDeprecationWarning"
+#]
 markers = [
     "acceptance: marks tests as acceptance tests (deselect with '-m \"not acceptance\"')",
 ]
