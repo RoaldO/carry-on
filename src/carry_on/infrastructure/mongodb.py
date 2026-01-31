@@ -14,7 +14,7 @@ def get_database() -> Database:
     global _client
     uri = os.getenv("MONGODB_URI")
     if not uri:
-        raise HTTPException(status_code=500, detail="Database not configured")
+        raise HTTPException(status_code=503)
     if _client is None:
         _client = MongoClient(uri)
     return _client.carryon
