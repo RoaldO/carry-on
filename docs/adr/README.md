@@ -6,19 +6,20 @@ All contributors MUST adhere to these decisions.
 
 ## Index
 
-| ADR | Title | Status |
-|-----|-------|--------|
-| [0001](0001-domain-driven-development.md) | Domain-Driven Development | Accepted |
-| [0002](0002-test-driven-development.md) | Test-Driven Development | Accepted |
-| [0003](0003-solid-principles.md) | SOLID Principles | Accepted |
-| [0004](0004-pytest.md) | pytest as Testing Framework | Accepted |
-| [0005](0005-uv-package-manager.md) | uv for Dependency Management | Accepted |
-| [0006](0006-owasp-security.md) | OWASP Security Best Practices | Accepted |
-| [0007](0007-dependency-versioning.md) | Dependency Versioning Strategy | Accepted |
-| [0008](0008-feature-specifications.md) | Feature Specifications | Accepted |
-| [0009](0009-password-hashing.md) | Password Hashing with Argon2 | Accepted |
+| ADR | Title                                         | Status |
+|-----|-----------------------------------------------|--------|
+| [0001](0001-domain-driven-development.md) | Domain-Driven Development                     | Accepted |
+| [0002](0002-test-driven-development.md) | Test-Driven Development                       | Accepted |
+| [0003](0003-solid-principles.md) | SOLID Principles                              | Accepted |
+| [0004](0004-pytest.md) | pytest as Testing Framework                   | Accepted |
+| [0005](0005-uv-package-manager.md) | uv for Dependency Management                  | Accepted |
+| [0006](0006-owasp-security.md) | OWASP Security Best Practices                 | Accepted |
+| [0007](0007-dependency-versioning.md) | Dependency Versioning Strategy                | Accepted |
+| [0008](0008-feature-specifications.md) | Feature Specifications                        | Accepted |
+| [0009](0009-password-hashing.md) | Password Hashing with Argon2                  | Accepted |
 | [0010](0010-two-click-navigation.md) | Usability - Navigation and Interaction Limits | Accepted |
-| [0011](0011-specification-acceptance-tests.md) | Specification Acceptance Tests | Accepted |
+| [0011](0011-specification-acceptance-tests.md) | Specification Acceptance Tests                | Accepted |
+| [0012](0012-development-workflow.md) | Development Workflow                          | Accepted |
 
 ## What is an ADR?
 
