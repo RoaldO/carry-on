@@ -15,6 +15,13 @@ import tomllib
 nox.options.default_venv_backend = "uv"
 
 
+@nox.session(
+    requires=['outdated_direct', 'format', 'lint', 'typecheck', 'tests']
+)
+def final(session: nox.Session):
+    """Final checks before pull request."""
+
+
 @nox.session(python="3.12")
 def tests(session: nox.Session) -> None:
     """Run the test suite with coverage."""
