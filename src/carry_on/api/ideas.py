@@ -5,7 +5,6 @@ from bson import ObjectId
 from fastapi import Depends
 from pydantic import BaseModel, Field
 from pymongo.synchronous.collection import Collection
-from starlette.responses import RedirectResponse
 
 from carry_on.api.index import app, verify_pin
 from carry_on.api.pin_security import AuthenticatedUser
@@ -17,34 +16,6 @@ class IdeaDoc(TypedDict):
     description: str
     created_at: str
     user_id: str
-
-
-@app.get("/api/ideas")
-async def list_ideas(
-    limit: int = 50,
-    user: AuthenticatedUser = Depends(verify_pin),
-) -> dict:
-    """List submitted ideas for the authenticated user."""
-    ideas_collection = get_ideas_collection()
-
-    ideas = []
-    cursor = (
-        ideas_collection.find({"user_id": user.id}).sort("created_at", -1).limit(limit)
-    )
-
-    for doc in cursor:
-        ideas.append(
-            {
-                "id": str(doc["_id"]),
-                "description": doc["description"],
-                "created_at": doc["created_at"],
-            }
-        )
-
-    return {
-        "ideas": ideas,
-        "count": len(ideas),
-    }
 
 
 class IdeaCreate(BaseModel):
@@ -75,12 +46,6 @@ async def create_idea(
             "created_at": created_at,
         },
     }
-
-
-@app.get("/ideas")
-async def serve_ideas() -> RedirectResponse:
-    """Redirect /ideas to /#ideas for tab navigation."""
-    return RedirectResponse(url="/#ideas", status_code=302)
 
 
 def get_ideas_collection() -> Collection[IdeaDoc]:
