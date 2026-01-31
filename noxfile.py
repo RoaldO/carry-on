@@ -34,7 +34,7 @@ def mongodb(session: nox.Session):
         image,
         external=True
     )
-    os.environ["MONGODB_URI"] = f"mongodb://{username}@{password}@localhost:{port}"
+    os.environ["MONGODB_URI"] = f"mongodb://{username}:{password}@localhost:{port}"
 
     yield
 
