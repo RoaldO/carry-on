@@ -20,14 +20,13 @@ class TestStrokesWithDependencyInjection:
 
     def test_post_stroke_saves_to_repository(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
+        fake_stroke_repository: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes should save stroke via injected repository."""
-        client, fake_repo = client_with_fake_repo
-
-        response = client.post(
+        response = alternative_client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
             headers=auth_headers,
@@ -38,8 +37,8 @@ class TestStrokesWithDependencyInjection:
         assert data["message"] == "Stroke recorded successfully"
 
         # Verify stroke was saved to the fake repository
-        assert len(fake_repo.strokes) == 1
-        saved_stroke, user_id = fake_repo.strokes[0]
+        assert len(fake_stroke_repository.strokes) == 1
+        saved_stroke, user_id = fake_stroke_repository.strokes[0]
         assert saved_stroke.club.value == "7i"
         assert saved_stroke.distance is not None
         assert saved_stroke.distance.meters == 150
@@ -48,14 +47,13 @@ class TestStrokesWithDependencyInjection:
 
     def test_post_failed_stroke_saves_without_distance(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
+        fake_stroke_repository: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes with fail=true should save without distance."""
-        client, fake_repo = client_with_fake_repo
-
-        response = client.post(
+        response = alternative_client.post(
             "/api/strokes",
             json={"club": "d", "fail": True},
             headers=auth_headers,
@@ -64,35 +62,33 @@ class TestStrokesWithDependencyInjection:
         assert response.status_code == 200
 
         # Verify stroke was saved as failed
-        assert len(fake_repo.strokes) == 1
-        saved_stroke, _ = fake_repo.strokes[0]
+        assert len(fake_stroke_repository.strokes) == 1
+        saved_stroke, _ = fake_stroke_repository.strokes[0]
         assert saved_stroke.club.value == "d"
         assert saved_stroke.distance is None
         assert saved_stroke.fail is True
 
     def test_get_strokes_returns_saved_strokes(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes should return strokes from repository."""
-        client, fake_repo = client_with_fake_repo
-
         # First, create some strokes
-        client.post(
+        alternative_client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
             headers=auth_headers,
         )
-        client.post(
+        alternative_client.post(
             "/api/strokes",
             json={"club": "d", "distance": 250},
             headers=auth_headers,
         )
 
         # Now retrieve them
-        response = client.get("/api/strokes", headers=auth_headers)
+        response = alternative_client.get("/api/strokes", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -106,15 +102,14 @@ class TestStrokesWithDependencyInjection:
 
     def test_get_strokes_filters_by_user(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
+        fake_stroke_repository: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes should only return strokes for authenticated user."""
-        client, fake_repo = client_with_fake_repo
-
         # Create a stroke for authenticated user
-        client.post(
+        alternative_client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
             headers=auth_headers,
@@ -132,13 +127,13 @@ class TestStrokesWithDependencyInjection:
             distance=Distance(meters=300),
             stroke_date=date.today(),
         )
-        fake_repo.save(other_user_stroke, user_id="other_user_456")
+        fake_stroke_repository.save(other_user_stroke, user_id="other_user_456")
 
         # Verify both strokes are in repository
-        assert len(fake_repo.strokes) == 2
+        assert len(fake_stroke_repository.strokes) == 2
 
         # GET should only return strokes for authenticated user
-        response = client.get("/api/strokes", headers=auth_headers)
+        response = alternative_client.get("/api/strokes", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -147,23 +142,21 @@ class TestStrokesWithDependencyInjection:
 
     def test_get_strokes_respects_limit(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes should respect limit parameter."""
-        client, fake_repo = client_with_fake_repo
-
         # Create 5 strokes
         for i in range(5):
-            client.post(
+            alternative_client.post(
                 "/api/strokes",
                 json={"club": "7i", "distance": 100 + i * 10},
                 headers=auth_headers,
             )
 
         # Request with limit=3
-        response = client.get("/api/strokes?limit=3", headers=auth_headers)
+        response = alternative_client.get("/api/strokes?limit=3", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -172,22 +165,20 @@ class TestStrokesWithDependencyInjection:
 
     def test_stroke_response_includes_created_at(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes should include created_at in response."""
-        client, fake_repo = client_with_fake_repo
-
         # Create a stroke
-        client.post(
+        alternative_client.post(
             "/api/strokes",
             json={"club": "pw", "distance": 100},
             headers=auth_headers,
         )
 
         # Retrieve it
-        response = client.get("/api/strokes", headers=auth_headers)
+        response = alternative_client.get("/api/strokes", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -200,14 +191,13 @@ class TestStrokesWithDependencyInjection:
 
     def test_invalid_club_returns_400(
         self,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        alternative_client: TestClient,
+        fake_stroke_repository: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes with invalid club should return 400."""
-        client, fake_repo = client_with_fake_repo
-
-        response = client.post(
+        response = alternative_client.post(
             "/api/strokes",
             json={"club": "invalid_club", "distance": 150},
             headers=auth_headers,
@@ -215,4 +205,4 @@ class TestStrokesWithDependencyInjection:
 
         assert response.status_code == 400
         # Repository should be empty
-        assert len(fake_repo.strokes) == 0
+        assert len(fake_stroke_repository.strokes) == 0

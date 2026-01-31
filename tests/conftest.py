@@ -106,14 +106,15 @@ def client() -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def client_with_fake_repo(
+def alternative_client(
     fake_stroke_service: StrokeService,
-) -> Generator[tuple[TestClient, FakeStrokeRepository], None, None]:
+) -> Generator[TestClient, None, None]:
     """Create test client with fake repository injected via DI.
 
     Returns a tuple of (client, fake_repository) so tests can inspect
     the repository state after making requests.
     """
+    # TODO this fixture needs to merge with the `client` fixture which is very similar
     os.environ["MONGODB_URI"] = "mongodb://test"
 
     from carry_on.api.index import app
@@ -123,7 +124,7 @@ def client_with_fake_repo(
     app.dependency_overrides[get_stroke_service] = lambda: fake_stroke_service
 
     with TestClient(app) as client:
-        yield client, fake_stroke_service._repository  # type: ignore[misc]
+        yield client
 
     # Cleanup
     app.dependency_overrides.clear()
