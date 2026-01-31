@@ -7,7 +7,6 @@ import contextlib
 import os
 
 import nox
-import sys
 import subprocess
 import re
 import tomllib
@@ -36,12 +35,13 @@ def mongodb(session: nox.Session):
     )
     os.environ["MONGODB_URI"] = f"mongodb://{username}:{password}@localhost:{port}"
 
-    yield
-
-    os.environ["MONGODB_URI"] = ""
-    print(f"Cleaning up {container=}")
-    session.run("docker", "stop", container, external=True)
-    session.run("docker", "rm", container, external=True)
+    try:
+        yield
+    finally:
+        os.environ["MONGODB_URI"] = ""
+        print(f"Cleaning up {container=}")
+        session.run("docker", "stop", container, external=True)
+        session.run("docker", "rm", container, external=True)
 
 
 @nox.session(
@@ -67,20 +67,6 @@ def tests(session: nox.Session) -> None:
 
 
 @nox.session(python="3.12")
-def tests_fast(session: nox.Session) -> None:
-    """Run tests without acceptance tests (faster)."""
-    session.install(".", "--group", "dev")
-    session.run(
-        "pytest",
-        "-v",
-        "-m",
-        "not acceptance",
-        "--cov-report=term-missing",
-        *session.posargs,
-    )
-
-
-@nox.session(python="3.12")
 def tests_acceptance(session: nox.Session) -> None:
     """Run only acceptance tests."""
     session.install(".", "--group", "dev")
@@ -89,9 +75,21 @@ def tests_acceptance(session: nox.Session) -> None:
         session.run(
             "pytest",
             "-v",
-            "-m",
-            "acceptance",
-            *session.posargs,
+            *(session.posargs or ["tests/acceptance/"]),
+        )
+
+
+@nox.session(python="3.12")
+def tests_acceptance_headed(session: nox.Session) -> None:
+    """Run only acceptance tests with browser visible."""
+    session.install(".", "--group", "dev")
+    session.run("playwright", "install", "chromium", "--with-deps")
+    with mongodb(session):
+        session.run(
+            "pytest",
+            "--headed",
+            "-v",
+            *(session.posargs or ["tests/acceptance/"]),
         )
 
 
@@ -210,6 +208,7 @@ def outdated_all(session: nox.Session) -> None:
             session.log(tree.stdout.rstrip())
         else:
             session.log("  (could not determine dependency tree)")
+
 
 @nox.session(python="3.12")
 def outdated_direct(session: nox.Session) -> None:
