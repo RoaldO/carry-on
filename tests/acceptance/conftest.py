@@ -1,17 +1,17 @@
-import os
 import socket
 import threading
 import time
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import MagicMock, patch
 
 import pytest
 import uvicorn
 from playwright.sync_api import Page
+from pymongo.database import Database
 from pytest_bdd import given, parsers, then, when
 
 from carry_on.api.pin_security import hash_pin
+from tests.acceptance.db_utils import clear_collections, get_test_database, insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.stroke_page import StrokePage
 
@@ -46,12 +46,16 @@ class ServerThread(threading.Thread):
 
 
 @pytest.fixture(scope="session")
-def mock_collections() -> dict[str, MagicMock]:
-    return {
-        "users": MagicMock(),
-        "strokes": MagicMock(),
-        "ideas": MagicMock(),
-    }
+def test_database() -> Database[Any]:
+    """Get MongoDB database connection for tests."""
+    return get_test_database()
+
+
+@pytest.fixture(autouse=True)
+def clean_database(test_database: Database[Any]) -> Generator[None, None, None]:
+    """Clear all test collections before each test."""
+    clear_collections(test_database)
+    yield
 
 
 @pytest.fixture(scope="session")
@@ -65,38 +69,18 @@ def base_url(app_port: int) -> str:
 
 
 @pytest.fixture(scope="session")
-def app_server(
-    mock_collections: dict[str, MagicMock], app_port: int
-) -> Generator[ServerThread, None, None]:
-    os.environ["MONGODB_URI"] = "mongodb://test"
+def app_server(app_port: int) -> Generator[ServerThread, None, None]:
+    from carry_on.api.index import app
 
-    with (
-        patch(
-            "carry_on.api.index.get_users_collection",
-            return_value=mock_collections["users"],
-        ),
-        patch(
-            "carry_on.api.strokes.get_strokes_collection",
-            return_value=mock_collections["strokes"],
-        ),
-        patch(
-            "carry_on.api.ideas.get_ideas_collection",
-            return_value=mock_collections["ideas"],
-        ),
-    ):
-        from carry_on.api.index import app
+    server = ServerThread(app, "127.0.0.1", app_port)
+    server.start()
 
-        server = ServerThread(app, "127.0.0.1", app_port)
-        server.start()
+    # Wait for server to be ready
+    time.sleep(0.5)
 
-        # Wait for server to be ready
-        time.sleep(0.5)
+    yield server
 
-        yield server
-
-        server.stop()
-
-    os.environ.pop("MONGODB_URI", None)
+    server.stop()
 
 
 @pytest.fixture
@@ -111,23 +95,23 @@ def page(
 
 
 @pytest.fixture
-def inactive_user(mock_collections: dict[str, MagicMock]) -> dict[str, Any]:
-    """Create an inactive user (needs activation) in the mock database."""
-    user = {
-        "_id": "inactive_user_123",
-        "email": "inactive@example.com",
+def inactive_user(test_database: Database[Any]) -> dict[str, Any]:
+    """Create an inactive user (needs activation) in the database."""
+    email = "inactive@example.com"
+    user_id = insert_user(
+        test_database,
+        email=email,
+        display_name="Inactive User",
+        pin_hash=None,
+        activated_at=None,
+    )
+    return {
+        "_id": user_id,
+        "email": email,
         "display_name": "Inactive User",
         "pin_hash": None,
         "activated_at": None,
     }
-
-    def find_one(query: dict) -> dict | None:
-        if query.get("email") == user["email"]:
-            return user
-        return None
-
-    mock_collections["users"].find_one.side_effect = find_one
-    return user
 
 
 @pytest.fixture
@@ -142,36 +126,28 @@ def activated_user_pin() -> str:
 
 @pytest.fixture
 def activated_user(
-    mock_collections: dict[str, MagicMock],
+    test_database: Database[Any],
     activated_user_email: str,
     activated_user_pin: str,
 ) -> dict[str, Any]:
-    """Create an activated user in the mock database."""
-    user = {
-        "_id": "activated_user_456",
+    """Create an activated user in the database."""
+    pin_hash = hash_pin(activated_user_pin)
+    activated_at = "2026-01-25T10:00:00Z"
+    user_id = insert_user(
+        test_database,
+        email=activated_user_email,
+        display_name="Active User",
+        pin_hash=pin_hash,
+        activated_at=activated_at,
+    )
+    return {
+        "_id": user_id,
         "email": activated_user_email,
         "display_name": "Active User",
-        "pin_hash": hash_pin(activated_user_pin),
-        "activated_at": "2026-01-25T10:00:00Z",
+        "pin_hash": pin_hash,
+        "activated_at": activated_at,
+        "pin": activated_user_pin,  # Include plain PIN for test use
     }
-
-    def find_one(query: dict) -> dict | None:
-        if query.get("email") == user["email"]:
-            return user
-        return None
-
-    mock_collections["users"].find_one.side_effect = find_one
-    return {**user, "pin": activated_user_pin}  # Include plain PIN for test use
-
-
-@pytest.fixture
-def clear_mock_users(
-    mock_collections: dict[str, MagicMock],
-) -> Generator[None, None, None]:
-    yield
-    mock_collections["users"].reset_mock()
-    mock_collections["users"].find_one.side_effect = None
-    mock_collections["users"].find_one.return_value = None
 
 
 @pytest.fixture

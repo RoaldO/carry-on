@@ -1,10 +1,11 @@
 """Step definitions for registration feature."""
 
 from typing import Any
-from unittest.mock import MagicMock
 
+from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 
 # Link this file to the feature file
@@ -15,29 +16,22 @@ scenarios("../features/auth/registration.feature")
     parsers.parse('a user exists with email "{email}" who needs activation'),
     target_fixture="test_user",
 )
-def user_needs_activation(
-    mock_collections: dict[str, MagicMock], email: str
-) -> dict[str, Any]:
-    """Create an inactive user in the mock database."""
-    user = {
-        "_id": f"user_{email.replace('@', '_')}",
+def user_needs_activation(test_database: Database[Any], email: str) -> dict[str, Any]:
+    """Create an inactive user in the database."""
+    user_id = insert_user(
+        test_database,
+        email=email,
+        display_name="Inactive User",
+        pin_hash=None,
+        activated_at=None,
+    )
+    return {
+        "_id": user_id,
         "email": email,
         "display_name": "Inactive User",
         "pin_hash": None,
         "activated_at": None,
     }
-
-    original_side_effect = mock_collections["users"].find_one.side_effect
-
-    def find_one(query: dict) -> dict | None:
-        if query.get("email") == email:
-            return user
-        if original_side_effect:
-            return original_side_effect(query)
-        return None
-
-    mock_collections["users"].find_one.side_effect = find_one
-    return user
 
 
 @then("I should see the PIN activation form")

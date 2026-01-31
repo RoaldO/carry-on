@@ -1,11 +1,12 @@
 """Step definitions for login feature."""
 
 from typing import Any
-from unittest.mock import MagicMock
 
+from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from carry_on.api.pin_security import hash_pin
+from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 
 # Link this file to the feature file
@@ -16,29 +17,25 @@ scenarios("../features/auth/login.feature")
     parsers.parse('a user exists with email "{email}" and PIN "{pin}"'),
     target_fixture="test_user",
 )
-def user_with_pin(
-    mock_collections: dict[str, MagicMock], email: str, pin: str
-) -> dict[str, Any]:
-    """Create an activated user with a PIN in the mock database."""
-    user = {
-        "_id": f"user_{email.replace('@', '_')}",
+def user_with_pin(test_database: Database[Any], email: str, pin: str) -> dict[str, Any]:
+    """Create an activated user with a PIN in the database."""
+    pin_hash = hash_pin(pin)
+    activated_at = "2026-01-25T10:00:00Z"
+    user_id = insert_user(
+        test_database,
+        email=email,
+        display_name="Active User",
+        pin_hash=pin_hash,
+        activated_at=activated_at,
+    )
+    return {
+        "_id": user_id,
         "email": email,
         "display_name": "Active User",
-        "pin_hash": hash_pin(pin),
-        "activated_at": "2026-01-25T10:00:00Z",
+        "pin_hash": pin_hash,
+        "activated_at": activated_at,
+        "pin": pin,
     }
-
-    original_side_effect = mock_collections["users"].find_one.side_effect
-
-    def find_one(query: dict) -> dict | None:
-        if query.get("email") == email:
-            return user
-        if original_side_effect:
-            return original_side_effect(query)
-        return None
-
-    mock_collections["users"].find_one.side_effect = find_one
-    return {**user, "pin": pin}
 
 
 @then("I should see the PIN login form")
