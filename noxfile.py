@@ -3,6 +3,8 @@
 Run `nox --list` to see available sessions.
 Run `nox -s <session>` to run a specific session.
 """
+import contextlib
+import os
 
 import nox
 import sys
@@ -13,6 +15,33 @@ import tomllib
 
 # Use uv for all package management
 nox.options.default_venv_backend = "uv"
+
+@contextlib.contextmanager
+def mongodb(session: nox.Session):
+    container = "nox-mongo-test"
+    image = "mongo:latest"
+    username = "admin"
+    password = "password"
+    port = "27017"
+
+    print(f"Starting {container=}")
+    session.run(
+        "docker", "run", "-d",
+        "--name", container,
+        "-p", f"{port}:27017",
+        "-e", f"MONGO_INITDB_ROOT_USERNAME={username}",
+        "-e", f"MONGO_INITDB_ROOT_PASSWORD={password}",
+        image,
+        external=True
+    )
+    os.environ["MONGODB_URI"] = f"mongodb://{username}@{password}@localhost:{port}"
+
+    yield
+
+    os.environ["MONGODB_URI"] = ""
+    print(f"Cleaning up {container=}")
+    session.run("docker", "stop", container, external=True)
+    session.run("docker", "rm", container, external=True)
 
 
 @nox.session(
@@ -27,19 +56,7 @@ def tests(session: nox.Session) -> None:
     """Run the test suite with coverage."""
     session.install(".", "--group", "dev")
 
-    # todo create a context manager for the mongodb container
-    container_name = "nox-mongo-test"
-    image = "mongo:latest"
-    session.run(
-        "docker", "run", "-d",
-        "--name", container_name,
-        "-p", "27017:27017",
-        "-e", "MONGO_INITDB_ROOT_USERNAME=admin",
-        "-e", "MONGO_INITDB_ROOT_PASSWORD=password",
-        image,
-        external=True
-    )
-    try:
+    with mongodb(session):
         session.run(
             "pytest",
             "-v",
@@ -47,10 +64,6 @@ def tests(session: nox.Session) -> None:
             "--cov-report=html",
             *session.posargs,
         )
-    finally:
-        print(f"Cleaning up container: {container_name}")
-        session.run("docker", "stop", container_name, external=True)
-        session.run("docker", "rm", container_name, external=True)
 
 
 @nox.session(python="3.12")
@@ -72,13 +85,14 @@ def tests_acceptance(session: nox.Session) -> None:
     """Run only acceptance tests."""
     session.install(".", "--group", "dev")
     session.run("playwright", "install", "chromium", "--with-deps")
-    session.run(
-        "pytest",
-        "-v",
-        "-m",
-        "acceptance",
-        *session.posargs,
-    )
+    with mongodb(session):
+        session.run(
+            "pytest",
+            "-v",
+            "-m",
+            "acceptance",
+            *session.posargs,
+        )
 
 
 @nox.session(python="3.12")
