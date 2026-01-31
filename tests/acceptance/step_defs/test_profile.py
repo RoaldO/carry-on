@@ -1,13 +1,14 @@
 """Step definitions for profile display feature."""
 
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 from playwright.sync_api import Page
+from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from carry_on.api.pin_security import hash_pin
+from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.navigation_page import NavigationPage
 
@@ -29,32 +30,26 @@ def nav_page(page: Page, base_url: str) -> NavigationPage:
     target_fixture="test_user",
 )
 def user_with_display_name(
-    mock_collections: dict[str, MagicMock], email: str, pin: str, display_name: str
+    test_database: Database[Any], email: str, pin: str, display_name: str
 ) -> dict[str, Any]:
-    """Create an activated user with a display name in the mock database."""
-    user = {
-        "_id": f"user_{email.replace('@', '_').replace('.', '_')}",
+    """Create an activated user with a display name in the database."""
+    pin_hash = hash_pin(pin)
+    activated_at = "2026-01-25T10:00:00Z"
+    user_id = insert_user(
+        test_database,
+        email=email,
+        display_name=display_name,
+        pin_hash=pin_hash,
+        activated_at=activated_at,
+    )
+    return {
+        "_id": user_id,
         "email": email,
         "display_name": display_name,
-        "pin_hash": hash_pin(pin),
-        "activated_at": "2026-01-25T10:00:00Z",
+        "pin_hash": pin_hash,
+        "activated_at": activated_at,
+        "pin": pin,
     }
-
-    original_side_effect = mock_collections["users"].find_one.side_effect
-
-    def find_one(query: dict) -> dict | None:
-        if query.get("email") == email:
-            return user
-        if original_side_effect:
-            return original_side_effect(query)
-        return None
-
-    mock_collections["users"].find_one.side_effect = find_one
-    mock_collections[
-        "strokes"
-    ].find.return_value.sort.return_value.limit.return_value = []
-
-    return {**user, "pin": pin}
 
 
 @given(parsers.parse('I am logged in as "{email}" with PIN "{pin}"'))
