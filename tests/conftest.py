@@ -3,10 +3,12 @@
 import os
 from collections.abc import Generator
 from pathlib import Path
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 import warnings
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from carry_on.api.pin_security import hash_pin
@@ -42,9 +44,18 @@ def fake_stroke_repository() -> FakeStrokeRepository:
 
 
 @pytest.fixture
-def fake_stroke_service(fake_stroke_repository: FakeStrokeRepository) -> StrokeService:
+def fake_stroke_service(
+    fake_stroke_repository: FakeStrokeRepository,
+    app: FastAPI,
+) -> Iterator[StrokeService]:
     """Create a StrokeService with the fake repository."""
-    return StrokeService(fake_stroke_repository)
+
+    from carry_on.api.strokes import get_stroke_service
+
+    fake_service = StrokeService(fake_stroke_repository)
+    app.dependency_overrides[get_stroke_service] = lambda: fake_service
+    yield fake_service
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -86,49 +97,38 @@ def test_pin_hashed(test_pin: str) -> str:
 
 
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
-    """Create test client.
+def mongodb_uri() -> Iterator[str]:
+    uri = "mongodb://test"
+    os.environ["MONGODB_URI"] = uri
 
-    DEPRECATED: Use client_with_fake_repo for proper DI.
-    Kept for backward compatibility with existing tests.
-    """
-    warnings.warn("Use client_with_fake_repo instead for proper DI", DeprecationWarning)
-    os.environ["MONGODB_URI"] = "mongodb://test"
+    yield uri
 
-    # Import app after setting env vars
-    from carry_on.api.index import app
-
-    with TestClient(app) as client:
-        yield client
-
-    # Cleanup
     os.environ.pop("MONGODB_URI", None)
 
 
 @pytest.fixture
-def alternative_client(
-    fake_stroke_service: StrokeService,
-) -> Generator[TestClient, None, None]:
-    """Create test client with fake repository injected via DI.
+def app(mongodb_uri: str) -> FastAPI:
+    import carry_on.api.index
 
-    Returns a tuple of (client, fake_repository) so tests can inspect
-    the repository state after making requests.
-    """
-    # TODO this fixture needs to merge with the `client` fixture which is very similar
-    os.environ["MONGODB_URI"] = "mongodb://test"
+    return carry_on.api.index.app
 
-    from carry_on.api.index import app
-    from carry_on.api.strokes import get_stroke_service
 
-    # Override the dependency to use our fake service
-    app.dependency_overrides[get_stroke_service] = lambda: fake_stroke_service
-
+@pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as client:
         yield client
 
-    # Cleanup
+
+@pytest.fixture
+def register_fake_stroke_service(
+    fake_stroke_service: StrokeService,
+    app: FastAPI,
+):
+    from carry_on.api.strokes import get_stroke_service
+
+    app.dependency_overrides[get_stroke_service] = lambda: fake_stroke_service
+    yield
     app.dependency_overrides.clear()
-    os.environ.pop("MONGODB_URI", None)
 
 
 @pytest.fixture
