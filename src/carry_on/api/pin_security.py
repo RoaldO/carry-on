@@ -33,6 +33,20 @@ def needs_rehash(stored_hash: str) -> bool:
     return _hasher.check_needs_rehash(stored_hash)
 
 
+MIN_PASSWORD_LENGTH = 8
+
+
+def is_password_compliant(password: str) -> bool:
+    """Check if password meets complexity requirements.
+
+    Requirements:
+    - Minimum 8 characters
+    - No maximum length
+    - Any characters allowed (letters, numbers, special chars)
+    """
+    return len(password) >= MIN_PASSWORD_LENGTH
+
+
 class AuthenticatedUser(BaseModel):
     """Represents an authenticated user returned by verify_pin()."""
 
