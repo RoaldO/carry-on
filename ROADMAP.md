@@ -181,6 +181,13 @@ Use deply to enforce architectural boundaries and dependency rules.
 - [ ] Add `deply` nox session for architecture checks
 - [ ] Add architecture validation to CI pipeline
 
+### 0r. Infer GitHub Actions from Project Configuration
+Generate CI workflow from noxfile.py to avoid duplication and drift.
+- [ ] Evaluate approach (nox session to generate workflow, or template-based)
+- [ ] Create script/session to generate `.github/workflows/ci.yml`
+- [ ] Ensure generated workflow matches current CI behavior
+- [ ] Document regeneration process
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
