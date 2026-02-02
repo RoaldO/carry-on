@@ -188,6 +188,45 @@ Generate CI workflow from noxfile.py to avoid duplication and drift.
 - [ ] Ensure generated workflow matches current CI behavior
 - [ ] Document regeneration process
 
+### 0s. Pre-commit Hooks
+Catch issues before commit to prevent CI failures and keep commits clean.
+- [ ] Install pre-commit package
+- [ ] Create `.pre-commit-config.yaml` configuration
+- [ ] Add ruff linting hook
+- [ ] Add ruff formatting hook
+- [ ] Add mypy type checking hook
+- [ ] Document setup for new contributors (`pre-commit install`)
+
+### 0t. Dependency Security Scanning
+Scan dependencies for known security vulnerabilities.
+- [ ] Install pip-audit package
+- [ ] Add `security` nox session to run pip-audit
+- [ ] Add security scan to CI pipeline
+- [ ] Configure to fail on high/critical vulnerabilities
+
+### 0u. Automated Dependency Updates
+Automatically create PRs for dependency updates.
+- [ ] Create `.github/dependabot.yml` configuration
+- [ ] Configure update schedule (weekly)
+- [ ] Configure Python ecosystem (pip/uv)
+- [ ] Set PR limits and reviewers
+
+### 0v. Secrets Detection
+Prevent accidental commits of API keys, passwords, and other secrets.
+- [ ] Install detect-secrets package
+- [ ] Generate baseline file (`.secrets.baseline`)
+- [ ] Add detect-secrets pre-commit hook
+- [ ] Add secrets scan to CI pipeline
+
+### 0w. Production Error Tracking
+Track and monitor errors in production with Sentry.
+- [ ] Create Sentry project for CarryOn
+- [ ] Install sentry-sdk package
+- [ ] Configure Sentry DSN in environment
+- [ ] Initialize Sentry in FastAPI app
+- [ ] Configure error filtering and sampling
+- [ ] Add source maps for frontend errors (optional)
+
 ### 1. Golf Course Management
 Store golf course information including:
 - Course name
