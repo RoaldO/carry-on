@@ -88,14 +88,14 @@ See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing appr
 - [x] Logout tests (`tests/acceptance/features/navigation/profile.feature`)
 
 **Stroke Tracking (`docs/specs/stroke-tracking.md`):**
-- [ ] Record successful stroke
+- [x] Record successful stroke (`tests/acceptance/features/strokes/record.feature`)
 - [ ] Record failed stroke
 - [ ] View recent strokes
 - [ ] Stroke validation (club, distance)
 
 **Idea Capture (`docs/specs/idea-capture.md`):**
 - [ ] Submit idea
-- [ ] View submitted ideas
+- [ ] ~~View submitted ideas~~ (endpoint removed)
 - [ ] Character limit validation
 
 **Navigation (`docs/specs/navigation.md`):**
@@ -147,10 +147,16 @@ Set up nox for consistent test running and other development tasks.
 - [x] Add `tests` session (full test suite with coverage)
 - [x] Add `tests_fast` session (skip acceptance tests)
 - [x] Add `tests_acceptance` session (acceptance tests only)
+- [x] Add `tests_acceptance_headed` session (acceptance tests with visible browser)
 - [x] Add `lint` session (ruff check)
 - [x] Add `format` session (ruff format)
 - [x] Add `typecheck` session (mypy)
 - [x] Add `dev` session (run development server)
+- [x] Add `final` session (pre-MR checks: outdated, format, lint, typecheck, tests)
+- [x] Add `outdated_direct` session (check direct dependencies)
+- [x] Add `outdated_all` session (show all outdated dependencies)
+- [x] Add `coverage_html` session (generate HTML coverage report)
+- [x] Add `allure` session (generate Allure report)
 
 ### 0n. HTML Rendering Refactor
 Remove duplication between `public/index.html` and inline HTML in `api/index.py`.
@@ -166,6 +172,14 @@ Add linting, formatting, and type checking to CI pipeline.
 - [x] Add ruff format check to CI (`nox -s format_check`)
 - [x] Add mypy type check to CI (`nox -s typecheck`)
 - [x] Run quality checks before tests in pipeline
+
+### 0q. Architecture Validation with Deply
+Use deply to enforce architectural boundaries and dependency rules.
+- [ ] Install deply package
+- [ ] Configure layer definitions (domain, infrastructure, api, services)
+- [ ] Define dependency rules (e.g., domain must not depend on infrastructure)
+- [ ] Add `deply` nox session for architecture checks
+- [ ] Add architecture validation to CI pipeline
 
 ### 1. Golf Course Management
 Store golf course information including:
