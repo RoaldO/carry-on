@@ -89,7 +89,7 @@ class TestActivateEndpoint:
 
         response = client.post(
             "/api/activate",
-            json={"email": "unknown@example.com", "pin": "1234"},
+            json={"email": "unknown@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 404
 
@@ -108,7 +108,7 @@ class TestActivateEndpoint:
 
         response = client.post(
             "/api/activate",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 400
 
@@ -117,7 +117,7 @@ class TestActivateEndpoint:
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/activate with valid email sets PIN and activates."""
+        """POST /api/activate with valid email sets password and activates."""
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
@@ -128,7 +128,7 @@ class TestActivateEndpoint:
 
         response = client.post(
             "/api/activate",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -136,12 +136,12 @@ class TestActivateEndpoint:
         assert data["user"]["email"] == "user@example.com"
         mock_users_collection.update_one.assert_called_once()
 
-    def test_activate_hashes_pin(
+    def test_activate_hashes_password(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/activate stores PIN as Argon2 hash."""
+        """POST /api/activate stores password as Argon2 hash."""
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
@@ -152,7 +152,7 @@ class TestActivateEndpoint:
 
         response = client.post(
             "/api/activate",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 200
         # Verify the stored hash is Argon2 format
@@ -176,7 +176,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "unknown@example.com", "pin": "1234"},
+            json={"email": "unknown@example.com", "password": "1234"},
         )
         assert response.status_code == 401
 
@@ -195,7 +195,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 400
 
@@ -215,7 +215,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 401
 
@@ -236,7 +236,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -261,7 +261,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 200
         # Should trigger rehash since PIN was plain text

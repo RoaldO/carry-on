@@ -61,9 +61,10 @@ class EmailCheck(BaseModel):
 
 class ActivateRequest(BaseModel):
     email: str = Field(..., min_length=1)
-    pin: str = Field(..., min_length=4, max_length=10)
+    password: str = Field(..., min_length=MIN_PASSWORD_LENGTH)
 
 
 class LoginRequest(BaseModel):
     email: str = Field(..., min_length=1)
-    pin: str = Field(..., min_length=4, max_length=10)
+    # min_length=4 allows legacy PINs for migration flow
+    password: str = Field(..., min_length=4)

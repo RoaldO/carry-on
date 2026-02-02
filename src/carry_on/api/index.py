@@ -72,7 +72,7 @@ async def check_email(request: EmailCheck) -> dict:
 
 @app.post("/api/activate")
 async def activate_account(request: ActivateRequest) -> dict:
-    """Activate account by setting PIN."""
+    """Activate account by setting password."""
     users_collection = get_users_collection()
 
     user = users_collection.find_one({"email": request.email.lower()})
@@ -82,12 +82,12 @@ async def activate_account(request: ActivateRequest) -> dict:
     if user.get("activated_at"):
         raise HTTPException(status_code=400, detail="Account already activated")
 
-    # Hash PIN before storing
+    # Hash password before storing
     users_collection.update_one(
         {"_id": user["_id"]},
         {
             "$set": {
-                "pin_hash": hash_pin(request.pin),
+                "pin_hash": hash_pin(request.password),
                 "activated_at": datetime.now(UTC).isoformat(),
             }
         },
@@ -104,24 +104,24 @@ async def activate_account(request: ActivateRequest) -> dict:
 
 @app.post("/api/login")
 async def login(request: LoginRequest) -> dict:
-    """Login with email and PIN."""
+    """Login with email and password."""
     users_collection = get_users_collection()
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if not user.get("activated_at"):
         raise HTTPException(status_code=400, detail="Account not activated")
 
-    # Check PIN using secure verification
-    if not verify_pin_hash(request.pin, user.get("pin_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+    # Check password using secure verification
+    if not verify_pin_hash(request.password, user.get("pin_hash", "")):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Rehash if using outdated algorithm
     if needs_rehash(user.get("pin_hash", "")):
         users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(request.pin)}}
+            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(request.password)}}
         )
 
     return {
