@@ -26,6 +26,7 @@ dev = [
     "allure-pytest>=2.15.3",
     "nox>=2025.11.12",
     "nox-uv>=0.7.0",
+    "deply>=0.8.0",
 ]
 
 [tool.pytest.ini_options]

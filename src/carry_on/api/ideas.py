@@ -1,25 +1,12 @@
 from datetime import datetime, UTC
-from typing import NotRequired, TypedDict
 
-from bson import ObjectId
 from fastapi import Depends
-from pydantic import BaseModel, Field
 from pymongo.synchronous.collection import Collection
 
 from carry_on.api.index import app, verify_password
 from carry_on.api.password_security import AuthenticatedUser
+from carry_on.api.schema import IdeaCreate, IdeaDoc
 from carry_on.infrastructure.mongodb import get_database
-
-
-class IdeaDoc(TypedDict):
-    _id: NotRequired[ObjectId]
-    description: str
-    created_at: str
-    user_id: str
-
-
-class IdeaCreate(BaseModel):
-    description: str = Field(..., min_length=1, max_length=1000)
 
 
 @app.post("/api/ideas")
