@@ -102,14 +102,14 @@ def inactive_user(test_database: Database[Any]) -> dict[str, Any]:
         test_database,
         email=email,
         display_name="Inactive User",
-        pin_hash=None,
+        password_hash=None,
         activated_at=None,
     )
     return {
         "_id": user_id,
         "email": email,
         "display_name": "Inactive User",
-        "pin_hash": None,
+        "password_hash": None,
         "activated_at": None,
     }
 
@@ -131,20 +131,20 @@ def activated_user(
     activated_user_password: str,
 ) -> dict[str, Any]:
     """Create an activated user in the database."""
-    pin_hash = hash_password(activated_user_password)
+    password_hash = hash_password(activated_user_password)
     activated_at = "2026-01-25T10:00:00Z"
     user_id = insert_user(
         test_database,
         email=activated_user_email,
         display_name="Active User",
-        pin_hash=pin_hash,
+        password_hash=password_hash,
         activated_at=activated_at,
     )
     return {
         "_id": user_id,
         "email": activated_user_email,
         "display_name": "Active User",
-        "pin_hash": pin_hash,
+        "password_hash": password_hash,
         "activated_at": activated_at,
         "password": activated_user_password,  # Include plain password for test use
     }

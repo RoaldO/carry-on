@@ -37,7 +37,7 @@ class TestCheckEmailEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
@@ -60,7 +60,7 @@ class TestCheckEmailEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "hashed_pin",
+            "password_hash": "hashed_pin",
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -102,7 +102,7 @@ class TestActivateEndpoint:
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
-            "pin_hash": "already_set",
+            "password_hash": "already_set",
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -122,7 +122,7 @@ class TestActivateEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
@@ -146,7 +146,7 @@ class TestActivateEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
@@ -157,7 +157,7 @@ class TestActivateEndpoint:
         assert response.status_code == 200
         # Verify the stored hash is Argon2 format
         call_args = mock_users_collection.update_one.call_args
-        stored_hash = call_args[0][1]["$set"]["pin_hash"]
+        stored_hash = call_args[0][1]["$set"]["password_hash"]
         assert stored_hash.startswith("$argon2id$")
 
 
@@ -189,7 +189,7 @@ class TestLoginEndpoint:
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
@@ -209,7 +209,7 @@ class TestLoginEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "hashed_5678",  # Different from input
+            "password_hash": "hashed_5678",  # Different from input
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -230,7 +230,7 @@ class TestLoginEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": hashed,
+            "password_hash": hashed,
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -255,7 +255,7 @@ class TestLoginEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "1234",  # Plain text password (legacy)
+            "password_hash": "1234",  # Plain text password (legacy)
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -268,5 +268,5 @@ class TestLoginEndpoint:
         mock_users_collection.update_one.assert_called_once()
         # Verify the new hash is Argon2 format
         call_args = mock_users_collection.update_one.call_args
-        new_hash = call_args[0][1]["$set"]["pin_hash"]
+        new_hash = call_args[0][1]["$set"]["password_hash"]
         assert new_hash.startswith("$argon2id$")

@@ -166,7 +166,7 @@ def mock_authenticated_user(
         "_id": "user123",
         "email": test_email,
         "display_name": "Test User",
-        "pin_hash": test_password_hashed,
+        "password_hash": test_password_hashed,
         "activated_at": "2026-01-25T10:00:00Z",
     }
     return mock_users_collection
@@ -181,7 +181,7 @@ def mock_authenticated_user_plain_password(
         "_id": "user123",
         "email": test_email,
         "display_name": "Test User",
-        "pin_hash": test_password,
+        "password_hash": test_password,
         "activated_at": "2026-01-25T10:00:00Z",
     }
     return mock_users_collection

@@ -23,7 +23,7 @@ class TestVerifyPasswordReturnsAuthenticatedUser:
             "_id": "user123",
             "email": test_email,
             "display_name": "Test User",
-            "pin_hash": hash_password(test_password),
+            "password_hash": hash_password(test_password),
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -48,7 +48,7 @@ class TestVerifyPasswordReturnsAuthenticatedUser:
         mock_user = {
             "_id": "user456",
             "email": test_email,
-            "pin_hash": hash_password(test_password),
+            "password_hash": hash_password(test_password),
             "activated_at": "2026-01-25T10:00:00Z",
         }
 

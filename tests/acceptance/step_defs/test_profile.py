@@ -33,20 +33,20 @@ def user_with_display_name(
     test_database: Database[Any], email: str, password: str, display_name: str
 ) -> dict[str, Any]:
     """Create an activated user with a display name in the database."""
-    pin_hash = hash_password(password)
+    password_hash = hash_password(password)
     activated_at = "2026-01-25T10:00:00Z"
     user_id = insert_user(
         test_database,
         email=email,
         display_name=display_name,
-        pin_hash=pin_hash,
+        password_hash=password_hash,
         activated_at=activated_at,
     )
     return {
         "_id": user_id,
         "email": email,
         "display_name": display_name,
-        "pin_hash": pin_hash,
+        "password_hash": password_hash,
         "activated_at": activated_at,
         "password": password,
     }

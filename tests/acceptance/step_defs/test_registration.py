@@ -22,14 +22,14 @@ def user_needs_activation(test_database: Database[Any], email: str) -> dict[str,
         test_database,
         email=email,
         display_name="Inactive User",
-        pin_hash=None,
+        password_hash=None,
         activated_at=None,
     )
     return {
         "_id": user_id,
         "email": email,
         "display_name": "Inactive User",
-        "pin_hash": None,
+        "password_hash": None,
         "activated_at": None,
     }
 

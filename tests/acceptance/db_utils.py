@@ -62,7 +62,7 @@ def insert_user(
     db: Database[Any],
     email: str,
     display_name: str,
-    pin_hash: str | None = None,
+    password_hash: str | None = None,
     activated_at: datetime | str | None = None,
 ) -> str:
     """Insert a user document into the database.
@@ -71,7 +71,7 @@ def insert_user(
         db: The MongoDB database instance.
         email: User's email address (will be lowercased).
         display_name: User's display name.
-        pin_hash: Hashed password (None for inactive users).
+        password_hash: Hashed password (None for inactive users).
         activated_at: Activation timestamp (None for inactive users).
             Can be a datetime object or ISO format string.
 
@@ -84,7 +84,7 @@ def insert_user(
     doc = {
         "email": email.lower(),
         "display_name": display_name,
-        "pin_hash": pin_hash,
+        "password_hash": password_hash,
         "activated_at": activated_at,
     }
     result = db.users.insert_one(doc)

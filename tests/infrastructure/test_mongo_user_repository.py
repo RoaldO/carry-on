@@ -76,10 +76,10 @@ class TestMongoUserRepositorySave:
 
         assert doc["email"] == "test@example.com"  # lowercased
         assert doc["display_name"] == "Test User"
-        assert doc["pin_hash"] is None
+        assert doc["password_hash"] is None
         assert doc["activated_at"] is None
 
-    def test_save_activated_user_includes_pin_hash_and_timestamp(
+    def test_save_activated_user_includes_password_hash_and_timestamp(
         self,
         user_collection: MagicMock,
         user_repo: UserRepository,
@@ -91,14 +91,14 @@ class TestMongoUserRepositorySave:
         user = User(
             email="test@example.com",
             display_name="Test User",
-            pin_hash="hashed_pin_123",
+            password_hash="hashed_pin_123",
             activated_at=activated_at,
         )
 
         user_repo.save(user)
 
         doc = user_collection.insert_one.call_args[0][0]
-        assert doc["pin_hash"] == "hashed_pin_123"
+        assert doc["password_hash"] == "hashed_pin_123"
         assert doc["activated_at"] == "2024-01-15T10:00:00+00:00"
 
     def test_save_existing_user_updates_document(
@@ -112,7 +112,7 @@ class TestMongoUserRepositorySave:
             id=UserId(value=str(user_id)),
             email="test@example.com",
             display_name="Updated Name",
-            pin_hash="new_hash",
+            password_hash="new_hash",
             activated_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
         )
 
@@ -139,7 +139,7 @@ class TestMongoUserRepositoryFindByEmail:
             "_id": doc_id,
             "email": "test@example.com",
             "display_name": "Test User",
-            "pin_hash": "hashed_pin",
+            "password_hash": "hashed_pin",
             "activated_at": "2024-01-15T10:00:00+00:00",
         }
 
@@ -150,7 +150,7 @@ class TestMongoUserRepositoryFindByEmail:
         assert result.id == UserId(value=str(doc_id))
         assert result.email == "test@example.com"
         assert result.display_name == "Test User"
-        assert result.pin_hash == "hashed_pin"
+        assert result.password_hash == "hashed_pin"
         assert result.activated_at == datetime(
             2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc
         )
@@ -190,7 +190,7 @@ class TestMongoUserRepositoryFindByEmail:
             "_id": doc_id,
             "email": "test@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
@@ -198,7 +198,7 @@ class TestMongoUserRepositoryFindByEmail:
 
         assert result is not None
         assert result.is_activated is False
-        assert result.pin_hash is None
+        assert result.password_hash is None
         assert result.activated_at is None
 
 
@@ -218,7 +218,7 @@ class TestMongoUserRepositoryFindById:
             "_id": doc_id,
             "email": "test@example.com",
             "display_name": "Test User",
-            "pin_hash": "hashed_pin",
+            "password_hash": "hashed_pin",
             "activated_at": "2024-01-15T10:00:00+00:00",
         }
 

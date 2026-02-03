@@ -21,7 +21,7 @@ class User:
 
     email: str
     display_name: str
-    pin_hash: str | None = None
+    password_hash: str | None = None
     activated_at: datetime | None = None
     id: UserId | None = None
 
@@ -29,7 +29,7 @@ class User:
         """Validate user state."""
         if not self.email:
             raise ValueError("Email is required")
-        if self.activated_at and not self.pin_hash:
+        if self.activated_at and not self.password_hash:
             raise ValueError("Activated users must have a password hash")
 
     @property
@@ -50,11 +50,11 @@ class User:
         """
         return cls(email=email.lower(), display_name=display_name)
 
-    def activate(self, pin_hash: str, activated_at: datetime) -> "User":
+    def activate(self, password_hash: str, activated_at: datetime) -> "User":
         """Activate the user with a password.
 
         Args:
-            pin_hash: Hashed password for authentication.
+            password_hash: Hashed password for authentication.
             activated_at: Timestamp of activation.
 
         Returns:
@@ -66,15 +66,15 @@ class User:
             id=self.id,
             email=self.email,
             display_name=self.display_name,
-            pin_hash=pin_hash,
+            password_hash=password_hash,
             activated_at=activated_at,
         )
 
-    def update_pin_hash(self, new_pin_hash: str) -> "User":
+    def update_password_hash(self, new_password_hash: str) -> "User":
         """Update the user's password hash (for rehashing).
 
         Args:
-            new_pin_hash: New hashed password.
+            new_password_hash: New hashed password.
 
         Returns:
             New User instance with updated password hash.
@@ -83,6 +83,6 @@ class User:
             id=self.id,
             email=self.email,
             display_name=self.display_name,
-            pin_hash=new_pin_hash,
+            password_hash=new_password_hash,
             activated_at=self.activated_at,
         )

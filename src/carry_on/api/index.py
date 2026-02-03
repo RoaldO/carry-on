@@ -38,13 +38,13 @@ def verify_password(
     users_collection = get_users_collection()
 
     user = users_collection.find_one({"email": x_email.lower()})
-    if not user or not verify_password_hash(x_password, user.get("pin_hash", "")):
+    if not user or not verify_password_hash(x_password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Rehash if needed (on successful auth)
-    if needs_rehash(user.get("pin_hash", "")):
+    if needs_rehash(user.get("password_hash", "")):
         users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_password(x_password)}}
+            {"_id": user["_id"]}, {"$set": {"password_hash": hash_password(x_password)}}
         )
 
     return AuthenticatedUser(
@@ -87,7 +87,7 @@ async def activate_account(request: ActivateRequest) -> dict:
         {"_id": user["_id"]},
         {
             "$set": {
-                "pin_hash": hash_password(request.password),
+                "password_hash": hash_password(request.password),
                 "activated_at": datetime.now(UTC).isoformat(),
             }
         },
@@ -115,14 +115,14 @@ async def login(request: LoginRequest) -> dict:
         raise HTTPException(status_code=400, detail="Account not activated")
 
     # Check password using secure verification
-    if not verify_password_hash(request.password, user.get("pin_hash", "")):
+    if not verify_password_hash(request.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Rehash if using outdated algorithm
-    if needs_rehash(user.get("pin_hash", "")):
+    if needs_rehash(user.get("password_hash", "")):
         new_hash = hash_password(request.password)
         users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"pin_hash": new_hash}}
+            {"_id": user["_id"]}, {"$set": {"password_hash": new_hash}}
         )
 
     return {
