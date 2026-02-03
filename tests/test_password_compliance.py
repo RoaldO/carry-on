@@ -54,9 +54,7 @@ class TestActivateRequestValidation:
     def test_rejects_password_under_8_chars(self):
         """ActivateRequest should reject passwords under 8 characters."""
         with pytest.raises(ValidationError):
-            pin_security.ActivateRequest(
-                email="test@example.com", password="1234567"
-            )
+            pin_security.ActivateRequest(email="test@example.com", password="1234567")
 
     def test_accepts_password_of_8_chars(self):
         """ActivateRequest should accept 8 character password."""
@@ -86,9 +84,7 @@ class TestLoginRequestValidation:
 
     def test_accepts_4_char_password_for_migration(self):
         """LoginRequest should accept 4-char passwords for migration support."""
-        req = pin_security.LoginRequest(
-            email="test@example.com", password="1234"
-        )
+        req = pin_security.LoginRequest(email="test@example.com", password="1234")
         assert req.password == "1234"
 
     def test_rejects_password_under_4_chars(self):
@@ -104,7 +100,5 @@ class TestLoginRequestValidation:
 
     def test_accepts_special_characters(self):
         """LoginRequest should accept special characters in password."""
-        req = pin_security.LoginRequest(
-            email="test@example.com", password="P@ssw0rd!"
-        )
+        req = pin_security.LoginRequest(email="test@example.com", password="P@ssw0rd!")
         assert req.password == "P@ssw0rd!"

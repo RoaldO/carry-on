@@ -12,8 +12,8 @@ Feature: User Registration
     And I click the continue button
     Then I should see the PIN activation form
     And I should see "Welcome, Inactive User"
-    When I enter PIN "5678"
-    And I enter confirm PIN "5678"
+    When I enter PIN "SecureP1"
+    And I enter confirm PIN "SecureP1"
     And I click the submit button
     Then I should be logged in
     And the tab bar should be visible
@@ -23,10 +23,10 @@ Feature: User Registration
     When I enter email "inactive@example.com"
     And I click the continue button
     Then I should see the PIN activation form
-    When I enter PIN "1234"
-    And I enter confirm PIN "5678"
+    When I enter PIN "SecureP1"
+    And I enter confirm PIN "SecureP2"
     And I click the submit button
-    Then I should see PIN error "PINs do not match"
+    Then I should see PIN error "Passwords do not match"
 
   Scenario: User enters unregistered email
     When I enter email "unknown@example.com"

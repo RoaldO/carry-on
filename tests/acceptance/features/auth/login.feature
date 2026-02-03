@@ -24,7 +24,7 @@ Feature: User Login
     Then I should see the PIN login form
     When I enter PIN "9999"
     And I click the submit button
-    Then I should see PIN error "Invalid email or PIN"
+    Then I should see PIN error "Invalid email or password"
 
   Scenario: Already activated user sees login form not activation form
     Given a user exists with email "active@example.com" and PIN "1234"
