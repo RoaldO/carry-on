@@ -293,6 +293,27 @@
                     <div id="pinMessage"></div>
                 </form>
             </div>
+
+            <!-- Step 3: Update Password (for weak passwords) -->
+            <div id="stepUpdatePassword" class="step">
+                <div class="welcome-name">Password Update Required</div>
+                <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
+                    Your password doesn't meet our new security requirements.
+                    Please create a new password (minimum 8 characters).
+                </p>
+                <form id="updatePasswordForm">
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" placeholder="Minimum 8 characters" minlength="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword">Confirm New Password</label>
+                        <input type="password" id="confirmNewPassword" name="confirmNewPassword" placeholder="Confirm new password" minlength="8" required>
+                    </div>
+                    <button type="submit">Update Password</button>
+                    <div id="updatePasswordMessage"></div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -404,6 +425,7 @@
         const loginScreen = document.getElementById('loginScreen');
         const stepEmail = document.getElementById('stepEmail');
         const stepPin = document.getElementById('stepPin');
+        const stepUpdatePassword = document.getElementById('stepUpdatePassword');
         const emailForm = document.getElementById('emailForm');
         const emailInput = document.getElementById('email');
         const emailMessage = document.getElementById('emailMessage');
@@ -416,8 +438,13 @@
         const pinSubmitBtn = document.getElementById('pinSubmitBtn');
         const welcomeName = document.getElementById('welcomeName');
         const backToEmail = document.getElementById('backToEmail');
+        const updatePasswordForm = document.getElementById('updatePasswordForm');
+        const newPasswordInput = document.getElementById('newPassword');
+        const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
+        const updatePasswordMessage = document.getElementById('updatePasswordMessage');
 
         let currentEmail = '';
+        let currentPassword = ''; // Store current password for migration flow
         let isActivation = false;
 
         // Tab bar elements
@@ -463,10 +490,13 @@
         function showStep(step) {
             stepEmail.classList.remove('active');
             stepPin.classList.remove('active');
+            stepUpdatePassword.classList.remove('active');
             if (step === 'email') {
                 stepEmail.classList.add('active');
-            } else {
+            } else if (step === 'pin') {
                 stepPin.classList.add('active');
+            } else if (step === 'updatePassword') {
+                stepUpdatePassword.classList.add('active');
             }
         }
 
@@ -605,14 +635,65 @@
                 // Login flow
                 const result = await login(currentEmail, pin);
                 if (result.ok) {
-                    storeAuth(currentEmail, pin);
-                    hideLoginScreen();
-                    loadRecentStrokes();
+                    if (result.data.status === 'password_update_required') {
+                        // Store current password for update flow
+                        currentPassword = pin;
+                        newPasswordInput.value = '';
+                        confirmNewPasswordInput.value = '';
+                        updatePasswordMessage.textContent = '';
+                        showStep('updatePassword');
+                    } else {
+                        storeAuth(currentEmail, pin);
+                        hideLoginScreen();
+                        loadRecentStrokes();
+                    }
                 } else {
                     pinMessage.textContent = result.data.detail || 'Invalid password';
                     pinMessage.className = 'message error';
                     pinInput.value = '';
                 }
+            }
+        });
+
+        // Update password form submission
+        updatePasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const newPassword = newPasswordInput.value;
+            updatePasswordMessage.textContent = '';
+            updatePasswordMessage.className = '';
+
+            // Check passwords match
+            if (newPassword !== confirmNewPasswordInput.value) {
+                updatePasswordMessage.textContent = 'Passwords do not match';
+                updatePasswordMessage.className = 'message error';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/update-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: currentEmail,
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store new credentials and proceed
+                    storeAuth(currentEmail, newPassword);
+                    currentPassword = '';
+                    hideLoginScreen();
+                    loadRecentStrokes();
+                } else {
+                    updatePasswordMessage.textContent = data.detail || 'Update failed';
+                    updatePasswordMessage.className = 'message error';
+                }
+            } catch {
+                updatePasswordMessage.textContent = 'Network error';
+                updatePasswordMessage.className = 'message error';
             }
         });
 
@@ -623,6 +704,16 @@
             if (auth) {
                 const result = await login(auth.email, auth.password);
                 if (result.ok) {
+                    if (result.data.status === 'password_update_required') {
+                        // Need to update password
+                        currentEmail = auth.email;
+                        currentPassword = auth.password;
+                        newPasswordInput.value = '';
+                        confirmNewPasswordInput.value = '';
+                        updatePasswordMessage.textContent = '';
+                        showStep('updatePassword');
+                        return;
+                    }
                     hideLoginScreen();
                     loadRecentStrokes();
                     return;
