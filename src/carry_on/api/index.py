@@ -7,12 +7,14 @@ from fastapi.responses import HTMLResponse
 
 from carry_on.api.password_security import (
     hash_password,
+    is_password_compliant,
     needs_rehash,
     verify_password as verify_password_hash,
     AuthenticatedUser,
     EmailCheck,
     ActivateRequest,
     LoginRequest,
+    UpdatePasswordRequest,
 )
 from carry_on.infrastructure.repositories.mongo_user_repository import (
     get_users_collection,
@@ -125,12 +127,57 @@ async def login(request: LoginRequest) -> dict:
             {"_id": user["_id"]}, {"$set": {"password_hash": new_hash}}
         )
 
+    # Check if password meets complexity requirements
+    if not is_password_compliant(request.password):
+        return {
+            "status": "password_update_required",
+            "message": "Password does not meet complexity requirements",
+            "user": {
+                "email": user["email"],
+                "display_name": user.get("display_name", ""),
+            },
+        }
+
     return {
+        "status": "success",
         "message": "Login successful",
         "user": {
             "email": user["email"],
             "display_name": user.get("display_name", ""),
         },
+    }
+
+
+@app.post("/api/update-password")
+async def update_password(request: UpdatePasswordRequest) -> dict:
+    """Update password for users with weak passwords."""
+    users_collection = get_users_collection()
+
+    user = users_collection.find_one({"email": request.email.lower()})
+    if not user:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    # Verify current password
+    stored_hash = user.get("password_hash", "")
+    if not verify_password_hash(request.current_password, stored_hash):
+        raise HTTPException(status_code=401, detail="Invalid current password")
+
+    # Validate new password meets complexity requirements
+    if not is_password_compliant(request.new_password):
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be at least 8 characters",
+        )
+
+    # Update password hash
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password_hash": hash_password(request.new_password)}},
+    )
+
+    return {
+        "status": "success",
+        "message": "Password updated successfully",
     }
 
 

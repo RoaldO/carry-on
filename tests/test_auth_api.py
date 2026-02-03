@@ -225,7 +225,7 @@ class TestLoginEndpoint:
         mock_users_collection: MagicMock,
     ) -> None:
         """POST /api/login with hashed password returns success."""
-        hashed = hash_password("1234")
+        hashed = hash_password("SecurePass1")  # Compliant password (8+ chars)
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
@@ -236,10 +236,11 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "password": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 200
         data = response.json()
+        assert data["status"] == "success"
         assert data["message"] == "Login successful"
         assert data["user"]["email"] == "user@example.com"
         # Should not rehash since password is already properly hashed
@@ -276,7 +277,7 @@ class TestLoginEndpoint:
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/login with weak password returns password_update_required status."""
+        """POST /api/login with weak password returns password_update_required."""
         hashed = hash_password("1234")  # 4-char weak password
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
@@ -350,12 +351,12 @@ class TestUpdatePasswordEndpoint:
         )
         assert response.status_code == 401
 
-    def test_update_password_with_weak_new_password_returns_400(
+    def test_update_password_with_weak_new_password_returns_422(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/update-password with weak new password returns 400."""
+        """POST /api/update-password with weak new password returns 422."""
         hashed = hash_password("1234")
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
@@ -370,10 +371,11 @@ class TestUpdatePasswordEndpoint:
             json={
                 "email": "user@example.com",
                 "current_password": "1234",
-                "new_password": "short",  # Only 5 chars
+                "new_password": "short",  # Only 5 chars - fails Pydantic validation
             },
         )
-        assert response.status_code == 400
+        # Pydantic validation returns 422 for constraint violations
+        assert response.status_code == 422
 
     def test_update_password_unknown_email_returns_404(
         self,
