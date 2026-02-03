@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import allure
 from fastapi.testclient import TestClient
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 
 
 @allure.feature("REST API")
@@ -219,13 +219,13 @@ class TestLoginEndpoint:
         )
         assert response.status_code == 401
 
-    def test_login_success_with_hashed_pin(
+    def test_login_success_with_hashed_password(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/login with correct credentials and hashed PIN returns success."""
-        hashed = hash_pin("1234")
+        """POST /api/login with hashed password returns success."""
+        hashed = hash_password("1234")
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
@@ -242,20 +242,20 @@ class TestLoginEndpoint:
         data = response.json()
         assert data["message"] == "Login successful"
         assert data["user"]["email"] == "user@example.com"
-        # Should not rehash since PIN is already properly hashed
+        # Should not rehash since password is already properly hashed
         mock_users_collection.update_one.assert_not_called()
 
-    def test_login_success_with_plain_pin_triggers_rehash(
+    def test_login_success_with_plain_password_triggers_rehash(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/login with plain text PIN triggers rehashing."""
+        """POST /api/login with plain text password triggers rehashing."""
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "1234",  # Plain text PIN (legacy)
+            "pin_hash": "1234",  # Plain text password (legacy)
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -264,7 +264,7 @@ class TestLoginEndpoint:
             json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 200
-        # Should trigger rehash since PIN was plain text
+        # Should trigger rehash since password was plain text
         mock_users_collection.update_one.assert_called_once()
         # Verify the new hash is Argon2 format
         call_args = mock_users_collection.update_one.call_args

@@ -5,7 +5,7 @@ from typing import Any
 from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 
@@ -14,12 +14,14 @@ scenarios("../features/auth/session.feature")
 
 
 @given(
-    parsers.parse('a user exists with email "{email}" and PIN "{pin}"'),
+    parsers.parse('a user exists with email "{email}" and password "{password}"'),
     target_fixture="test_user",
 )
-def user_with_pin(test_database: Database[Any], email: str, pin: str) -> dict[str, Any]:
-    """Create an activated user with a PIN in the database."""
-    pin_hash = hash_pin(pin)
+def user_with_password(
+    test_database: Database[Any], email: str, password: str
+) -> dict[str, Any]:
+    """Create an activated user with a password in the database."""
+    pin_hash = hash_password(password)
     activated_at = "2026-01-25T10:00:00Z"
     user_id = insert_user(
         test_database,
@@ -34,17 +36,17 @@ def user_with_pin(test_database: Database[Any], email: str, pin: str) -> dict[st
         "display_name": "Session Test User",
         "pin_hash": pin_hash,
         "activated_at": activated_at,
-        "pin": pin,
+        "password": password,
     }
 
 
-@when(parsers.parse('I log in with email "{email}" and PIN "{pin}"'))
-def log_in(login_page: LoginPage, email: str, pin: str) -> None:
+@when(parsers.parse('I log in with email "{email}" and password "{password}"'))
+def log_in(login_page: LoginPage, email: str, password: str) -> None:
     """Perform a complete login flow."""
     login_page.enter_email(email)
     login_page.click_continue()
     login_page.wait_for_pin_step()
-    login_page.enter_pin(pin)
+    login_page.enter_pin(password)
     login_page.click_submit()
 
 
@@ -59,7 +61,7 @@ def set_invalid_credentials(login_page: LoginPage) -> None:
     """Set invalid credentials in localStorage to simulate corrupted session."""
     login_page.page.evaluate("""
         localStorage.setItem('carryon_email', 'invalid@example.com');
-        localStorage.setItem('carryon_pin', 'wrongpin');
+        localStorage.setItem('carryon_password', 'wrongpassword');
     """)
 
 

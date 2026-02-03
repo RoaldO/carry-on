@@ -10,7 +10,7 @@ from playwright.sync_api import Page
 from pymongo.database import Database
 from pytest_bdd import given, parsers, then, when
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 from tests.acceptance.db_utils import clear_collections, get_test_database, insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.stroke_page import StrokePage
@@ -120,7 +120,7 @@ def activated_user_email() -> str:
 
 
 @pytest.fixture
-def activated_user_pin() -> str:
+def activated_user_password() -> str:
     return "1234"
 
 
@@ -128,10 +128,10 @@ def activated_user_pin() -> str:
 def activated_user(
     test_database: Database[Any],
     activated_user_email: str,
-    activated_user_pin: str,
+    activated_user_password: str,
 ) -> dict[str, Any]:
     """Create an activated user in the database."""
-    pin_hash = hash_pin(activated_user_pin)
+    pin_hash = hash_password(activated_user_password)
     activated_at = "2026-01-25T10:00:00Z"
     user_id = insert_user(
         test_database,
@@ -146,7 +146,7 @@ def activated_user(
         "display_name": "Active User",
         "pin_hash": pin_hash,
         "activated_at": activated_at,
-        "pin": activated_user_pin,  # Include plain PIN for test use
+        "password": activated_user_password,  # Include plain password for test use
     }
 
 
@@ -176,14 +176,14 @@ def click_continue(login_page: LoginPage) -> None:
     login_page.click_continue()
 
 
-@when(parsers.parse('I enter PIN "{pin}"'))
-def enter_pin(login_page: LoginPage, pin: str) -> None:
-    login_page.enter_pin(pin)
+@when(parsers.parse('I enter password "{password}"'))
+def enter_password(login_page: LoginPage, password: str) -> None:
+    login_page.enter_pin(password)
 
 
-@when(parsers.parse('I enter confirm PIN "{pin}"'))
-def enter_confirm_pin(login_page: LoginPage, pin: str) -> None:
-    login_page.enter_confirm_pin(pin)
+@when(parsers.parse('I enter confirm password "{password}"'))
+def enter_confirm_password(login_page: LoginPage, password: str) -> None:
+    login_page.enter_confirm_pin(password)
 
 
 @when("I click the submit button")
@@ -202,8 +202,8 @@ def tab_bar_visible(login_page: LoginPage) -> None:
     assert login_page.is_tab_bar_visible(), "Tab bar should be visible"
 
 
-@then(parsers.parse('I should see PIN error "{error}"'))
-def see_pin_error(login_page: LoginPage, error: str) -> None:
+@then(parsers.parse('I should see password error "{error}"'))
+def see_password_error(login_page: LoginPage, error: str) -> None:
     login_page.wait_for_pin_error()
     actual_error = login_page.get_pin_error()
     assert error in actual_error, f"Expected '{error}' in '{actual_error}'"
@@ -226,13 +226,13 @@ def see_text(login_page: LoginPage, text: str) -> None:
 def an_authenticated_user(
     login_page: LoginPage,
     activated_user_email: str,
-    activated_user_pin: str,
+    activated_user_password: str,
     activated_user: dict[str, Any],
 ):
     login_page.goto_login()
     login_page.enter_email(activated_user_email)
     login_page.click_continue()
     login_page.wait_for_pin_step()
-    login_page.enter_pin(activated_user_pin)
+    login_page.enter_pin(activated_user_password)
     login_page.click_submit()
     login_page.wait_for_logged_in()

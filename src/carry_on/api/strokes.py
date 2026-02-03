@@ -4,8 +4,8 @@ from typing import Optional
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from carry_on.api.index import app, verify_pin
-from carry_on.api.pin_security import AuthenticatedUser
+from carry_on.api.index import app, verify_password
+from carry_on.api.password_security import AuthenticatedUser
 from carry_on.infrastructure.repositories import MongoStrokeRepository
 from carry_on.infrastructure.repositories.mongo_stroke_repository import (
     get_strokes_collection,
@@ -37,7 +37,7 @@ class Stroke(BaseModel):
 @app.post("/api/strokes")
 async def create_stroke(
     stroke: StrokeCreate,
-    user: AuthenticatedUser = Depends(verify_pin),
+    user: AuthenticatedUser = Depends(verify_password),
     service: StrokeService = Depends(get_stroke_service),
 ) -> dict:
     """Record a new golf stroke."""
@@ -68,7 +68,7 @@ async def create_stroke(
 @app.get("/api/strokes")
 async def list_strokes(
     limit: int = 20,
-    user: AuthenticatedUser = Depends(verify_pin),
+    user: AuthenticatedUser = Depends(verify_password),
     service: StrokeService = Depends(get_stroke_service),
 ) -> dict:
     """List recent strokes for the authenticated user."""

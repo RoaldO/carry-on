@@ -15,8 +15,8 @@ class UserId:
 class User:
     """Entity representing an application user.
 
-    Users authenticate with email and PIN. New users must activate their
-    account by setting a PIN before they can log in.
+    Users authenticate with email and password. New users must activate their
+    account by setting a password before they can log in.
     """
 
     email: str
@@ -30,7 +30,7 @@ class User:
         if not self.email:
             raise ValueError("Email is required")
         if self.activated_at and not self.pin_hash:
-            raise ValueError("Activated users must have a PIN hash")
+            raise ValueError("Activated users must have a password hash")
 
     @property
     def is_activated(self) -> bool:
@@ -51,10 +51,10 @@ class User:
         return cls(email=email.lower(), display_name=display_name)
 
     def activate(self, pin_hash: str, activated_at: datetime) -> "User":
-        """Activate the user with a PIN.
+        """Activate the user with a password.
 
         Args:
-            pin_hash: Hashed PIN for authentication.
+            pin_hash: Hashed password for authentication.
             activated_at: Timestamp of activation.
 
         Returns:
@@ -71,13 +71,13 @@ class User:
         )
 
     def update_pin_hash(self, new_pin_hash: str) -> "User":
-        """Update the user's PIN hash (for rehashing).
+        """Update the user's password hash (for rehashing).
 
         Args:
-            new_pin_hash: New hashed PIN.
+            new_pin_hash: New hashed password.
 
         Returns:
-            New User instance with updated PIN hash.
+            New User instance with updated password hash.
         """
         return User(
             id=self.id,

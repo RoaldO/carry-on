@@ -50,7 +50,7 @@ def insert_user(
         db: The MongoDB database instance.
         email: User's email address (will be lowercased).
         display_name: User's display name.
-        pin_hash: Hashed PIN (None for inactive users).
+        pin_hash: Hashed password (None for inactive users).
         activated_at: Activation timestamp (None for inactive users).
             Can be a datetime object or ISO format string.
 

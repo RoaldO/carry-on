@@ -38,7 +38,7 @@ class TestUserCreation:
     """Tests for User entity creation."""
 
     def test_create_pending_user(self) -> None:
-        """Should create a pending user without PIN."""
+        """Should create a pending user without password."""
         user = User.create_pending(email="test@example.com", display_name="Test User")
 
         assert user.email == "test@example.com"
@@ -58,9 +58,11 @@ class TestUserCreation:
         with pytest.raises(ValueError, match="Email is required"):
             User(email="", display_name="Test")
 
-    def test_activated_user_requires_pin_hash(self) -> None:
-        """Should raise ValueError if activated without PIN hash."""
-        with pytest.raises(ValueError, match="Activated users must have a PIN hash"):
+    def test_activated_user_requires_password_hash(self) -> None:
+        """Should raise ValueError if activated without password hash."""
+        with pytest.raises(
+            ValueError, match="Activated users must have a password hash"
+        ):
             User(
                 email="test@example.com",
                 display_name="Test",
@@ -119,11 +121,11 @@ class TestUserActivation:
 
 @allure.feature("Domain")
 @allure.story("User Entity")
-class TestUserPinUpdate:
-    """Tests for User PIN hash update."""
+class TestUserPasswordUpdate:
+    """Tests for User password hash update."""
 
     def test_update_pin_hash(self) -> None:
-        """Should update PIN hash preserving other fields."""
+        """Should update password hash preserving other fields."""
         user = User(
             id=UserId(value="123"),
             email="test@example.com",

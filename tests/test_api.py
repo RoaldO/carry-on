@@ -5,25 +5,25 @@ from unittest.mock import MagicMock, patch
 import allure
 from fastapi.testclient import TestClient
 
-from carry_on.api.pin_security import hash_pin, AuthenticatedUser
+from carry_on.api.password_security import hash_password, AuthenticatedUser
 
 
 @allure.feature("REST API")
 @allure.story("Authentication")
-class TestVerifyPinReturnsAuthenticatedUser:
-    """Tests for verify_pin returning AuthenticatedUser."""
+class TestVerifyPasswordReturnsAuthenticatedUser:
+    """Tests for verify_password returning AuthenticatedUser."""
 
-    def test_verify_pin_returns_authenticated_user(self) -> None:
-        """verify_pin should return AuthenticatedUser with user data."""
-        from carry_on.api.index import verify_pin
+    def test_verify_password_returns_authenticated_user(self) -> None:
+        """verify_password should return AuthenticatedUser with user data."""
+        from carry_on.api.index import verify_password
 
         test_email = "test@example.com"
-        test_pin = "1234"
+        test_password = "1234"
         mock_user = {
             "_id": "user123",
             "email": test_email,
             "display_name": "Test User",
-            "pin_hash": hash_pin(test_pin),
+            "pin_hash": hash_password(test_password),
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -32,23 +32,23 @@ class TestVerifyPinReturnsAuthenticatedUser:
             mock_collection.find_one.return_value = mock_user
             mock_get_collection.return_value = mock_collection
 
-            result = verify_pin(x_pin=test_pin, x_email=test_email)
+            result = verify_password(x_password=test_password, x_email=test_email)
 
             assert isinstance(result, AuthenticatedUser)
             assert result.id == "user123"
             assert result.email == test_email
             assert result.display_name == "Test User"
 
-    def test_verify_pin_returns_user_without_display_name(self) -> None:
-        """verify_pin should handle users without display_name."""
-        from carry_on.api.index import AuthenticatedUser, verify_pin
+    def test_verify_password_returns_user_without_display_name(self) -> None:
+        """verify_password should handle users without display_name."""
+        from carry_on.api.index import AuthenticatedUser, verify_password
 
         test_email = "test@example.com"
-        test_pin = "1234"
+        test_password = "1234"
         mock_user = {
             "_id": "user456",
             "email": test_email,
-            "pin_hash": hash_pin(test_pin),
+            "pin_hash": hash_password(test_password),
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -57,7 +57,7 @@ class TestVerifyPinReturnsAuthenticatedUser:
             mock_collection.find_one.return_value = mock_user
             mock_get_collection.return_value = mock_collection
 
-            result = verify_pin(x_pin=test_pin, x_email=test_email)
+            result = verify_password(x_password=test_password, x_email=test_email)
 
             assert isinstance(result, AuthenticatedUser)
             assert result.id == "user456"
@@ -93,9 +93,8 @@ class TestStrokesEndpoint:
         self, client: TestClient, mock_users_collection: MagicMock
     ) -> None:
         """GET /api/strokes with invalid credentials should return 401."""
-        response = client.get(
-            "/api/strokes", headers={"X-Email": "wrong@example.com", "X-Pin": "wrong"}
-        )
+        headers = {"X-Email": "wrong@example.com", "X-Password": "wrong"}
+        response = client.get("/api/strokes", headers=headers)
         assert response.status_code == 401
 
     def test_get_strokes_with_valid_auth(
@@ -242,6 +241,6 @@ class TestMeEndpoint:
     ) -> None:
         """GET /api/me with invalid credentials should return 401."""
         response = client.get(
-            "/api/me", headers={"X-Email": "wrong@example.com", "X-Pin": "wrong"}
+            "/api/me", headers={"X-Email": "wrong@example.com", "X-Password": "wrong"}
         )
         assert response.status_code == 401

@@ -9,7 +9,7 @@ import warnings
 import pytest
 from fastapi.testclient import TestClient
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 from carry_on.services.stroke_service import StrokeService
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
@@ -74,15 +74,15 @@ def test_email() -> str:
 
 
 @pytest.fixture
-def test_pin() -> str:
-    """Test PIN for authentication."""
+def test_password() -> str:
+    """Test password for authentication."""
     return "1234"
 
 
 @pytest.fixture
-def test_pin_hashed(test_pin: str) -> str:
-    """Test PIN hashed with Argon2 for authentication tests."""
-    return hash_pin(test_pin)
+def test_password_hashed(test_password: str) -> str:
+    """Test password hashed with Argon2 for authentication tests."""
+    return hash_password(test_password)
 
 
 @pytest.fixture
@@ -131,9 +131,9 @@ def client_with_fake_repo(
 
 
 @pytest.fixture
-def auth_headers(test_email: str, test_pin: str) -> dict[str, str]:
-    """Headers with valid email and PIN for authenticated requests."""
-    return {"X-Email": test_email, "X-Pin": test_pin}
+def auth_headers(test_email: str, test_password: str) -> dict[str, str]:
+    """Headers with valid email and password for authenticated requests."""
+    return {"X-Email": test_email, "X-Password": test_password}
 
 
 @pytest.fixture
@@ -159,29 +159,29 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_authenticated_user(
-    mock_users_collection: MagicMock, test_email: str, test_pin_hashed: str
+    mock_users_collection: MagicMock, test_email: str, test_password_hashed: str
 ) -> MagicMock:
-    """Mock a valid authenticated user in the database with hashed PIN."""
+    """Mock a valid authenticated user in the database with hashed password."""
     mock_users_collection.find_one.return_value = {
         "_id": "user123",
         "email": test_email,
         "display_name": "Test User",
-        "pin_hash": test_pin_hashed,
+        "pin_hash": test_password_hashed,
         "activated_at": "2026-01-25T10:00:00Z",
     }
     return mock_users_collection
 
 
 @pytest.fixture
-def mock_authenticated_user_plain_pin(
-    mock_users_collection: MagicMock, test_email: str, test_pin: str
+def mock_authenticated_user_plain_password(
+    mock_users_collection: MagicMock, test_email: str, test_password: str
 ) -> MagicMock:
-    """Mock a user with plain text PIN (legacy, needs rehash)."""
+    """Mock a user with plain text password (legacy, needs rehash)."""
     mock_users_collection.find_one.return_value = {
         "_id": "user123",
         "email": test_email,
         "display_name": "Test User",
-        "pin_hash": test_pin,
+        "pin_hash": test_password,
         "activated_at": "2026-01-25T10:00:00Z",
     }
     return mock_users_collection

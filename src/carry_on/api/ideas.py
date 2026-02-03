@@ -6,8 +6,8 @@ from fastapi import Depends
 from pydantic import BaseModel, Field
 from pymongo.synchronous.collection import Collection
 
-from carry_on.api.index import app, verify_pin
-from carry_on.api.pin_security import AuthenticatedUser
+from carry_on.api.index import app, verify_password
+from carry_on.api.password_security import AuthenticatedUser
 from carry_on.infrastructure.mongodb import get_database
 
 
@@ -24,7 +24,7 @@ class IdeaCreate(BaseModel):
 
 @app.post("/api/ideas")
 async def create_idea(
-    idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_pin)
+    idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_password)
 ) -> dict:
     """Submit a new idea."""
     ideas_collection = get_ideas_collection()

@@ -1,4 +1,4 @@
-"""PIN hashing utilities with algorithm versioning."""
+"""Password hashing utilities with algorithm versioning."""
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
@@ -8,22 +8,22 @@ from pydantic import BaseModel, Field
 _hasher = PasswordHasher()
 
 
-def hash_pin(pin: str) -> str:
-    """Hash a PIN using the current preferred algorithm (Argon2id)."""
-    return _hasher.hash(pin)
+def hash_password(password: str) -> str:
+    """Hash a password using the current preferred algorithm (Argon2id)."""
+    return _hasher.hash(password)
 
 
-def verify_pin(pin: str, stored_hash: str) -> bool:
-    """Verify PIN against stored hash (supports plain text and Argon2)."""
+def verify_password(password: str, stored_hash: str) -> bool:
+    """Verify password against stored hash (supports plain text and Argon2)."""
     if stored_hash.startswith("$argon2"):
         try:
-            _hasher.verify(stored_hash, pin)
+            _hasher.verify(stored_hash, password)
             return True
         except (VerifyMismatchError, InvalidHashError, VerificationError):
             return False
     else:
         # Plain text comparison (legacy)
-        return stored_hash == pin
+        return stored_hash == password
 
 
 def needs_rehash(stored_hash: str) -> bool:
@@ -48,7 +48,7 @@ def is_password_compliant(password: str) -> bool:
 
 
 class AuthenticatedUser(BaseModel):
-    """Represents an authenticated user returned by verify_pin()."""
+    """Represents an authenticated user returned by verify_password()."""
 
     id: str
     email: str

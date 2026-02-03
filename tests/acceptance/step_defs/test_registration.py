@@ -34,11 +34,11 @@ def user_needs_activation(test_database: Database[Any], email: str) -> dict[str,
     }
 
 
-@then("I should see the PIN activation form")
+@then("I should see the password activation form")
 def see_activation_form(login_page: LoginPage) -> None:
-    """Verify the PIN activation form is visible."""
+    """Verify the password activation form is visible."""
     login_page.wait_for_pin_step()
-    assert login_page.is_confirm_pin_visible(), "Confirm PIN field should be visible"
+    assert login_page.is_confirm_pin_visible(), "Confirm password should be visible"
     assert login_page.get_submit_button_text() == "Activate"
 
 

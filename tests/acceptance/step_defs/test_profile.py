@@ -7,7 +7,7 @@ from playwright.sync_api import Page
 from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.navigation_page import NavigationPage
@@ -24,16 +24,16 @@ def nav_page(page: Page, base_url: str) -> NavigationPage:
 
 @given(
     parsers.parse(
-        'a user exists with email "{email}" and PIN "{pin}" and display name '
+        'a user exists with email "{email}" and password "{password}" and display name '
         '"{display_name}"'
     ),
     target_fixture="test_user",
 )
 def user_with_display_name(
-    test_database: Database[Any], email: str, pin: str, display_name: str
+    test_database: Database[Any], email: str, password: str, display_name: str
 ) -> dict[str, Any]:
     """Create an activated user with a display name in the database."""
-    pin_hash = hash_pin(pin)
+    pin_hash = hash_password(password)
     activated_at = "2026-01-25T10:00:00Z"
     user_id = insert_user(
         test_database,
@@ -48,18 +48,18 @@ def user_with_display_name(
         "display_name": display_name,
         "pin_hash": pin_hash,
         "activated_at": activated_at,
-        "pin": pin,
+        "password": password,
     }
 
 
-@given(parsers.parse('I am logged in as "{email}" with PIN "{pin}"'))
-def logged_in(login_page: LoginPage, email: str, pin: str) -> None:
+@given(parsers.parse('I am logged in as "{email}" with password "{password}"'))
+def logged_in(login_page: LoginPage, email: str, password: str) -> None:
     """Perform login with given credentials."""
     login_page.goto_login()
     login_page.enter_email(email)
     login_page.click_continue()
     login_page.wait_for_pin_step()
-    login_page.enter_pin(pin)
+    login_page.enter_pin(password)
     login_page.click_submit()
     login_page.wait_for_logged_in()
 
