@@ -30,9 +30,7 @@ def get_test_database() -> Database[Any]:
     # Safety check: refuse to run against production databases
     uri_lower = uri.lower()
     is_safe = (
-        "test" in uri_lower
-        or "localhost" in uri_lower
-        or "127.0.0.1" in uri_lower
+        "test" in uri_lower or "localhost" in uri_lower or "127.0.0.1" in uri_lower
     )
     if not is_safe:
         raise RuntimeError(
