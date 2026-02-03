@@ -9,17 +9,38 @@ from pymongo.database import Database
 
 
 def get_test_database() -> Database[Any]:
-    """Get MongoDB database connection using MONGODB_URI environment variable.
+    """Get MongoDB database connection for tests.
+
+    Uses MONGODB_TEST_URI if set, otherwise falls back to MONGODB_URI.
+    As a safety measure, refuses to run if the URI appears to point to
+    a production database (must contain 'test' or 'localhost').
 
     Returns:
         The 'carryon' database from the MongoDB connection.
 
     Raises:
-        RuntimeError: If MONGODB_URI is not set.
+        RuntimeError: If no URI is set or if URI appears to be production.
     """
-    uri = os.getenv("MONGODB_URI")
+    uri = os.getenv("MONGODB_TEST_URI") or os.getenv("MONGODB_URI")
     if not uri:
-        raise RuntimeError("MONGODB_URI environment variable is not set")
+        raise RuntimeError(
+            "MONGODB_TEST_URI or MONGODB_URI environment variable must be set"
+        )
+
+    # Safety check: refuse to run against production databases
+    uri_lower = uri.lower()
+    is_safe = (
+        "test" in uri_lower
+        or "localhost" in uri_lower
+        or "127.0.0.1" in uri_lower
+    )
+    if not is_safe:
+        raise RuntimeError(
+            "DANGER: Refusing to run tests against what appears to be a "
+            "production database. Set MONGODB_TEST_URI to a test database, "
+            "or ensure your URI contains 'test' or 'localhost'."
+        )
+
     client: MongoClient[Any] = MongoClient(uri)
     return client.carryon
 
