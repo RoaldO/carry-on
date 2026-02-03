@@ -177,10 +177,10 @@ Add linting, formatting, and type checking to CI pipeline.
 
 ### 0q. Architecture Validation with Deply
 Use deply to enforce architectural boundaries and dependency rules.
-- [ ] Install deply package
-- [ ] Configure layer definitions (domain, infrastructure, api, services)
-- [ ] Define dependency rules (e.g., domain must not depend on infrastructure)
-- [ ] Add `deply` nox session for architecture checks
+- [x] Install deply package
+- [x] Configure layer definitions (domain, infrastructure, api, services)
+- [x] Define dependency rules (e.g., domain must not depend on infrastructure)
+- [x] Add `deply` nox session for architecture checks
 - [ ] Add architecture validation to CI pipeline
 
 ### 0r. Infer GitHub Actions from Project Configuration
