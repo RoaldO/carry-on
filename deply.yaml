@@ -1,0 +1,68 @@
+deply:
+  paths:
+    - ./src  # Adjust to point to the correct directory where the code resides
+
+  exclude_files:
+    - ".*\\.venv/.*"  # Exclude any virtual environments
+
+  layers:
+    # Define the API Layer
+    - name: api
+      collectors:
+        - type: directory
+          directories:
+            - "carry_on/api"
+
+    # Define the Domain Layer
+    - name: domain
+      collectors:
+        - type: directory
+          directories:
+            - "carry_on/domain"
+
+    # Define the Services Layer
+    - name: services
+      collectors:
+        - type: directory
+          directories:
+            - "carry_on/services"
+
+    # Define the Infrastructure Layer
+    - name: infrastructure
+      collectors:
+        - type: directory
+          directories:
+            - "carry_on/infrastructure"
+
+    # Static files layer (if needed)
+    - name: static
+      collectors:
+        - type: directory
+          directories:
+            - "carry_on/static"
+
+  ruleset:
+    # API should not depend on Infrastructure or Static layers
+    api:
+      disallow_layer_dependencies:
+        - infrastructure
+        - static
+
+    # Services can depend on domain and infrastructure
+    services:
+      allow_layer_dependencies:
+        - domain
+        - infrastructure
+
+    # Domain can have dependencies but not on API
+    domain:
+      disallow_layer_dependencies:
+        - api
+
+    # Static should not depend on any other layers
+    static:
+      disallow_layer_dependencies:
+        - api
+        - services
+        - domain
+        - infrastructure

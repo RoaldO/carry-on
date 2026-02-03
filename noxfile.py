@@ -15,6 +15,7 @@ import tomllib
 # Use uv for all package management
 nox.options.default_venv_backend = "uv"
 
+
 @contextlib.contextmanager
 def mongodb(session: nox.Session):
     container = "nox-mongo-test"
@@ -49,6 +50,13 @@ def mongodb(session: nox.Session):
 )
 def final(session: nox.Session):
     """Final checks before pull request."""
+
+
+@nox.session
+def arch(session):
+    """Perform architecture validation of the project."""
+    session.install("deply")
+    session.run("deply", "analyze")
 
 
 @nox.session(python="3.12")
