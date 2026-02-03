@@ -14,9 +14,7 @@ scenarios("../features/auth/password_migration.feature")
 
 
 @given(
-    parsers.parse(
-        'a user exists with email "{email}" and weak password "{password}"'
-    ),
+    parsers.parse('a user exists with email "{email}" and weak password "{password}"'),
     target_fixture="test_user",
 )
 def user_with_weak_password(
