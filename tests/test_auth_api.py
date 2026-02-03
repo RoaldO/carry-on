@@ -225,7 +225,7 @@ class TestLoginEndpoint:
         mock_users_collection: MagicMock,
     ) -> None:
         """POST /api/login with hashed password returns success."""
-        hashed = hash_password("1234")
+        hashed = hash_password("SecurePass1")  # Compliant password (8+ chars)
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
@@ -236,10 +236,11 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "password": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 200
         data = response.json()
+        assert data["status"] == "success"
         assert data["message"] == "Login successful"
         assert data["user"]["email"] == "user@example.com"
         # Should not rehash since password is already properly hashed
@@ -267,6 +268,163 @@ class TestLoginEndpoint:
         # Should trigger rehash since password was plain text
         mock_users_collection.update_one.assert_called_once()
         # Verify the new hash is Argon2 format
+        call_args = mock_users_collection.update_one.call_args
+        new_hash = call_args[0][1]["$set"]["password_hash"]
+        assert new_hash.startswith("$argon2id$")
+
+    def test_login_with_weak_password_returns_password_update_required(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/login with weak password returns password_update_required."""
+        hashed = hash_password("1234")  # 4-char weak password
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "password_hash": hashed,
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        response = client.post(
+            "/api/login",
+            json={"email": "user@example.com", "password": "1234"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "password_update_required"
+        assert data["user"]["email"] == "user@example.com"
+
+    def test_login_with_compliant_password_returns_success(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/login with compliant password returns success status."""
+        hashed = hash_password("SecurePass123")  # 13-char compliant password
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "password_hash": hashed,
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        response = client.post(
+            "/api/login",
+            json={"email": "user@example.com", "password": "SecurePass123"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["user"]["email"] == "user@example.com"
+
+
+@allure.feature("REST API")
+@allure.story("Password Update")
+class TestUpdatePasswordEndpoint:
+    """Tests for POST /api/update-password endpoint."""
+
+    def test_update_password_with_wrong_current_password_returns_401(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/update-password with wrong current password returns 401."""
+        hashed = hash_password("1234")
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "password_hash": hashed,
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        response = client.post(
+            "/api/update-password",
+            json={
+                "email": "user@example.com",
+                "current_password": "wrong",
+                "new_password": "SecurePass123",
+            },
+        )
+        assert response.status_code == 401
+
+    def test_update_password_with_weak_new_password_returns_422(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/update-password with weak new password returns 422."""
+        hashed = hash_password("1234")
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "password_hash": hashed,
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        response = client.post(
+            "/api/update-password",
+            json={
+                "email": "user@example.com",
+                "current_password": "1234",
+                "new_password": "short",  # Only 5 chars - fails Pydantic validation
+            },
+        )
+        # Pydantic validation returns 422 for constraint violations
+        assert response.status_code == 422
+
+    def test_update_password_unknown_email_returns_404(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/update-password with unknown email returns 404."""
+        mock_users_collection.find_one.return_value = None
+
+        response = client.post(
+            "/api/update-password",
+            json={
+                "email": "unknown@example.com",
+                "current_password": "1234",
+                "new_password": "SecurePass123",
+            },
+        )
+        assert response.status_code == 404
+
+    def test_update_password_success(
+        self,
+        client: TestClient,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """POST /api/update-password with valid data updates password."""
+        hashed = hash_password("1234")
+        mock_users_collection.find_one.return_value = {
+            "_id": "user123",
+            "email": "user@example.com",
+            "display_name": "Test User",
+            "password_hash": hashed,
+            "activated_at": "2026-01-25T10:00:00Z",
+        }
+
+        response = client.post(
+            "/api/update-password",
+            json={
+                "email": "user@example.com",
+                "current_password": "1234",
+                "new_password": "SecurePass123",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["message"] == "Password updated successfully"
+
+        # Verify the new hash is Argon2 format
+        mock_users_collection.update_one.assert_called_once()
         call_args = mock_users_collection.update_one.call_args
         new_hash = call_args[0][1]["$set"]["password_hash"]
         assert new_hash.startswith("$argon2id$")

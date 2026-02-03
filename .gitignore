@@ -44,4 +44,7 @@ warnings.txt
 build/
 *.egg-info/
 
+# Backups
+backups/
+
 *.kate-swp

@@ -4,8 +4,8 @@ Feature: Tab Navigation
   So that I can easily access all features of the app
 
   Background:
-    Given a user exists with email "nav@example.com" and password "1234"
-    And I am logged in as "nav@example.com" with password "1234"
+    Given a user exists with email "nav@example.com" and password "Password1234!"
+    And I am logged in as "nav@example.com" with password "Password1234!"
 
   Scenario: Tab bar is visible after login
     Then the tab bar should be visible

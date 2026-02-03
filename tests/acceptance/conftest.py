@@ -121,7 +121,7 @@ def activated_user_email() -> str:
 
 @pytest.fixture
 def activated_user_password() -> str:
-    return "1234"
+    return "Password1234!"
 
 
 @pytest.fixture

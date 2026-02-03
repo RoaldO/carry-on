@@ -31,6 +31,15 @@ class LoginPage:
         # Tab bar (visible after login)
         self.tab_bar = page.locator("#tabBar")
 
+        # Password update step elements
+        self.step_update_password = page.locator("#stepUpdatePassword")
+        self.new_password_input = page.locator("#newPassword")
+        self.confirm_new_password_input = page.locator("#confirmNewPassword")
+        self.update_password_button = page.locator(
+            "#updatePasswordForm button[type='submit']"
+        )
+        self.update_password_message = page.locator("#updatePasswordMessage")
+
     def goto_login(self) -> None:
         """Navigate to the login page."""
         self.page.goto(self.base_url)
@@ -134,3 +143,32 @@ class LoginPage:
     def reload(self) -> None:
         """Reload the current page."""
         self.page.reload()
+
+    def is_update_password_step_visible(self) -> bool:
+        """Check if the password update step is currently active."""
+        classes = self.step_update_password.get_attribute("class") or ""
+        return "active" in classes
+
+    def wait_for_update_password_step(self) -> None:
+        """Wait for the password update step to become visible."""
+        self.page.locator("#stepUpdatePassword.active").wait_for(state="visible")
+
+    def enter_new_password(self, password: str) -> None:
+        """Enter new password in the new password input field."""
+        self.new_password_input.fill(password)
+
+    def enter_confirm_new_password(self, password: str) -> None:
+        """Enter password in the confirm new password input field."""
+        self.confirm_new_password_input.fill(password)
+
+    def click_update_password(self) -> None:
+        """Click the Update Password button."""
+        self.update_password_button.click()
+
+    def get_update_password_error(self) -> str:
+        """Get the error message displayed on the password update step."""
+        return self.update_password_message.text_content() or ""
+
+    def wait_for_update_password_error(self) -> None:
+        """Wait for an update password error message to appear."""
+        expect(self.update_password_message).not_to_be_empty()

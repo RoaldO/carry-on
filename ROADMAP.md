@@ -65,7 +65,7 @@ Allow users to use generated passwords from password managers.
 - [x] Support numbers
 - [x] Update password field validation to accept complex passwords
 - [x] Update UI input field to allow all character types
-- [ ] Add migration flow for users with weak passwords
+- [x] Add migration flow for users with weak passwords
 
 ### 0h. Tab Navigation
 Implement tab-based navigation for better app structure.

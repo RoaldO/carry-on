@@ -68,3 +68,9 @@ class LoginRequest(BaseModel):
     email: str = Field(..., min_length=1)
     # min_length=4 allows legacy PINs for migration flow
     password: str = Field(..., min_length=4)
+
+
+class UpdatePasswordRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    current_password: str = Field(..., min_length=4)
+    new_password: str = Field(..., min_length=MIN_PASSWORD_LENGTH)
