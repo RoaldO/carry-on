@@ -501,7 +501,7 @@
                 const response = await fetch('/api/activate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, pin })
+                    body: JSON.stringify({ email, password: pin })
                 });
                 const data = await response.json();
                 if (data.detail) data.detail = parseErrorDetail(data.detail);
@@ -517,7 +517,7 @@
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, pin })
+                    body: JSON.stringify({ email, password: pin })
                 });
                 const data = await response.json();
                 if (data.detail) data.detail = parseErrorDetail(data.detail);
