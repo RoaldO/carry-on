@@ -11,8 +11,7 @@ from carry_on.infrastructure.mongodb import get_database
 
 @app.post("/api/ideas")
 async def create_idea(
-    idea: IdeaCreate,
-    user: AuthenticatedUser = Depends(verify_password)
+    idea: IdeaCreate, user: AuthenticatedUser = Depends(verify_password)
 ) -> dict:
     """Submit a new idea."""
     ideas_collection = get_ideas_collection()

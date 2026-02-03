@@ -46,7 +46,7 @@ def mongodb(session: nox.Session):
 
 
 @nox.session(
-    requires=['outdated_direct', 'format', 'lint', 'typecheck', 'tests']
+    requires=['outdated_direct', 'format', 'lint', 'typecheck', 'tests', 'arch']
 )
 def final(session: nox.Session):
     """Final checks before pull request."""
