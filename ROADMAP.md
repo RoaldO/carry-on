@@ -231,12 +231,7 @@ Track and monitor errors in production with Sentry.
 
 ### 0x. Database Backup
 Implement automated backup strategy for MongoDB Atlas to prevent data loss.
-- [ ] Evaluate backup options (MongoDB Atlas built-in, manual export, third-party)
-- [ ] Configure automated daily backups
-- [ ] Set up backup retention policy (e.g., 7 daily, 4 weekly)
-- [ ] Document backup restoration procedure
-- [ ] Test backup restoration to verify backups work
-- [ ] Consider upgrading Atlas tier for point-in-time recovery (PITR)
+- [x] Implement a simplified backup and restore script.
 
 ### 1. Golf Course Management
 Store golf course information including:
