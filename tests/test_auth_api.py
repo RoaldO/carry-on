@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import allure
 from fastapi.testclient import TestClient
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 
 
 @allure.feature("REST API")
@@ -37,7 +37,7 @@ class TestCheckEmailEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
@@ -60,7 +60,7 @@ class TestCheckEmailEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "hashed_pin",
+            "password_hash": "hashed_pin",
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
@@ -89,7 +89,7 @@ class TestActivateEndpoint:
 
         response = client.post(
             "/api/activate",
-            json={"email": "unknown@example.com", "pin": "1234"},
+            json={"email": "unknown@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 404
 
@@ -102,13 +102,13 @@ class TestActivateEndpoint:
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
-            "pin_hash": "already_set",
+            "password_hash": "already_set",
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
         response = client.post(
             "/api/activate",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 400
 
@@ -117,18 +117,18 @@ class TestActivateEndpoint:
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/activate with valid email sets PIN and activates."""
+        """POST /api/activate with valid email sets password and activates."""
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
         response = client.post(
             "/api/activate",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -136,28 +136,28 @@ class TestActivateEndpoint:
         assert data["user"]["email"] == "user@example.com"
         mock_users_collection.update_one.assert_called_once()
 
-    def test_activate_hashes_pin(
+    def test_activate_hashes_password(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/activate stores PIN as Argon2 hash."""
+        """POST /api/activate stores password as Argon2 hash."""
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
         response = client.post(
             "/api/activate",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "SecurePass1"},
         )
         assert response.status_code == 200
         # Verify the stored hash is Argon2 format
         call_args = mock_users_collection.update_one.call_args
-        stored_hash = call_args[0][1]["$set"]["pin_hash"]
+        stored_hash = call_args[0][1]["$set"]["password_hash"]
         assert stored_hash.startswith("$argon2id$")
 
 
@@ -176,7 +176,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/login",
-            json={"email": "unknown@example.com", "pin": "1234"},
+            json={"email": "unknown@example.com", "password": "1234"},
         )
         assert response.status_code == 401
 
@@ -189,13 +189,13 @@ class TestLoginEndpoint:
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
-            "pin_hash": None,
+            "password_hash": None,
             "activated_at": None,
         }
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 400
 
@@ -209,64 +209,64 @@ class TestLoginEndpoint:
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "hashed_5678",  # Different from input
+            "password_hash": "hashed_5678",  # Different from input
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 401
 
-    def test_login_success_with_hashed_pin(
+    def test_login_success_with_hashed_password(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/login with correct credentials and hashed PIN returns success."""
-        hashed = hash_pin("1234")
+        """POST /api/login with hashed password returns success."""
+        hashed = hash_password("1234")
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": hashed,
+            "password_hash": hashed,
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Login successful"
         assert data["user"]["email"] == "user@example.com"
-        # Should not rehash since PIN is already properly hashed
+        # Should not rehash since password is already properly hashed
         mock_users_collection.update_one.assert_not_called()
 
-    def test_login_success_with_plain_pin_triggers_rehash(
+    def test_login_success_with_plain_password_triggers_rehash(
         self,
         client: TestClient,
         mock_users_collection: MagicMock,
     ) -> None:
-        """POST /api/login with plain text PIN triggers rehashing."""
+        """POST /api/login with plain text password triggers rehashing."""
         mock_users_collection.find_one.return_value = {
             "_id": "user123",
             "email": "user@example.com",
             "display_name": "Test User",
-            "pin_hash": "1234",  # Plain text PIN (legacy)
+            "password_hash": "1234",  # Plain text password (legacy)
             "activated_at": "2026-01-25T10:00:00Z",
         }
 
         response = client.post(
             "/api/login",
-            json={"email": "user@example.com", "pin": "1234"},
+            json={"email": "user@example.com", "password": "1234"},
         )
         assert response.status_code == 200
-        # Should trigger rehash since PIN was plain text
+        # Should trigger rehash since password was plain text
         mock_users_collection.update_one.assert_called_once()
         # Verify the new hash is Argon2 format
         call_args = mock_users_collection.update_one.call_args
-        new_hash = call_args[0][1]["$set"]["pin_hash"]
+        new_hash = call_args[0][1]["$set"]["password_hash"]
         assert new_hash.startswith("$argon2id$")

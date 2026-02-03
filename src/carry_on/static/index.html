@@ -276,18 +276,18 @@
                 </form>
             </div>
 
-            <!-- Step 2: PIN (login or activate) -->
+            <!-- Step 2: Password (login or activate) -->
             <div id="stepPin" class="step">
                 <button type="button" class="back-button" id="backToEmail">&larr; Back</button>
                 <div id="welcomeName" class="welcome-name"></div>
                 <form id="pinForm">
                     <div class="form-group">
-                        <label for="pin" id="pinLabel">Enter PIN</label>
-                        <input type="password" id="pin" name="pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN" minlength="4" required>
+                        <label for="pin" id="pinLabel">Enter Password</label>
+                        <input type="password" id="pin" name="pin" placeholder="Password" minlength="4" required>
                     </div>
                     <div class="form-group" id="confirmPinGroup" style="display: none;">
-                        <label for="confirmPin">Confirm PIN</label>
-                        <input type="password" id="confirmPin" name="confirmPin" inputmode="numeric" pattern="[0-9]*" placeholder="Confirm PIN" minlength="4">
+                        <label for="confirmPin">Confirm Password</label>
+                        <input type="password" id="confirmPin" name="confirmPin" placeholder="Confirm Password" minlength="8">
                     </div>
                     <button type="submit" id="pinSubmitBtn">Login</button>
                     <div id="pinMessage"></div>
@@ -435,18 +435,18 @@
         // Storage helpers
         function getStoredAuth() {
             const email = localStorage.getItem('carryon_email');
-            const pin = localStorage.getItem('carryon_pin');
-            return email && pin ? { email, pin } : null;
+            const password = localStorage.getItem('carryon_password');
+            return email && password ? { email, password } : null;
         }
 
-        function storeAuth(email, pin) {
+        function storeAuth(email, password) {
             localStorage.setItem('carryon_email', email);
-            localStorage.setItem('carryon_pin', pin);
+            localStorage.setItem('carryon_password', password);
         }
 
         function clearAuth() {
             localStorage.removeItem('carryon_email');
-            localStorage.removeItem('carryon_pin');
+            localStorage.removeItem('carryon_password');
         }
 
         function showLoginScreen() {
@@ -501,7 +501,7 @@
                 const response = await fetch('/api/activate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, pin })
+                    body: JSON.stringify({ email, password: pin })
                 });
                 const data = await response.json();
                 if (data.detail) data.detail = parseErrorDetail(data.detail);
@@ -517,7 +517,7 @@
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, pin })
+                    body: JSON.stringify({ email, password: pin })
                 });
                 const data = await response.json();
                 if (data.detail) data.detail = parseErrorDetail(data.detail);
@@ -551,16 +551,16 @@
             currentEmail = email;
             isActivation = result.status === 'needs_activation';
 
-            // Show welcome and configure PIN step
+            // Show welcome and configure password step
             welcomeName.textContent = `Welcome, ${result.display_name || email}`;
 
             if (isActivation) {
-                pinLabel.textContent = 'Create your PIN';
+                pinLabel.textContent = 'Create your Password';
                 confirmPinGroup.style.display = 'block';
                 confirmPinInput.required = true;
                 pinSubmitBtn.textContent = 'Activate';
             } else {
-                pinLabel.textContent = 'Enter PIN';
+                pinLabel.textContent = 'Enter Password';
                 confirmPinGroup.style.display = 'none';
                 confirmPinInput.required = false;
                 pinSubmitBtn.textContent = 'Login';
@@ -577,7 +577,7 @@
             showStep('email');
         });
 
-        // PIN form submission
+        // Password form submission
         pinForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const pin = pinInput.value;
@@ -587,7 +587,7 @@
             if (isActivation) {
                 // Activation flow
                 if (pin !== confirmPinInput.value) {
-                    pinMessage.textContent = 'PINs do not match';
+                    pinMessage.textContent = 'Passwords do not match';
                     pinMessage.className = 'message error';
                     return;
                 }
@@ -609,7 +609,7 @@
                     hideLoginScreen();
                     loadRecentStrokes();
                 } else {
-                    pinMessage.textContent = result.data.detail || 'Invalid PIN';
+                    pinMessage.textContent = result.data.detail || 'Invalid password';
                     pinMessage.className = 'message error';
                     pinInput.value = '';
                 }
@@ -621,7 +621,7 @@
             const auth = getStoredAuth();
 
             if (auth) {
-                const result = await login(auth.email, auth.pin);
+                const result = await login(auth.email, auth.password);
                 if (result.ok) {
                     hideLoginScreen();
                     loadRecentStrokes();
@@ -634,9 +634,9 @@
         }
 
         // Helpers to get credentials for API calls
-        function getStoredPin() {
+        function getStoredPassword() {
             const auth = getStoredAuth();
-            return auth ? auth.pin : '';
+            return auth ? auth.password : '';
         }
 
         function getStoredEmail() {
@@ -646,7 +646,7 @@
 
         function getAuthHeaders() {
             return {
-                'X-Pin': getStoredPin() || '',
+                'X-Password': getStoredPassword() || '',
                 'X-Email': getStoredEmail()
             };
         }
@@ -708,10 +708,10 @@
                     distanceInput.disabled = false;
                     loadRecentStrokes();
                 } else if (response.status === 401) {
-                    // PIN invalid, show PIN screen
-                    localStorage.removeItem('carryon_pin');
-                    showPinScreen();
-                    showMessage('PIN expired, please re-enter', 'error');
+                    // Password invalid, show login screen
+                    localStorage.removeItem('carryon_password');
+                    showLoginScreen();
+                    showMessage('Session expired, please log in again', 'error');
                 } else {
                     showMessage(result.detail || 'Error recording stroke', 'error');
                 }

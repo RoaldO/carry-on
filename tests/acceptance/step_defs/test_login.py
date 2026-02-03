@@ -5,7 +5,7 @@ from typing import Any
 from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from carry_on.api.pin_security import hash_pin
+from carry_on.api.password_security import hash_password
 from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 
@@ -14,35 +14,37 @@ scenarios("../features/auth/login.feature")
 
 
 @given(
-    parsers.parse('a user exists with email "{email}" and PIN "{pin}"'),
+    parsers.parse('a user exists with email "{email}" and password "{password}"'),
     target_fixture="test_user",
 )
-def user_with_pin(test_database: Database[Any], email: str, pin: str) -> dict[str, Any]:
-    """Create an activated user with a PIN in the database."""
-    pin_hash = hash_pin(pin)
+def user_with_password(
+    test_database: Database[Any], email: str, password: str
+) -> dict[str, Any]:
+    """Create an activated user with a password in the database."""
+    password_hash = hash_password(password)
     activated_at = "2026-01-25T10:00:00Z"
     user_id = insert_user(
         test_database,
         email=email,
         display_name="Active User",
-        pin_hash=pin_hash,
+        password_hash=password_hash,
         activated_at=activated_at,
     )
     return {
         "_id": user_id,
         "email": email,
         "display_name": "Active User",
-        "pin_hash": pin_hash,
+        "password_hash": password_hash,
         "activated_at": activated_at,
-        "pin": pin,
+        "password": password,
     }
 
 
-@then("I should see the PIN login form")
+@then("I should see the password login form")
 def see_login_form(login_page: LoginPage) -> None:
-    """Verify the PIN login form is visible (not activation)."""
+    """Verify the password login form is visible (not activation)."""
     login_page.wait_for_pin_step()
-    assert not login_page.is_confirm_pin_visible(), "Confirm PIN should not be visible"
+    assert not login_page.is_confirm_pin_visible(), "Confirm should not be visible"
     assert login_page.get_submit_button_text() == "Login"
 
 
@@ -53,10 +55,10 @@ def submit_button_text(login_page: LoginPage, text: str) -> None:
     assert text == actual_text, f"Expected '{text}' but got '{actual_text}'"
 
 
-@then("the confirm PIN field should not be visible")
-def confirm_pin_not_visible(login_page: LoginPage) -> None:
-    """Verify the confirm PIN field is hidden."""
-    assert not login_page.is_confirm_pin_visible(), "Confirm PIN should be hidden"
+@then("the confirm password field should not be visible")
+def confirm_password_not_visible(login_page: LoginPage) -> None:
+    """Verify the confirm password field is hidden."""
+    assert not login_page.is_confirm_pin_visible(), "Confirm password should be hidden"
 
 
 @when("I reload the page")

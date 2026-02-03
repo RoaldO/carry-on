@@ -16,7 +16,7 @@ class UserDoc(TypedDict):
     _id: NotRequired[ObjectId]
     email: str
     display_name: str
-    pin_hash: str | None
+    password_hash: str | None
     activated_at: str | None
 
 
@@ -101,7 +101,7 @@ class MongoUserRepository:
         return {
             "email": user.email,
             "display_name": user.display_name,
-            "pin_hash": user.pin_hash,
+            "password_hash": user.password_hash,
             "activated_at": user.activated_at.isoformat()
             if user.activated_at
             else None,
@@ -125,7 +125,7 @@ class MongoUserRepository:
             id=UserId(value=str(doc["_id"])),
             email=doc["email"],
             display_name=doc.get("display_name", ""),
-            pin_hash=doc.get("pin_hash"),
+            password_hash=doc.get("password_hash"),
             activated_at=activated_at,
         )
 

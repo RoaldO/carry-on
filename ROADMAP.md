@@ -3,7 +3,7 @@
 ## Current Features
 - Record golf strokes (club, distance, fail)
 - View recent strokes
-- Multi-user authentication (email + PIN)
+- Multi-user authentication (email + password)
 
 ## Planned Features
 
@@ -47,23 +47,25 @@ See [specification](docs/specs/multi-user.md) for details.
 - [x] Implement check-email endpoint (`POST /api/check-email`)
 - [x] Implement activation endpoint (`POST /api/activate`)
 - [x] Implement login endpoint (`POST /api/login`)
-- [x] Update UI with email/PIN login flow
+- [x] Update UI with email/password login flow
 - [x] Remove legacy APP_PIN authentication
-- [x] Secure PIN hashing with Argon2id (see [ADR-0009](docs/adr/0009-password-hashing.md))
+- [x] Secure password hashing with Argon2id (see [ADR-0009](docs/adr/0009-password-hashing.md))
 - [x] Add user_id to strokes and ideas
 - [x] Filter strokes/ideas by logged-in user
 - [x] Migrate existing data to default user
 
 ### 0g. Password Complexity Support
 Allow users to use generated passwords from password managers.
-- [ ] Rename "PIN" to "password" throughout codebase (API, UI, docs)
-- [ ] Increase minimum password length from 4 to 8 characters
-- [ ] Remove 10 character limit on password field
-- [ ] Support special characters in password field (e.g., `!@#$%^&*`)
-- [ ] Support mixed case letters (uppercase and lowercase)
-- [ ] Support numbers
-- [ ] Update password field validation to accept complex passwords
-- [ ] Update UI input field to allow all character types
+- [x] Rename "PIN" to "password" throughout codebase (API, UI, docs)
+- [x] Rename `pin_hash` to `password_hash` in database schema
+- [x] Increase minimum password length from 4 to 8 characters (for activation)
+- [x] Remove 10 character limit on password field
+- [x] Support special characters in password field (e.g., `!@#$%^&*`)
+- [x] Support mixed case letters (uppercase and lowercase)
+- [x] Support numbers
+- [x] Update password field validation to accept complex passwords
+- [x] Update UI input field to allow all character types
+- [ ] Add migration flow for users with weak passwords
 
 ### 0h. Tab Navigation
 Implement tab-based navigation for better app structure.
@@ -226,6 +228,15 @@ Track and monitor errors in production with Sentry.
 - [ ] Initialize Sentry in FastAPI app
 - [ ] Configure error filtering and sampling
 - [ ] Add source maps for frontend errors (optional)
+
+### 0x. Database Backup
+Implement automated backup strategy for MongoDB Atlas to prevent data loss.
+- [ ] Evaluate backup options (MongoDB Atlas built-in, manual export, third-party)
+- [ ] Configure automated daily backups
+- [ ] Set up backup retention policy (e.g., 7 daily, 4 weekly)
+- [ ] Document backup restoration procedure
+- [ ] Test backup restoration to verify backups work
+- [ ] Consider upgrading Atlas tier for point-in-time recovery (PITR)
 
 ### 1. Golf Course Management
 Store golf course information including:

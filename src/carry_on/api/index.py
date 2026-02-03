@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 
-from carry_on.api.pin_security import (
-    hash_pin,
+from carry_on.api.password_security import (
+    hash_password,
     needs_rehash,
-    verify_pin as verify_pin_hash,
+    verify_password as verify_password_hash,
     AuthenticatedUser,
     EmailCheck,
     ActivateRequest,
@@ -23,28 +23,28 @@ load_dotenv()
 app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 
 
-def verify_pin(
-    x_pin: str = Header(None), x_email: str = Header(None)
+def verify_password(
+    x_password: str = Header(None), x_email: str = Header(None)
 ) -> AuthenticatedUser:
-    """Verify PIN from request header and return authenticated user.
+    """Verify password from request header and return authenticated user.
 
-    Authenticates user by verifying X-Email + X-Pin headers against user's PIN in
-    database.
+    Authenticates user by verifying X-Email + X-Password headers against user's
+    password hash in database.
     Returns AuthenticatedUser on success.
     """
-    if not x_email or not x_pin:
+    if not x_email or not x_password:
         raise HTTPException(status_code=401, detail="Authentication required")
 
     users_collection = get_users_collection()
 
     user = users_collection.find_one({"email": x_email.lower()})
-    if not user or not verify_pin_hash(x_pin, user.get("pin_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+    if not user or not verify_password_hash(x_password, user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Rehash if needed (on successful auth)
-    if needs_rehash(user.get("pin_hash", "")):
+    if needs_rehash(user.get("password_hash", "")):
         users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(x_pin)}}
+            {"_id": user["_id"]}, {"$set": {"password_hash": hash_password(x_password)}}
         )
 
     return AuthenticatedUser(
@@ -72,7 +72,7 @@ async def check_email(request: EmailCheck) -> dict:
 
 @app.post("/api/activate")
 async def activate_account(request: ActivateRequest) -> dict:
-    """Activate account by setting PIN."""
+    """Activate account by setting password."""
     users_collection = get_users_collection()
 
     user = users_collection.find_one({"email": request.email.lower()})
@@ -82,12 +82,12 @@ async def activate_account(request: ActivateRequest) -> dict:
     if user.get("activated_at"):
         raise HTTPException(status_code=400, detail="Account already activated")
 
-    # Hash PIN before storing
+    # Hash password before storing
     users_collection.update_one(
         {"_id": user["_id"]},
         {
             "$set": {
-                "pin_hash": hash_pin(request.pin),
+                "password_hash": hash_password(request.password),
                 "activated_at": datetime.now(UTC).isoformat(),
             }
         },
@@ -104,24 +104,25 @@ async def activate_account(request: ActivateRequest) -> dict:
 
 @app.post("/api/login")
 async def login(request: LoginRequest) -> dict:
-    """Login with email and PIN."""
+    """Login with email and password."""
     users_collection = get_users_collection()
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if not user.get("activated_at"):
         raise HTTPException(status_code=400, detail="Account not activated")
 
-    # Check PIN using secure verification
-    if not verify_pin_hash(request.pin, user.get("pin_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid email or PIN")
+    # Check password using secure verification
+    if not verify_password_hash(request.password, user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Rehash if using outdated algorithm
-    if needs_rehash(user.get("pin_hash", "")):
+    if needs_rehash(user.get("password_hash", "")):
+        new_hash = hash_password(request.password)
         users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"pin_hash": hash_pin(request.pin)}}
+            {"_id": user["_id"]}, {"$set": {"password_hash": new_hash}}
         )
 
     return {
@@ -141,7 +142,7 @@ async def serve_form() -> str:
 
 
 @app.get("/api/me")
-async def get_current_user(user: AuthenticatedUser = Depends(verify_pin)) -> dict:
+async def get_current_user(user: AuthenticatedUser = Depends(verify_password)) -> dict:
     """Get current authenticated user's profile information."""
     return {
         "email": user.email,

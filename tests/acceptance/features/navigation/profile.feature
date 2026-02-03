@@ -4,8 +4,8 @@ Feature: Profile Display
   So that I can see my account details and logout
 
   Background:
-    Given a user exists with email "profile@example.com" and PIN "5678" and display name "Test Profile User"
-    And I am logged in as "profile@example.com" with PIN "5678"
+    Given a user exists with email "profile@example.com" and password "5678" and display name "Test Profile User"
+    And I am logged in as "profile@example.com" with password "5678"
 
   Scenario: Profile tab shows user display name
     When I click the Profile tab

@@ -38,12 +38,12 @@ class TestUserCreation:
     """Tests for User entity creation."""
 
     def test_create_pending_user(self) -> None:
-        """Should create a pending user without PIN."""
+        """Should create a pending user without password."""
         user = User.create_pending(email="test@example.com", display_name="Test User")
 
         assert user.email == "test@example.com"
         assert user.display_name == "Test User"
-        assert user.pin_hash is None
+        assert user.password_hash is None
         assert user.activated_at is None
         assert user.id is None
 
@@ -58,14 +58,16 @@ class TestUserCreation:
         with pytest.raises(ValueError, match="Email is required"):
             User(email="", display_name="Test")
 
-    def test_activated_user_requires_pin_hash(self) -> None:
-        """Should raise ValueError if activated without PIN hash."""
-        with pytest.raises(ValueError, match="Activated users must have a PIN hash"):
+    def test_activated_user_requires_password_hash(self) -> None:
+        """Should raise ValueError if activated without password hash."""
+        with pytest.raises(
+            ValueError, match="Activated users must have a password hash"
+        ):
             User(
                 email="test@example.com",
                 display_name="Test",
                 activated_at=datetime.now(timezone.utc),
-                pin_hash=None,
+                password_hash=None,
             )
 
 
@@ -85,7 +87,7 @@ class TestUserActivation:
         user = User(
             email="test@example.com",
             display_name="Test",
-            pin_hash="hash123",
+            password_hash="hash123",
             activated_at=datetime.now(timezone.utc),
         )
 
@@ -96,10 +98,10 @@ class TestUserActivation:
         user = User.create_pending(email="test@example.com", display_name="Test")
         activated_at = datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
 
-        activated = user.activate(pin_hash="hash123", activated_at=activated_at)
+        activated = user.activate(password_hash="hash123", activated_at=activated_at)
 
         assert activated.is_activated is True
-        assert activated.pin_hash == "hash123"
+        assert activated.password_hash == "hash123"
         assert activated.activated_at == activated_at
         assert activated.email == user.email
         assert activated.display_name == user.display_name
@@ -109,32 +111,34 @@ class TestUserActivation:
         user = User(
             email="test@example.com",
             display_name="Test",
-            pin_hash="hash123",
+            password_hash="hash123",
             activated_at=datetime.now(timezone.utc),
         )
 
         with pytest.raises(ValueError, match="already activated"):
-            user.activate(pin_hash="newhash", activated_at=datetime.now(timezone.utc))
+            user.activate(
+                password_hash="newhash", activated_at=datetime.now(timezone.utc)
+            )
 
 
 @allure.feature("Domain")
 @allure.story("User Entity")
-class TestUserPinUpdate:
-    """Tests for User PIN hash update."""
+class TestUserPasswordUpdate:
+    """Tests for User password hash update."""
 
-    def test_update_pin_hash(self) -> None:
-        """Should update PIN hash preserving other fields."""
+    def test_update_password_hash(self) -> None:
+        """Should update password hash preserving other fields."""
         user = User(
             id=UserId(value="123"),
             email="test@example.com",
             display_name="Test",
-            pin_hash="old_hash",
+            password_hash="old_hash",
             activated_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
         )
 
-        updated = user.update_pin_hash("new_hash")
+        updated = user.update_password_hash("new_hash")
 
-        assert updated.pin_hash == "new_hash"
+        assert updated.password_hash == "new_hash"
         assert updated.id == user.id
         assert updated.email == user.email
         assert updated.display_name == user.display_name

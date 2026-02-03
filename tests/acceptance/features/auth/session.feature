@@ -4,11 +4,11 @@ Feature: Session Persistence
   So that I don't have to log in repeatedly
 
   Background:
-    Given a user exists with email "session@example.com" and PIN "5678"
+    Given a user exists with email "session@example.com" and password "5678"
 
   Scenario: Session persists across page reload
     Given I am on the login screen
-    When I log in with email "session@example.com" and PIN "5678"
+    When I log in with email "session@example.com" and password "5678"
     Then I should be logged in
     When I reload the page
     Then I should still be logged in
@@ -16,7 +16,7 @@ Feature: Session Persistence
 
   Scenario: Clearing localStorage logs out the user
     Given I am on the login screen
-    When I log in with email "session@example.com" and PIN "5678"
+    When I log in with email "session@example.com" and password "5678"
     Then I should be logged in
     When I clear local storage
     And I reload the page
@@ -24,7 +24,7 @@ Feature: Session Persistence
 
   Scenario: Session allows accessing protected API endpoints
     Given I am on the login screen
-    When I log in with email "session@example.com" and PIN "5678"
+    When I log in with email "session@example.com" and password "5678"
     Then I should be logged in
     And I should be able to view my strokes
 
@@ -36,7 +36,7 @@ Feature: Session Persistence
 
   Scenario: Session persists when switching between tabs
     Given I am on the login screen
-    When I log in with email "session@example.com" and PIN "5678"
+    When I log in with email "session@example.com" and password "5678"
     Then I should be logged in
     When I click the Ideas tab
     Then I should be on the Ideas tab
