@@ -53,6 +53,7 @@ exclude_lines = [
 
 [tool.mypy]
 plugins = "pydantic.mypy"
+disable_error_code = ["type-abstract"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_any_explicit = true

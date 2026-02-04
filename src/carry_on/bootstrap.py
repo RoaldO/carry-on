@@ -22,4 +22,4 @@ def get(interface: type[T]) -> T:
     if interface not in _registry:
         raise LookupError(f"No `{interface.__name__}` implementation found")
     clazz = _registry[interface]
-    return clazz()
+    return typing.cast(T, clazz())
