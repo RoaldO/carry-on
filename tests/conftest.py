@@ -62,7 +62,8 @@ def mock_strokes_collection() -> Generator[MagicMock, None, None]:
     mock_collection.insert_one.return_value.inserted_id = "test_id_123"
 
     with patch(
-        "carry_on.api.strokes.get_strokes_collection", return_value=mock_collection
+        "carry_on.services.stroke_service.get_strokes_collection",
+        return_value=mock_collection,
     ):
         yield mock_collection
 
