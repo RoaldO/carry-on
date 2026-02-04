@@ -4,6 +4,7 @@ from importlib.resources import files
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
+from starlette.status import HTTP_404_NOT_FOUND, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 
 from carry_on.api.password_security import (
     hash_password,
@@ -63,7 +64,7 @@ async def check_email(request: EmailCheck) -> dict:
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
-        raise HTTPException(status_code=404, detail="Email not found")
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Email not found")
 
     status = "activated" if user.get("activated_at") else "needs_activation"
     return {
@@ -79,10 +80,10 @@ async def activate_account(request: ActivateRequest) -> dict:
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
-        raise HTTPException(status_code=404, detail="Email not found")
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Email not found")
 
     if user.get("activated_at"):
-        raise HTTPException(status_code=400, detail="Account already activated")
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Account already activated")
 
     # Hash password before storing
     users_collection.update_one(
@@ -111,14 +112,14 @@ async def login(request: LoginRequest) -> dict:
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
     if not user.get("activated_at"):
-        raise HTTPException(status_code=400, detail="Account not activated")
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Account not activated")
 
     # Check password using secure verification
     if not verify_password_hash(request.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
     # Rehash if using outdated algorithm
     if needs_rehash(user.get("password_hash", "")):
@@ -155,17 +156,17 @@ async def update_password(request: UpdatePasswordRequest) -> dict:
 
     user = users_collection.find_one({"email": request.email.lower()})
     if not user:
-        raise HTTPException(status_code=404, detail="Email not found")
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Email not found")
 
     # Verify current password
     stored_hash = user.get("password_hash", "")
     if not verify_password_hash(request.current_password, stored_hash):
-        raise HTTPException(status_code=401, detail="Invalid current password")
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid current password")
 
     # Validate new password meets complexity requirements
     if not is_password_compliant(request.new_password):
         raise HTTPException(
-            status_code=400,
+            status_code=HTTP_400_BAD_REQUEST,
             detail="New password must be at least 8 characters",
         )
 
