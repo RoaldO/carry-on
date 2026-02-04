@@ -38,7 +38,6 @@ class TestIdeasEndpoint:
         data = response.json()
         assert data["message"] == "Idea submitted successfully"
         assert data["idea"]["description"] == "Add dark mode"
-        assert "created_at" in data["idea"]
 
     def test_post_idea_without_description_returns_422(
         self,

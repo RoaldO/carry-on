@@ -1,5 +1,3 @@
-"""Tests for MongoStrokeRepository."""
-
 from datetime import date, datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, Mock

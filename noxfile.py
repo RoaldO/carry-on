@@ -24,6 +24,11 @@ def mongodb(session: nox.Session):
     password = "password"
     port = "27017"
 
+    # Clean up any existing container from previous interrupted runs
+    print(f"Cleaning up any existing {container=}")
+    session.run("docker", "stop", container, external=True, success_codes=[0, 1])
+    session.run("docker", "rm", container, external=True, success_codes=[0, 1])
+
     print(f"Starting {container=}")
     session.run(
         "docker", "run", "-d",
