@@ -2,6 +2,10 @@
 
 from carry_on.domain.entities.idea import Idea, IdeaId
 from carry_on.domain.repositories.idea_repository import IdeaRepository
+from carry_on.infrastructure.repositories.mongo_idea_repository import (
+    MongoIdeaRepository,
+    get_ideas_collection,
+)
 
 
 class IdeaService:
@@ -45,3 +49,10 @@ class IdeaService:
         )
 
         return self._repository.save(idea, user_id)
+
+
+def get_ideas_service() -> IdeaService:
+    """Get StrokeService with MongoDB repository."""
+    collection = get_ideas_collection()
+    repository = MongoIdeaRepository(collection)
+    return IdeaService(repository)

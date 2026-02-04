@@ -143,7 +143,10 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_idea_123"
 
-    with patch("carry_on.api.ideas.get_ideas_collection", return_value=mock_collection):
+    with patch(
+        "carry_on.services.idea_service.get_ideas_collection",
+        return_value=mock_collection,
+    ):
         yield mock_collection
 
 
