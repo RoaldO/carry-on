@@ -6,18 +6,7 @@ from pydantic import BaseModel, Field
 
 from carry_on.api.index import app, verify_password
 from carry_on.api.password_security import AuthenticatedUser
-from carry_on.infrastructure.repositories import MongoStrokeRepository
-from carry_on.infrastructure.repositories.mongo_stroke_repository import (
-    get_strokes_collection,
-)
-from carry_on.services import StrokeService
-
-
-def get_stroke_service() -> StrokeService:
-    """Get StrokeService with MongoDB repository."""
-    collection = get_strokes_collection()
-    repository = MongoStrokeRepository(collection)
-    return StrokeService(repository)
+from carry_on.services.stroke_service import StrokeService, get_stroke_service
 
 
 class StrokeCreate(BaseModel):

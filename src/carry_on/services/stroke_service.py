@@ -6,6 +6,10 @@ from carry_on.domain.entities.stroke import Stroke, StrokeId
 from carry_on.domain.repositories.stroke_repository import StrokeRepository
 from carry_on.domain.value_objects.club_type import ClubType
 from carry_on.domain.value_objects.distance import Distance
+from carry_on.infrastructure.repositories.mongo_stroke_repository import (
+    MongoStrokeRepository,
+    get_strokes_collection,
+)
 
 
 class StrokeService:
@@ -76,3 +80,10 @@ class StrokeService:
             List of strokes, newest first.
         """
         return self._repository.find_by_user(user_id, limit)
+
+
+def get_stroke_service() -> StrokeService:
+    """Get StrokeService with MongoDB repository."""
+    collection = get_strokes_collection()
+    repository = MongoStrokeRepository(collection)
+    return StrokeService(repository)
