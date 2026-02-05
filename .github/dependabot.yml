@@ -1,24 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "deps"
-    groups:
-      dev-dependencies:
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
-      production-dependencies:
-        dependency-type: "production"
-        update-types:
-          - "patch"
-
+  # GitHub Actions updates only - Python dependencies handled by uv-upgrade.yml workflow
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

@@ -1,0 +1,53 @@
+name: Dependency Upgrade
+
+on:
+  schedule:
+    # Run every Monday at 6:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Upgrade dependencies
+        run: uv lock --upgrade
+
+      - name: Export requirements.txt
+        run: uv export > requirements.txt
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "deps: Upgrade Python dependencies"
+          title: "deps: Upgrade Python dependencies"
+          body: |
+            Automated dependency upgrade via `uv lock --upgrade`.
+
+            ## Changes
+            - Updated `uv.lock` with latest compatible versions
+            - Regenerated `requirements.txt` for production deployment
+
+            ## Review checklist
+            - [ ] Check CI passes
+            - [ ] Review changelog for breaking changes in major upgrades
+            - [ ] Test locally if significant changes
+
+            🤖 Generated automatically by [uv-upgrade workflow](../actions/workflows/uv-upgrade.yml)
+          branch: deps/uv-upgrade
+          delete-branch: true
+          labels: dependencies
