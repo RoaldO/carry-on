@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from carry_on.api.index import app, verify_password
-from carry_on.api.password_security import AuthenticatedUser
+from carry_on.services.authentication_service import AuthenticatedUser
 from carry_on.services.stroke_service import StrokeService, get_stroke_service
 
 

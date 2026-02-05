@@ -3,9 +3,13 @@
 from unittest.mock import MagicMock
 
 import allure
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
 from carry_on.api.password_security import hash_password
+
+# Valid ObjectId for test user
+TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")
 
 
 @allure.feature("REST API")
@@ -34,7 +38,7 @@ class TestCheckEmailEndpoint:
     ) -> None:
         """POST /api/check-email with non-activated user returns needs_activation."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": None,
@@ -57,7 +61,7 @@ class TestCheckEmailEndpoint:
     ) -> None:
         """POST /api/check-email with activated user returns activated."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": "hashed_pin",
@@ -100,7 +104,7 @@ class TestActivateEndpoint:
     ) -> None:
         """POST /api/activate with already activated user returns 400."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "password_hash": "already_set",
             "activated_at": "2026-01-25T10:00:00Z",
@@ -119,7 +123,7 @@ class TestActivateEndpoint:
     ) -> None:
         """POST /api/activate with valid email sets password and activates."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": None,
@@ -143,7 +147,7 @@ class TestActivateEndpoint:
     ) -> None:
         """POST /api/activate stores password as Argon2 hash."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": None,
@@ -187,7 +191,7 @@ class TestLoginEndpoint:
     ) -> None:
         """POST /api/login with non-activated user returns 400."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "password_hash": None,
             "activated_at": None,
@@ -206,7 +210,7 @@ class TestLoginEndpoint:
     ) -> None:
         """POST /api/login with wrong PIN returns 401."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": "hashed_5678",  # Different from input
@@ -227,7 +231,7 @@ class TestLoginEndpoint:
         """POST /api/login with hashed password returns success."""
         hashed = hash_password("SecurePass1")  # Compliant password (8+ chars)
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": hashed,
@@ -253,7 +257,7 @@ class TestLoginEndpoint:
     ) -> None:
         """POST /api/login with plain text password triggers rehashing."""
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": "1234",  # Plain text password (legacy)
@@ -280,7 +284,7 @@ class TestLoginEndpoint:
         """POST /api/login with weak password returns password_update_required."""
         hashed = hash_password("1234")  # 4-char weak password
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": hashed,
@@ -304,7 +308,7 @@ class TestLoginEndpoint:
         """POST /api/login with compliant password returns success status."""
         hashed = hash_password("SecurePass123")  # 13-char compliant password
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": hashed,
@@ -334,7 +338,7 @@ class TestUpdatePasswordEndpoint:
         """POST /api/update-password with wrong current password returns 401."""
         hashed = hash_password("1234")
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": hashed,
@@ -359,7 +363,7 @@ class TestUpdatePasswordEndpoint:
         """POST /api/update-password with weak new password returns 422."""
         hashed = hash_password("1234")
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": hashed,
@@ -403,7 +407,7 @@ class TestUpdatePasswordEndpoint:
         """POST /api/update-password with valid data updates password."""
         hashed = hash_password("1234")
         mock_users_collection.find_one.return_value = {
-            "_id": "user123",
+            "_id": TEST_USER_ID,
             "email": "user@example.com",
             "display_name": "Test User",
             "password_hash": hashed,

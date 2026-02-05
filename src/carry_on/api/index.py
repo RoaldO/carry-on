@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from importlib.resources import files
 
 from dotenv import load_dotenv
@@ -6,18 +5,22 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 
 from carry_on.api.password_security import (
-    hash_password,
-    is_password_compliant,
-    needs_rehash,
-    verify_password as verify_password_hash,
-    AuthenticatedUser,
     EmailCheck,
     ActivateRequest,
     LoginRequest,
     UpdatePasswordRequest,
 )
-from carry_on.infrastructure.repositories.mongo_user_repository import (
-    get_users_collection,
+from carry_on.domain.exceptions import (
+    AccountAlreadyActivatedError,
+    AccountNotActivatedError,
+    InvalidCredentialsError,
+    PasswordNotCompliantError,
+    UserNotFoundError,
+)
+from carry_on.services.authentication_service import (
+    AuthenticatedUser,
+    AuthenticationService,
+    get_authentication_service,
 )
 
 load_dotenv()
@@ -26,7 +29,9 @@ app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 
 
 def verify_password(
-    x_password: str = Header(None), x_email: str = Header(None)
+    x_password: str = Header(None),
+    x_email: str = Header(None),
+    auth_service: AuthenticationService = Depends(get_authentication_service),
 ) -> AuthenticatedUser:
     """Verify password from request header and return authenticated user.
 
@@ -37,148 +42,94 @@ def verify_password(
     if not x_email or not x_password:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    users_collection = get_users_collection()
-
-    user = users_collection.find_one({"email": x_email.lower()})
-    if not user or not verify_password_hash(x_password, user.get("password_hash", "")):
+    try:
+        return auth_service.authenticate(x_email, x_password)
+    except InvalidCredentialsError:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    # Rehash if needed (on successful auth)
-    if needs_rehash(user.get("password_hash", "")):
-        users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"password_hash": hash_password(x_password)}}
-        )
-
-    return AuthenticatedUser(
-        id=str(user["_id"]),
-        email=user["email"],
-        display_name=user.get("display_name", ""),
-    )
 
 
 @app.post("/api/check-email")
-async def check_email(request: EmailCheck) -> dict:
+async def check_email(
+    request: EmailCheck,
+    auth_service: AuthenticationService = Depends(get_authentication_service),
+) -> dict:
     """Check if email exists and get activation status."""
-    users_collection = get_users_collection()
-
-    user = users_collection.find_one({"email": request.email.lower()})
-    if not user:
+    try:
+        result = auth_service.check_email(request.email)
+        return {
+            "status": result.status,
+            "display_name": result.display_name,
+        }
+    except UserNotFoundError:
         raise HTTPException(status_code=404, detail="Email not found")
-
-    status = "activated" if user.get("activated_at") else "needs_activation"
-    return {
-        "status": status,
-        "display_name": user.get("display_name", ""),
-    }
 
 
 @app.post("/api/activate")
-async def activate_account(request: ActivateRequest) -> dict:
+async def activate_account(
+    request: ActivateRequest,
+    auth_service: AuthenticationService = Depends(get_authentication_service),
+) -> dict:
     """Activate account by setting password."""
-    users_collection = get_users_collection()
-
-    user = users_collection.find_one({"email": request.email.lower()})
-    if not user:
+    try:
+        user = auth_service.activate_account(request.email, request.password)
+        return {
+            "message": "Account activated successfully",
+            "user": {
+                "email": user.email,
+                "display_name": user.display_name,
+            },
+        }
+    except UserNotFoundError:
         raise HTTPException(status_code=404, detail="Email not found")
-
-    if user.get("activated_at"):
+    except AccountAlreadyActivatedError:
         raise HTTPException(status_code=400, detail="Account already activated")
-
-    # Hash password before storing
-    users_collection.update_one(
-        {"_id": user["_id"]},
-        {
-            "$set": {
-                "password_hash": hash_password(request.password),
-                "activated_at": datetime.now(UTC).isoformat(),
-            }
-        },
-    )
-
-    return {
-        "message": "Account activated successfully",
-        "user": {
-            "email": user["email"],
-            "display_name": user.get("display_name", ""),
-        },
-    }
 
 
 @app.post("/api/login")
-async def login(request: LoginRequest) -> dict:
+async def login(
+    request: LoginRequest,
+    auth_service: AuthenticationService = Depends(get_authentication_service),
+) -> dict:
     """Login with email and password."""
-    users_collection = get_users_collection()
-
-    user = users_collection.find_one({"email": request.email.lower()})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    if not user.get("activated_at"):
-        raise HTTPException(status_code=400, detail="Account not activated")
-
-    # Check password using secure verification
-    if not verify_password_hash(request.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    # Rehash if using outdated algorithm
-    if needs_rehash(user.get("password_hash", "")):
-        new_hash = hash_password(request.password)
-        users_collection.update_one(
-            {"_id": user["_id"]}, {"$set": {"password_hash": new_hash}}
-        )
-
-    # Check if password meets complexity requirements
-    if not is_password_compliant(request.password):
+    try:
+        result = auth_service.login(request.email, request.password)
         return {
-            "status": "password_update_required",
-            "message": "Password does not meet complexity requirements",
+            "status": result.status,
+            "message": result.message,
             "user": {
-                "email": user["email"],
-                "display_name": user.get("display_name", ""),
+                "email": result.user.email,
+                "display_name": result.user.display_name,
             },
         }
-
-    return {
-        "status": "success",
-        "message": "Login successful",
-        "user": {
-            "email": user["email"],
-            "display_name": user.get("display_name", ""),
-        },
-    }
+    except InvalidCredentialsError:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    except AccountNotActivatedError:
+        raise HTTPException(status_code=400, detail="Account not activated")
 
 
 @app.post("/api/update-password")
-async def update_password(request: UpdatePasswordRequest) -> dict:
+async def update_password(
+    request: UpdatePasswordRequest,
+    auth_service: AuthenticationService = Depends(get_authentication_service),
+) -> dict:
     """Update password for users with weak passwords."""
-    users_collection = get_users_collection()
-
-    user = users_collection.find_one({"email": request.email.lower()})
-    if not user:
+    try:
+        auth_service.update_password(
+            request.email, request.current_password, request.new_password
+        )
+        return {
+            "status": "success",
+            "message": "Password updated successfully",
+        }
+    except UserNotFoundError:
         raise HTTPException(status_code=404, detail="Email not found")
-
-    # Verify current password
-    stored_hash = user.get("password_hash", "")
-    if not verify_password_hash(request.current_password, stored_hash):
+    except InvalidCredentialsError:
         raise HTTPException(status_code=401, detail="Invalid current password")
-
-    # Validate new password meets complexity requirements
-    if not is_password_compliant(request.new_password):
+    except PasswordNotCompliantError:
         raise HTTPException(
             status_code=400,
             detail="New password must be at least 8 characters",
         )
-
-    # Update password hash
-    users_collection.update_one(
-        {"_id": user["_id"]},
-        {"$set": {"password_hash": hash_password(request.new_password)}},
-    )
-
-    return {
-        "status": "success",
-        "message": "Password updated successfully",
-    }
 
 
 @app.get("/", response_class=HTMLResponse)

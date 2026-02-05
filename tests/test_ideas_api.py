@@ -5,6 +5,8 @@ from unittest.mock import MagicMock
 import allure
 from fastapi.testclient import TestClient
 
+from tests.conftest import TEST_USER_ID
+
 
 @allure.feature("REST API")
 @allure.story("Ideas API")
@@ -120,4 +122,4 @@ class TestIdeasEndpoint:
         call_args = mock_ideas_collection.insert_one.call_args
         inserted_doc = call_args[0][0]
         assert "user_id" in inserted_doc
-        assert inserted_doc["user_id"] == "user123"
+        assert inserted_doc["user_id"] == str(TEST_USER_ID)

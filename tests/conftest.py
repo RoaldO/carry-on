@@ -7,11 +7,15 @@ from unittest.mock import MagicMock, patch
 import warnings
 
 import pytest
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
 from carry_on.api.password_security import hash_password
 from carry_on.services.stroke_service import StrokeService
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
+
+# Valid ObjectId for test user
+TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")
 
 
 def pytest_terminal_summary(
@@ -153,11 +157,19 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_users_collection() -> Generator[MagicMock, None, None]:
-    """Mock MongoDB users collection."""
+    """Mock MongoDB users collection for authentication service.
+
+    DEPRECATED: Authentication now uses AuthenticationService.
+    This fixture mocks get_users_collection at the service factory level.
+    """
+    warnings.warn("Use mock_authentication_service for proper DI", DeprecationWarning)
     mock_collection = MagicMock()
     mock_collection.find_one.return_value = None
 
-    with patch("carry_on.api.index.get_users_collection", return_value=mock_collection):
+    with patch(
+        "carry_on.services.authentication_service.get_users_collection",
+        return_value=mock_collection,
+    ):
         yield mock_collection
 
 
@@ -167,7 +179,7 @@ def mock_authenticated_user(
 ) -> MagicMock:
     """Mock a valid authenticated user in the database with hashed password."""
     mock_users_collection.find_one.return_value = {
-        "_id": "user123",
+        "_id": TEST_USER_ID,
         "email": test_email,
         "display_name": "Test User",
         "password_hash": test_password_hashed,
@@ -182,7 +194,7 @@ def mock_authenticated_user_plain_password(
 ) -> MagicMock:
     """Mock a user with plain text password (legacy, needs rehash)."""
     mock_users_collection.find_one.return_value = {
-        "_id": "user123",
+        "_id": TEST_USER_ID,
         "email": test_email,
         "display_name": "Test User",
         "password_hash": test_password,

@@ -1,11 +1,12 @@
 """Tests for CarryOn API endpoints."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import allure
 from fastapi.testclient import TestClient
 
-from carry_on.api.password_security import hash_password, AuthenticatedUser
+from carry_on.services.authentication_service import AuthenticatedUser
+from tests.conftest import TEST_USER_ID
 
 
 @allure.feature("REST API")
@@ -19,49 +20,49 @@ class TestVerifyPasswordReturnsAuthenticatedUser:
 
         test_email = "test@example.com"
         test_password = "1234"
-        mock_user = {
-            "_id": "user123",
-            "email": test_email,
-            "display_name": "Test User",
-            "password_hash": hash_password(test_password),
-            "activated_at": "2026-01-25T10:00:00Z",
-        }
+        expected_user = AuthenticatedUser(
+            id="user123",
+            email=test_email,
+            display_name="Test User",
+        )
 
-        with patch("carry_on.api.index.get_users_collection") as mock_get_collection:
-            mock_collection = MagicMock()
-            mock_collection.find_one.return_value = mock_user
-            mock_get_collection.return_value = mock_collection
+        mock_auth_service = MagicMock()
+        mock_auth_service.authenticate.return_value = expected_user
 
-            result = verify_password(x_password=test_password, x_email=test_email)
+        result = verify_password(
+            x_password=test_password, x_email=test_email, auth_service=mock_auth_service
+        )
 
-            assert isinstance(result, AuthenticatedUser)
-            assert result.id == "user123"
-            assert result.email == test_email
-            assert result.display_name == "Test User"
+        assert isinstance(result, AuthenticatedUser)
+        assert result.id == "user123"
+        assert result.email == test_email
+        assert result.display_name == "Test User"
+        mock_auth_service.authenticate.assert_called_once_with(
+            test_email, test_password
+        )
 
     def test_verify_password_returns_user_without_display_name(self) -> None:
         """verify_password should handle users without display_name."""
-        from carry_on.api.index import AuthenticatedUser, verify_password
+        from carry_on.api.index import verify_password
 
         test_email = "test@example.com"
         test_password = "1234"
-        mock_user = {
-            "_id": "user456",
-            "email": test_email,
-            "password_hash": hash_password(test_password),
-            "activated_at": "2026-01-25T10:00:00Z",
-        }
+        expected_user = AuthenticatedUser(
+            id="user456",
+            email=test_email,
+            display_name="",
+        )
 
-        with patch("carry_on.api.index.get_users_collection") as mock_get_collection:
-            mock_collection = MagicMock()
-            mock_collection.find_one.return_value = mock_user
-            mock_get_collection.return_value = mock_collection
+        mock_auth_service = MagicMock()
+        mock_auth_service.authenticate.return_value = expected_user
 
-            result = verify_password(x_password=test_password, x_email=test_email)
+        result = verify_password(
+            x_password=test_password, x_email=test_email, auth_service=mock_auth_service
+        )
 
-            assert isinstance(result, AuthenticatedUser)
-            assert result.id == "user456"
-            assert result.display_name == ""
+        assert isinstance(result, AuthenticatedUser)
+        assert result.id == "user456"
+        assert result.display_name == ""
 
 
 @allure.feature("REST API")
@@ -192,7 +193,7 @@ class TestStrokesEndpoint:
         call_args = mock_strokes_collection.insert_one.call_args
         inserted_doc = call_args[0][0]
         assert "user_id" in inserted_doc
-        assert inserted_doc["user_id"] == "user123"
+        assert inserted_doc["user_id"] == str(TEST_USER_ID)
 
     def test_get_strokes_filters_by_user_id(
         self,
@@ -208,7 +209,7 @@ class TestStrokesEndpoint:
         # Verify find was called with user_id filter
         call_args = mock_strokes_collection.find.call_args
         filter_query = call_args[0][0] if call_args[0] else call_args[1].get("filter")
-        assert filter_query == {"user_id": "user123"}
+        assert filter_query == {"user_id": str(TEST_USER_ID)}
 
 
 @allure.feature("REST API")
