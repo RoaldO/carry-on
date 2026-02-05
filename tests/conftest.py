@@ -62,27 +62,6 @@ def fake_stroke_service(fake_stroke_repository: FakeStrokeRepository) -> StrokeS
 
 
 @pytest.fixture
-def mock_strokes_collection() -> Generator[MagicMock, None, None]:
-    """Mock MongoDB strokes collection.
-
-    DEPRECATED: Use fake_stroke_repository instead for proper DI.
-    Kept for backward compatibility with existing tests.
-    """
-    warnings.warn(
-        "Use fake_stroke_repository instead for proper DI", DeprecationWarning
-    )
-    mock_collection = MagicMock()
-    mock_collection.find.return_value.sort.return_value.limit.return_value = []
-    mock_collection.insert_one.return_value.inserted_id = "test_id_123"
-
-    with patch(
-        "carry_on.services.stroke_service.get_strokes_collection",
-        return_value=mock_collection,
-    ):
-        yield mock_collection
-
-
-@pytest.fixture
 def test_email() -> str:
     """Test email for authentication."""
     return "test@example.com"

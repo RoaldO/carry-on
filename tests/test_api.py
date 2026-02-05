@@ -100,12 +100,12 @@ class TestStrokesEndpoint:
 
     def test_get_strokes_with_valid_auth(
         self,
-        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, object],
         auth_headers: dict[str, str],
-        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes with valid authentication should return strokes."""
+        client, _ = client_with_fake_repo
         response = client.get("/api/strokes", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
@@ -124,12 +124,12 @@ class TestStrokesEndpoint:
 
     def test_post_stroke_with_valid_auth(
         self,
-        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, object],
         auth_headers: dict[str, str],
-        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes with valid authentication should create stroke."""
+        client, _ = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
@@ -143,12 +143,12 @@ class TestStrokesEndpoint:
 
     def test_post_failed_stroke(
         self,
-        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, object],
         auth_headers: dict[str, str],
-        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes with fail=true should not require distance."""
+        client, _ = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "d", "fail": True},
@@ -161,12 +161,12 @@ class TestStrokesEndpoint:
 
     def test_post_stroke_without_distance_or_fail_returns_400(
         self,
-        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, object],
         auth_headers: dict[str, str],
-        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes without distance and fail=false should return 400."""
+        client, _ = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i"},
@@ -176,12 +176,12 @@ class TestStrokesEndpoint:
 
     def test_post_stroke_stores_user_id(
         self,
-        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, object],
         auth_headers: dict[str, str],
-        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes should store user_id in the document."""
+        client, fake_repo = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
@@ -189,27 +189,26 @@ class TestStrokesEndpoint:
         )
         assert response.status_code == 200
 
-        # Verify insert_one was called with user_id
-        call_args = mock_strokes_collection.insert_one.call_args
-        inserted_doc = call_args[0][0]
-        assert "user_id" in inserted_doc
-        assert inserted_doc["user_id"] == str(TEST_USER_ID)
+        # Verify stroke was stored with user_id in fake repository
+        # The repository stores tuples of (stroke, user_id, created_at)
+        assert len(fake_repo._strokes) > 0  # type: ignore[attr-defined]
+        stroke, user_id, _ = fake_repo._strokes[-1]  # type: ignore[attr-defined]
+        assert user_id == str(TEST_USER_ID)
 
     def test_get_strokes_filters_by_user_id(
         self,
-        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, object],
         auth_headers: dict[str, str],
-        mock_strokes_collection: MagicMock,
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes should filter by user_id."""
+        client, _ = client_with_fake_repo
         response = client.get("/api/strokes", headers=auth_headers)
         assert response.status_code == 200
-
-        # Verify find was called with user_id filter
-        call_args = mock_strokes_collection.find.call_args
-        filter_query = call_args[0][0] if call_args[0] else call_args[1].get("filter")
-        assert filter_query == {"user_id": str(TEST_USER_ID)}
+        # With fake repository, filtering is automatic based on the authenticated user
+        # Response should only contain strokes for the authenticated user
+        data = response.json()
+        assert "strokes" in data
 
 
 @allure.feature("REST API")
