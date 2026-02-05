@@ -222,12 +222,12 @@ Prevent accidental commits of API keys, passwords, and other secrets.
 
 ### 0w. Production Error Tracking
 Track and monitor errors in production with Sentry.
-- [ ] Create Sentry project for CarryOn
-- [ ] Install sentry-sdk package
-- [ ] Configure Sentry DSN in environment
-- [ ] Initialize Sentry in FastAPI app
-- [ ] Configure error filtering and sampling
-- [ ] Add source maps for frontend errors (optional)
+- [x] Create Sentry project for CarryOn
+- [x] Install sentry-sdk package
+- [x] Configure Sentry DSN in environment
+- [x] Initialize Sentry in FastAPI app
+- [x] Configure error filtering and sampling
+- [ ] ~~Add source maps for frontend errors (optional)~~ (not applicable - no JS build)
 
 ### 0x. Database Backup
 Implement automated backup strategy for MongoDB Atlas to prevent data loss.
