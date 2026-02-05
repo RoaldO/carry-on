@@ -5,7 +5,7 @@ from typing import Any
 from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from carry_on.api.password_security import hash_password
+from tests.acceptance.conftest import hash_password
 from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 
