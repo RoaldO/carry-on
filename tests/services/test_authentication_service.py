@@ -42,7 +42,9 @@ def mock_hasher() -> MagicMock:
 
 
 @pytest.fixture
-def service(mock_repository: MagicMock, mock_hasher: MagicMock) -> AuthenticationService:
+def service(
+    mock_repository: MagicMock, mock_hasher: MagicMock
+) -> AuthenticationService:
     """Create an AuthenticationService with mocks."""
     return AuthenticationService(mock_repository, mock_hasher)
 

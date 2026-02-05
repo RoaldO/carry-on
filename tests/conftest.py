@@ -162,9 +162,7 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
     DEPRECATED: Authentication now uses AuthenticationService.
     This fixture mocks get_users_collection at the service factory level.
     """
-    warnings.warn(
-        "Use mock_authentication_service for proper DI", DeprecationWarning
-    )
+    warnings.warn("Use mock_authentication_service for proper DI", DeprecationWarning)
     mock_collection = MagicMock()
     mock_collection.find_one.return_value = None
 

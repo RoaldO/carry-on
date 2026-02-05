@@ -22,7 +22,9 @@ class AccountNotActivatedError(Exception):
 
     def __init__(self, email: str | None = None) -> None:
         self.email = email
-        message = f"Account not activated: {email}" if email else "Account not activated"
+        message = (
+            f"Account not activated: {email}" if email else "Account not activated"
+        )
         super().__init__(message)
 
 
@@ -42,6 +44,8 @@ class AccountAlreadyActivatedError(Exception):
 class PasswordNotCompliantError(Exception):
     """Raised when a password doesn't meet complexity requirements."""
 
-    def __init__(self, reason: str = "Password does not meet complexity requirements") -> None:
+    def __init__(
+        self, reason: str = "Password does not meet complexity requirements"
+    ) -> None:
         self.reason = reason
         super().__init__(reason)

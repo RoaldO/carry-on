@@ -55,9 +55,7 @@ class AuthenticationService:
     Delegates persistence to the repository and hashing to the hasher.
     """
 
-    def __init__(
-        self, repository: UserRepository, hasher: PasswordHasher
-    ) -> None:
+    def __init__(self, repository: UserRepository, hasher: PasswordHasher) -> None:
         """Initialize the service with dependencies.
 
         Args:
@@ -194,7 +192,9 @@ class AuthenticationService:
 
         # Check new password compliance
         if not self._hasher.is_compliant(new_password):
-            raise PasswordNotCompliantError("New password must be at least 8 characters")
+            raise PasswordNotCompliantError(
+                "New password must be at least 8 characters"
+            )
 
         # Hash and save new password
         new_hash = self._hasher.hash(new_password)

@@ -38,7 +38,9 @@ class TestVerifyPasswordReturnsAuthenticatedUser:
         assert result.id == "user123"
         assert result.email == test_email
         assert result.display_name == "Test User"
-        mock_auth_service.authenticate.assert_called_once_with(test_email, test_password)
+        mock_auth_service.authenticate.assert_called_once_with(
+            test_email, test_password
+        )
 
     def test_verify_password_returns_user_without_display_name(self) -> None:
         """verify_password should handle users without display_name."""
