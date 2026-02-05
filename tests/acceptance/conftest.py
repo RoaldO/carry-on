@@ -12,6 +12,7 @@ from pytest_bdd import given, parsers, then, when
 
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
 from tests.acceptance.db_utils import clear_collections, get_test_database, insert_user
+from tests.acceptance.pages.ideas_page import IdeasPage
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.stroke_page import StrokePage
 
@@ -168,6 +169,11 @@ def login_page(page: Page, base_url: str) -> LoginPage:
 @pytest.fixture
 def stroke_page(page: Page, base_url: str) -> StrokePage:
     return StrokePage(page, base_url)
+
+
+@pytest.fixture
+def ideas_page(page: Page, base_url: str) -> IdeasPage:
+    return IdeasPage(page, base_url)
 
 
 # Shared step definitions
