@@ -75,19 +75,19 @@ jobs:
           MONGODB_URI: "mongodb://admin:password@localhost:27017"
 
       - name: Upload coverage XML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-xml
           path: coverage.xml
 
       - name: Upload coverage HTML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-html
           path: htmlcov/
 
       - name: Upload Allure results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: allure-results
           path: allure-results/
