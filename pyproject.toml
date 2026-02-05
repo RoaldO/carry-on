@@ -27,6 +27,7 @@ dev = [
     "nox>=2025.11.12",
     "nox-uv>=0.7.0",
     "deply>=0.8.0",
+    "pre-commit>=4.1.0",
 ]
 
 [tool.pytest.ini_options]
@@ -87,3 +88,5 @@ lint.select = ["S", "E", "F", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["S101", "S105", "S106"]  # Ignore assert and hardcoded passwords in tests
+"noxfile.py" = ["S105", "S603", "S607"]  # Allow hardcoded passwords and subprocess in build script
+"scripts/*.py" = ["S603", "S607"]  # Allow subprocess in scripts

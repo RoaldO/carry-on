@@ -108,9 +108,7 @@ def main():
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "database": DATABASE_NAME,
         "collections": COLLECTIONS,
-        "document_counts": {
-            name: len(list(db[name].find())) for name in COLLECTIONS
-        },
+        "document_counts": {name: len(list(db[name].find())) for name in COLLECTIONS},
     }
     with open(backup_dir / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)

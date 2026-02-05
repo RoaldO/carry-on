@@ -78,7 +78,7 @@ def main():
     strokes_count = count_documents_without_user_id(db, "strokes")
     ideas_count = count_documents_without_user_id(db, "ideas")
 
-    print(f"\nDocuments without user_id:")
+    print("\nDocuments without user_id:")
     print(f"  - Strokes: {strokes_count}")
     print(f"  - Ideas: {ideas_count}")
 
