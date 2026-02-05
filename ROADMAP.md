@@ -201,10 +201,10 @@ Catch issues before commit to prevent CI failures and keep commits clean.
 
 ### 0t. Dependency Security Scanning
 Scan dependencies for known security vulnerabilities.
-- [ ] Install pip-audit package
-- [ ] Add `security` nox session to run pip-audit
-- [ ] Add security scan to CI pipeline
-- [ ] Configure to fail on high/critical vulnerabilities
+- [x] Install pip-audit package
+- [x] Add `security` nox session to run pip-audit
+- [x] Add security scan to CI pipeline
+- [x] Configure to fail on any vulnerability (safer than high/critical only)
 
 ### 0u. Automated Dependency Updates
 Automatically create PRs for dependency updates.
