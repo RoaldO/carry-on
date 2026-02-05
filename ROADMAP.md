@@ -91,14 +91,14 @@ See [ADR-0011](docs/adr/0011-specification-acceptance-tests.md) for testing appr
 
 **Stroke Tracking (`docs/specs/stroke-tracking.md`):**
 - [x] Record successful stroke (`tests/acceptance/features/strokes/record.feature`)
-- [ ] Record failed stroke
-- [ ] View recent strokes
-- [ ] Stroke validation (club, distance)
+- [x] Record failed stroke
+- [x] View recent strokes
+- [x] Stroke validation (club, distance)
 
 **Idea Capture (`docs/specs/idea-capture.md`):**
-- [ ] Submit idea
+- [x] Submit idea
 - [ ] ~~View submitted ideas~~ (endpoint removed)
-- [ ] Character limit validation
+- [x] Character limit validation
 
 **Navigation (`docs/specs/navigation.md`):**
 - [x] Tab switching between Strokes, Ideas, and Profile (`tests/acceptance/features/navigation/tabs.feature`)
