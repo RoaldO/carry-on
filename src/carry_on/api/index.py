@@ -1,3 +1,5 @@
+"""Web API for CarryOn application."""
+
 import os
 from importlib.resources import files
 
@@ -6,29 +8,19 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 
-from carry_on.api.schema import (
-    ActivateRequest,
-    EmailCheck,
-    LoginRequest,
-    UpdatePasswordRequest,
-)
-from carry_on.domain.exceptions import (
-    AccountAlreadyActivatedError,
-    AccountNotActivatedError,
-    InvalidCredentialsError,
-    PasswordNotCompliantError,
-    UserNotFoundError,
-)
-from carry_on.services.authentication_service import (
-    AuthenticatedUser,
-    AuthenticationService,
-    get_authentication_service,
-)
+from carry_on.api import schema as api_schema
+from carry_on.domain import exceptions as domain_exceptions
+from carry_on.services import authentication_service
 
 load_dotenv()
 
 # Initialize Sentry for error tracking (only if DSN is configured)
 sentry_dsn = os.getenv("SENTRY_DSN")
+_env_mapping = {
+    "production": "production",
+    "preview": "staging",
+    "development": "development",
+}
 if sentry_dsn:
     sentry_sdk.init(
         dsn=sentry_dsn,
@@ -38,9 +30,11 @@ if sentry_dsn:
         # Capture 100% of errors
         sample_rate=1.0,
         # Associate errors with releases (set via SENTRY_RELEASE env var)
-        release=os.getenv("SENTRY_RELEASE"),
+        # release=os.getenv("SENTRY_RELEASE"),
+        release=os.getenv("VERCEL_GIT_COMMIT_SHA"),
         # Set environment (production, staging, development)
-        environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
+        # environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
+        environment=_env_mapping[os.getenv("VERCEL_ENV", "production")],
     )
 
 app = FastAPI(title="CarryOn - Golf Stroke Tracker")
@@ -49,8 +43,10 @@ app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 def verify_password(
     x_password: str = Header(None),
     x_email: str = Header(None),
-    auth_service: AuthenticationService = Depends(get_authentication_service),
-) -> AuthenticatedUser:
+    auth_service: authentication_service.AuthenticationService = Depends(
+        authentication_service.get_authentication_service
+    ),
+) -> authentication_service.AuthenticatedUser:
     """Verify password from request header and return authenticated user.
 
     Authenticates user by verifying X-Email + X-Password headers against user's
@@ -62,14 +58,16 @@ def verify_password(
 
     try:
         return auth_service.authenticate(x_email, x_password)
-    except InvalidCredentialsError:
+    except domain_exceptions.InvalidCredentialsError:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
 
 @app.post("/api/check-email")
 async def check_email(
-    request: EmailCheck,
-    auth_service: AuthenticationService = Depends(get_authentication_service),
+    request: api_schema.EmailCheck,
+    auth_service: authentication_service.AuthenticationService = Depends(
+        authentication_service.get_authentication_service
+    ),
 ) -> dict:
     """Check if email exists and get activation status."""
     try:
@@ -78,14 +76,16 @@ async def check_email(
             "status": result.status,
             "display_name": result.display_name,
         }
-    except UserNotFoundError:
+    except domain_exceptions.UserNotFoundError:
         raise HTTPException(status_code=404, detail="Email not found")
 
 
 @app.post("/api/activate")
 async def activate_account(
-    request: ActivateRequest,
-    auth_service: AuthenticationService = Depends(get_authentication_service),
+    request: api_schema.ActivateRequest,
+    auth_service: authentication_service.AuthenticationService = Depends(
+        authentication_service.get_authentication_service
+    ),
 ) -> dict:
     """Activate account by setting password."""
     try:
@@ -97,16 +97,18 @@ async def activate_account(
                 "display_name": user.display_name,
             },
         }
-    except UserNotFoundError:
+    except domain_exceptions.UserNotFoundError:
         raise HTTPException(status_code=404, detail="Email not found")
-    except AccountAlreadyActivatedError:
+    except domain_exceptions.AccountAlreadyActivatedError:
         raise HTTPException(status_code=400, detail="Account already activated")
 
 
 @app.post("/api/login")
 async def login(
-    request: LoginRequest,
-    auth_service: AuthenticationService = Depends(get_authentication_service),
+    request: api_schema.LoginRequest,
+    auth_service: authentication_service.AuthenticationService = Depends(
+        authentication_service.get_authentication_service
+    ),
 ) -> dict:
     """Login with email and password."""
     try:
@@ -119,16 +121,18 @@ async def login(
                 "display_name": result.user.display_name,
             },
         }
-    except InvalidCredentialsError:
+    except domain_exceptions.InvalidCredentialsError:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    except AccountNotActivatedError:
+    except domain_exceptions.AccountNotActivatedError:
         raise HTTPException(status_code=400, detail="Account not activated")
 
 
 @app.post("/api/update-password")
 async def update_password(
-    request: UpdatePasswordRequest,
-    auth_service: AuthenticationService = Depends(get_authentication_service),
+    request: api_schema.UpdatePasswordRequest,
+    auth_service: authentication_service.AuthenticationService = Depends(
+        authentication_service.get_authentication_service
+    ),
 ) -> dict:
     """Update password for users with weak passwords."""
     try:
@@ -139,11 +143,11 @@ async def update_password(
             "status": "success",
             "message": "Password updated successfully",
         }
-    except UserNotFoundError:
+    except domain_exceptions.UserNotFoundError:
         raise HTTPException(status_code=404, detail="Email not found")
-    except InvalidCredentialsError:
+    except domain_exceptions.InvalidCredentialsError:
         raise HTTPException(status_code=401, detail="Invalid current password")
-    except PasswordNotCompliantError:
+    except domain_exceptions.PasswordNotCompliantError:
         raise HTTPException(
             status_code=400,
             detail="New password must be at least 8 characters",
@@ -158,7 +162,9 @@ async def serve_form() -> str:
 
 
 @app.get("/api/me")
-async def get_current_user(user: AuthenticatedUser = Depends(verify_password)) -> dict:
+async def get_current_user(
+    user: authentication_service.AuthenticatedUser = Depends(verify_password),
+) -> dict:
     """Get current authenticated user's profile information."""
     return {
         "email": user.email,
