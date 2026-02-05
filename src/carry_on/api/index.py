@@ -164,3 +164,9 @@ async def get_current_user(user: AuthenticatedUser = Depends(verify_password)) -
         "email": user.email,
         "display_name": user.display_name,
     }
+
+
+@app.get("/api/sentry-test")
+async def sentry_test() -> dict:
+    """Test endpoint to verify Sentry error tracking. Remove after testing."""
+    raise ValueError("This is a test error for Sentry integration")
