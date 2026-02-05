@@ -192,12 +192,12 @@ Generate CI workflow from noxfile.py to avoid duplication and drift.
 
 ### 0s. Pre-commit Hooks
 Catch issues before commit to prevent CI failures and keep commits clean.
-- [ ] Install pre-commit package
-- [ ] Create `.pre-commit-config.yaml` configuration
-- [ ] Add ruff linting hook
-- [ ] Add ruff formatting hook
-- [ ] Add mypy type checking hook
-- [ ] Document setup for new contributors (`pre-commit install`)
+- [x] Install pre-commit package
+- [x] Create `.pre-commit-config.yaml` configuration
+- [x] Add ruff linting hook
+- [x] Add ruff formatting hook
+- [x] Add mypy type checking hook
+- [x] Document setup for new contributors (`pre-commit install`)
 
 ### 0t. Dependency Security Scanning
 Scan dependencies for known security vulnerabilities.
