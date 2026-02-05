@@ -1,76 +1,76 @@
-"""Password hashing utilities with algorithm versioning."""
+"""Password security utilities and request models for authentication API."""
 
-from argon2 import PasswordHasher
-from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from pydantic import BaseModel, Field
 
-# Current preferred hasher
-_hasher = PasswordHasher()
+from carry_on.infrastructure.security.argon2_password_hasher import (
+    MIN_PASSWORD_LENGTH,
+    Argon2PasswordHasher,
+)
+
+# Singleton hasher instance for backward compatibility
+_hasher = Argon2PasswordHasher()
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using the current preferred algorithm (Argon2id)."""
+    """Hash a password using the current preferred algorithm (Argon2id).
+
+    This function is kept for backward compatibility. New code should use
+    the PasswordHasher protocol via dependency injection.
+    """
     return _hasher.hash(password)
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
-    """Verify password against stored hash (supports plain text and Argon2)."""
-    if stored_hash.startswith("$argon2"):
-        try:
-            _hasher.verify(stored_hash, password)
-            return True
-        except (VerifyMismatchError, InvalidHashError, VerificationError):
-            return False
-    else:
-        # Plain text comparison (legacy)
-        return stored_hash == password
+    """Verify password against stored hash (supports plain text and Argon2).
+
+    This function is kept for backward compatibility. New code should use
+    the PasswordHasher protocol via dependency injection.
+    """
+    return _hasher.verify(password, stored_hash)
 
 
 def needs_rehash(stored_hash: str) -> bool:
-    """Check if hash needs to be upgraded (plain text or outdated params)."""
-    if not stored_hash.startswith("$argon2"):
-        return True  # Plain text needs hashing
-    return _hasher.check_needs_rehash(stored_hash)
+    """Check if hash needs to be upgraded (plain text or outdated params).
 
-
-MIN_PASSWORD_LENGTH = 8
+    This function is kept for backward compatibility. New code should use
+    the PasswordHasher protocol via dependency injection.
+    """
+    return _hasher.needs_rehash(stored_hash)
 
 
 def is_password_compliant(password: str) -> bool:
     """Check if password meets complexity requirements.
 
-    Requirements:
-    - Minimum 8 characters
-    - No maximum length
-    - Any characters allowed (letters, numbers, special chars)
+    This function is kept for backward compatibility. New code should use
+    the PasswordHasher protocol via dependency injection.
     """
-    return len(password) >= MIN_PASSWORD_LENGTH
-
-
-class AuthenticatedUser(BaseModel):
-    """Represents an authenticated user returned by verify_password()."""
-
-    id: str
-    email: str
-    display_name: str
+    return _hasher.is_compliant(password)
 
 
 class EmailCheck(BaseModel):
+    """Request model for checking email existence."""
+
     email: str = Field(..., min_length=1)
 
 
 class ActivateRequest(BaseModel):
+    """Request model for account activation."""
+
     email: str = Field(..., min_length=1)
     password: str = Field(..., min_length=MIN_PASSWORD_LENGTH)
 
 
 class LoginRequest(BaseModel):
+    """Request model for login."""
+
     email: str = Field(..., min_length=1)
     # min_length=4 allows legacy PINs for migration flow
     password: str = Field(..., min_length=4)
 
 
 class UpdatePasswordRequest(BaseModel):
+    """Request model for password update."""
+
     email: str = Field(..., min_length=1)
     current_password: str = Field(..., min_length=4)
     new_password: str = Field(..., min_length=MIN_PASSWORD_LENGTH)

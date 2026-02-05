@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 import allure
 from fastapi.testclient import TestClient
 
+from tests.conftest import TEST_USER_ID
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
 
@@ -44,7 +45,7 @@ class TestStrokesWithDependencyInjection:
         assert saved_stroke.distance is not None
         assert saved_stroke.distance.meters == 150
         assert saved_stroke.fail is False
-        assert user_id == "user123"
+        assert user_id == str(TEST_USER_ID)
 
     def test_post_failed_stroke_saves_without_distance(
         self,
