@@ -208,10 +208,10 @@ Scan dependencies for known security vulnerabilities.
 
 ### 0u. Automated Dependency Updates
 Automatically create PRs for dependency updates.
-- [ ] Create `.github/dependabot.yml` configuration
-- [ ] Configure update schedule (weekly)
-- [ ] Configure Python ecosystem (pip/uv)
-- [ ] Set PR limits and reviewers
+- [x] Create `.github/dependabot.yml` for GitHub Actions updates
+- [x] Create `uv-upgrade.yml` workflow for Python dependencies
+- [x] Configure weekly schedule (Mondays)
+- [x] Workflow regenerates both `uv.lock` and `requirements.txt`
 
 ### 0v. Secrets Detection
 Prevent accidental commits of API keys, passwords, and other secrets.
