@@ -1,11 +1,10 @@
 """Tests for CarryOn API endpoints."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import allure
 from fastapi.testclient import TestClient
 
-from carry_on.api.password_security import hash_password
 from carry_on.services.authentication_service import AuthenticatedUser
 from tests.conftest import TEST_USER_ID
 

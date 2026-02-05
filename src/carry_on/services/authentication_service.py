@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from carry_on.domain.entities.user import User
 from carry_on.domain.exceptions import (
     AccountAlreadyActivatedError,
     AccountNotActivatedError,

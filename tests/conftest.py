@@ -11,12 +11,11 @@ from bson import ObjectId
 from fastapi.testclient import TestClient
 
 from carry_on.api.password_security import hash_password
-
-# Valid ObjectId for test user
-TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")
 from carry_on.services.stroke_service import StrokeService
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
+# Valid ObjectId for test user
+TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")
 
 def pytest_terminal_summary(
     terminalreporter: pytest.TerminalReporter,

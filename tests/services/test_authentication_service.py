@@ -179,7 +179,7 @@ class TestActivateAccount:
         mock_repository.find_by_email.return_value = pending_user
         mock_hasher.hash.return_value = "$argon2id$newhash"
 
-        result = service.activate_account("test@example.com", "SecurePass1")
+        service.activate_account("test@example.com", "SecurePass1")
 
         mock_hasher.hash.assert_called_once_with("SecurePass1")
         mock_repository.save.assert_called_once()
