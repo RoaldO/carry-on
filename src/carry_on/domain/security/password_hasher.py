@@ -2,6 +2,9 @@
 
 from typing import Protocol, runtime_checkable
 
+# Business rule: minimum password length requirement
+MIN_PASSWORD_LENGTH = 8
+
 
 @runtime_checkable
 class PasswordHasher(Protocol):
