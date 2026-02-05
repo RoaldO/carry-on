@@ -215,10 +215,10 @@ Automatically create PRs for dependency updates.
 
 ### 0v. Secrets Detection
 Prevent accidental commits of API keys, passwords, and other secrets.
-- [ ] Install detect-secrets package
-- [ ] Generate baseline file (`.secrets.baseline`)
-- [ ] Add detect-secrets pre-commit hook
-- [ ] Add secrets scan to CI pipeline
+- [x] Install detect-secrets package
+- [x] Generate baseline file (`.secrets.baseline`)
+- [x] Add detect-secrets pre-commit hook
+- [x] Add secrets scan to CI pipeline
 
 ### 0w. Production Error Tracking
 Track and monitor errors in production with Sentry.
