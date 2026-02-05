@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 
-from carry_on.api.password_security import (
-    EmailCheck,
+from carry_on.api.schema import (
     ActivateRequest,
+    EmailCheck,
     LoginRequest,
     UpdatePasswordRequest,
 )

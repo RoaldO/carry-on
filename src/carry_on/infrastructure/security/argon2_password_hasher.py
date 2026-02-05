@@ -3,7 +3,7 @@
 from argon2 import PasswordHasher as Argon2Hasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
-MIN_PASSWORD_LENGTH = 8
+from carry_on.domain.security.password_hasher import MIN_PASSWORD_LENGTH
 
 
 class Argon2PasswordHasher:
