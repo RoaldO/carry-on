@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
 from carry_on.services.stroke_service import StrokeService
 
+from tests.fakes.fake_stroke_repository import FakeStrokeRepository
+
 # Test password hasher instance
 _test_hasher = Argon2PasswordHasher()
 
@@ -20,7 +22,7 @@ _test_hasher = Argon2PasswordHasher()
 def hash_password(password: str) -> str:
     """Hash a password for test data setup."""
     return _test_hasher.hash(password)
-from tests.fakes.fake_stroke_repository import FakeStrokeRepository
+
 
 # Valid ObjectId for test user
 TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")

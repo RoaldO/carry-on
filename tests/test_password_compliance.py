@@ -35,9 +35,7 @@ class TestPasswordCompliance:
         """Passwords longer than 8 characters should be accepted."""
         assert hasher.is_compliant("123456789") is True
 
-    def test_password_with_letters_accepted(
-        self, hasher: Argon2PasswordHasher
-    ) -> None:
+    def test_password_with_letters_accepted(self, hasher: Argon2PasswordHasher) -> None:
         """Passwords with letters should be accepted."""
         assert hasher.is_compliant("Abcd1234") is True
 

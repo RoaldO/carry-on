@@ -11,6 +11,10 @@ from pymongo.database import Database
 from pytest_bdd import given, parsers, then, when
 
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
+from tests.acceptance.db_utils import clear_collections, get_test_database, insert_user
+from tests.acceptance.pages.login_page import LoginPage
+from tests.acceptance.pages.stroke_page import StrokePage
+
 
 # Test password hasher
 _hasher = Argon2PasswordHasher()
@@ -19,9 +23,7 @@ _hasher = Argon2PasswordHasher()
 def hash_password(password: str) -> str:
     """Hash a password for test data setup."""
     return _hasher.hash(password)
-from tests.acceptance.db_utils import clear_collections, get_test_database, insert_user
-from tests.acceptance.pages.login_page import LoginPage
-from tests.acceptance.pages.stroke_page import StrokePage
+
 
 pytestmark = pytest.mark.acceptance
 
