@@ -9,14 +9,14 @@ from carry_on.services.authentication_service import AuthenticatedUser
 from carry_on.services.stroke_service import StrokeService, get_stroke_service
 
 
-class StrokeCreate(BaseModel):
+class StrokeCreateRequest(BaseModel):
     club: str
     distance: Optional[int] = None
     fail: bool = False
     date: date_type = Field(default_factory=date_type.today)
 
 
-class Stroke(BaseModel):
+class StrokeResponse(BaseModel):
     id: str
     club: str
     distance: Optional[int] = None
@@ -25,7 +25,7 @@ class Stroke(BaseModel):
 
 @app.post("/api/strokes")
 async def create_stroke(
-    stroke: StrokeCreate,
+    stroke: StrokeCreateRequest,
     user: AuthenticatedUser = Depends(verify_password),
     service: StrokeService = Depends(get_stroke_service),
 ) -> dict:
