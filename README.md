@@ -51,6 +51,15 @@ uv run nox -s format
 # Type checking
 uv run nox -s typecheck
 
+# Architecture validation
+uv run nox -s arch
+
+# Check for secrets and passwords
+uv run nox -s secrets
+
+# Check for unsafe packages
+uv run nox -s security
+
 # Run development server
 uv run nox -s dev
 ```
