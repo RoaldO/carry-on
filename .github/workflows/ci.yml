@@ -40,6 +40,9 @@ jobs:
       - name: Security scan
         run: uv run nox -s security
 
+      - name: Secrets scan
+        run: uv run nox -s secrets
+
   test:
     needs: lint
     runs-on: ubuntu-latest

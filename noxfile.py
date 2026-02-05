@@ -66,6 +66,7 @@ def mongodb(session: nox.Session):
         "tests",
         "arch",
         "security",
+        "secrets",
     ]
 )
 def final(session: nox.Session):
@@ -77,6 +78,19 @@ def security(session: nox.Session) -> None:
     """Scan dependencies for known security vulnerabilities."""
     session.install("pip-audit")
     session.run("pip-audit", *session.posargs)
+
+
+@nox.session(python="3.12")
+def secrets(session: nox.Session) -> None:
+    """Scan for secrets in the codebase."""
+    session.install("detect-secrets")
+    session.run(
+        "detect-secrets",
+        "scan",
+        "--baseline",
+        ".secrets.baseline",
+        *session.posargs,
+    )
 
 
 @nox.session
