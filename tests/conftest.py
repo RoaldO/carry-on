@@ -17,6 +17,7 @@ from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 # Valid ObjectId for test user
 TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")
 
+
 def pytest_terminal_summary(
     terminalreporter: pytest.TerminalReporter,
     exitstatus: int,
