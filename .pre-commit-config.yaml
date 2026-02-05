@@ -18,6 +18,7 @@ repos:
           - types-requests
           - argon2-cffi
           - python-dotenv
+          - sentry-sdk
         pass_filenames: false
         entry: mypy src/carry_on
 

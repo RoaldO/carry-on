@@ -1,5 +1,7 @@
+import os
 from importlib.resources import files
 
+import sentry_sdk
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
@@ -24,6 +26,22 @@ from carry_on.services.authentication_service import (
 )
 
 load_dotenv()
+
+# Initialize Sentry for error tracking (only if DSN is configured)
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        # Set traces_sample_rate to capture performance data
+        # Adjust in production based on traffic volume
+        traces_sample_rate=0.1,
+        # Capture 100% of errors
+        sample_rate=1.0,
+        # Associate errors with releases (set via SENTRY_RELEASE env var)
+        release=os.getenv("SENTRY_RELEASE"),
+        # Set environment (production, staging, development)
+        environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
+    )
 
 app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 
