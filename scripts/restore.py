@@ -110,7 +110,7 @@ def restore_collection(db, collection_name: str, backup_dir: Path) -> int:
     collection = db[collection_name]
 
     # Delete existing documents
-    deleted = collection.delete_many({})
+    collection.delete_many({})
 
     # Insert restored documents
     collection.insert_many(documents)
@@ -161,7 +161,10 @@ def main():
         sys.exit(1)
 
     if not (args.backup_dir / "metadata.json").exists():
-        print(f"Error: Invalid backup directory (missing metadata.json): {args.backup_dir}")
+        print(
+            f"Error: Invalid backup directory (missing metadata.json): "
+            f"{args.backup_dir}"
+        )
         sys.exit(1)
 
     print("CarryOn Database Restore")

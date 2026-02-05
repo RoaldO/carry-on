@@ -3,6 +3,7 @@
 Run `nox --list` to see available sessions.
 Run `nox -s <session>` to run a specific session.
 """
+
 import contextlib
 import os
 
@@ -31,13 +32,19 @@ def mongodb(session: nox.Session):
 
     print(f"Starting {container=}")
     session.run(
-        "docker", "run", "-d",
-        "--name", container,
-        "-p", f"{port}:27017",
-        "-e", f"MONGO_INITDB_ROOT_USERNAME={username}",
-        "-e", f"MONGO_INITDB_ROOT_PASSWORD={password}",
+        "docker",
+        "run",
+        "-d",
+        "--name",
+        container,
+        "-p",
+        f"{port}:27017",
+        "-e",
+        f"MONGO_INITDB_ROOT_USERNAME={username}",
+        "-e",
+        f"MONGO_INITDB_ROOT_PASSWORD={password}",
         image,
-        external=True
+        external=True,
     )
     os.environ["MONGODB_URI"] = f"mongodb://{username}:{password}@localhost:{port}"
 
@@ -51,7 +58,7 @@ def mongodb(session: nox.Session):
 
 
 @nox.session(
-    requires=['outdated_direct', 'format', 'lint', 'typecheck', 'tests', 'arch']
+    requires=["outdated_direct", "format", "lint", "typecheck", "tests", "arch"]
 )
 def final(session: nox.Session):
     """Final checks before pull request."""
@@ -281,6 +288,4 @@ def outdated_direct(session: nox.Session) -> None:
     for row in outdated_direct:
         session.log(row)
 
-    session.error(
-        f"{len(outdated_direct)} direct dependencies are outdated."
-    )
+    session.error(f"{len(outdated_direct)} direct dependencies are outdated.")

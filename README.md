@@ -18,6 +18,9 @@ Golf stroke tracking web application.
 # Install dependencies
 uv sync --dev
 
+# Set up pre-commit hooks (one-time setup)
+uv run pre-commit install
+
 # Run locally
 uv run nox -s dev
 ```
