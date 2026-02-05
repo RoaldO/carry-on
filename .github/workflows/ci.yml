@@ -37,6 +37,9 @@ jobs:
       - name: Architecture check
         run: uv run nox -s arch
 
+      - name: Security scan
+        run: uv run nox -s security
+
   test:
     needs: lint
     runs-on: ubuntu-latest

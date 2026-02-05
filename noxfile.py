@@ -58,10 +58,25 @@ def mongodb(session: nox.Session):
 
 
 @nox.session(
-    requires=["outdated_direct", "format", "lint", "typecheck", "tests", "arch"]
+    requires=[
+        "outdated_direct",
+        "format",
+        "lint",
+        "typecheck",
+        "tests",
+        "arch",
+        "security",
+    ]
 )
 def final(session: nox.Session):
     """Final checks before pull request."""
+
+
+@nox.session(python="3.12")
+def security(session: nox.Session) -> None:
+    """Scan dependencies for known security vulnerabilities."""
+    session.install("pip-audit")
+    session.run("pip-audit", *session.posargs)
 
 
 @nox.session
