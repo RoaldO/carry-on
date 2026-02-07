@@ -186,21 +186,21 @@ def coverage_html(session: nox.Session) -> None:
 @nox.session(python="3.14")
 def lint(session: nox.Session) -> None:
     """Run ruff linter."""
-    session.install("ruff")
+    session.install("ruff==0.9.6")
     session.run("ruff", "check", "src/carry_on", "tests", *session.posargs)
 
 
 @nox.session(python="3.14")
 def format(session: nox.Session) -> None:
     """Run ruff formatter."""
-    session.install("ruff")
+    session.install("ruff==0.9.6")
     session.run("ruff", "format", "src/carry_on", "tests", *session.posargs)
 
 
 @nox.session(python="3.14")
 def format_check(session: nox.Session) -> None:
     """Check code formatting without making changes."""
-    session.install("ruff")
+    session.install("ruff==0.9.6")
     session.run("ruff", "format", "--check", "src/carry_on", "tests")
 
 
