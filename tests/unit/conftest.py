@@ -1,6 +1,5 @@
 """Pytest fixtures for CarryOn API tests."""
 
-import os
 from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -87,16 +86,11 @@ def client() -> Generator[TestClient, None, None]:
     Kept for backward compatibility with existing tests.
     """
     warnings.warn("Use client_with_fake_repo instead for proper DI", DeprecationWarning)
-    os.environ["MONGODB_URI"] = "mongodb://test"
-
-    # Import app after setting env vars
+    # Import app (no need to set MONGODB_URI - mocks will intercept all DB calls)
     from carry_on.api.index import app
 
     with TestClient(app) as client:
         yield client
-
-    # Cleanup
-    os.environ.pop("MONGODB_URI", None)
 
 
 @pytest.fixture
@@ -108,8 +102,7 @@ def client_with_fake_repo(
     Returns a tuple of (client, fake_repository) so tests can inspect
     the repository state after making requests.
     """
-    os.environ["MONGODB_URI"] = "mongodb://test"
-
+    # Import app (no need to set MONGODB_URI - dependency injection handles it)
     from carry_on.api.index import app
     from carry_on.api.strokes import get_stroke_service
 
@@ -121,7 +114,6 @@ def client_with_fake_repo(
 
     # Cleanup
     app.dependency_overrides.clear()
-    os.environ.pop("MONGODB_URI", None)
 
 
 @pytest.fixture
@@ -143,6 +135,9 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
     ):
         yield mock_collection
 
+    # Cleanup: reset mock to ensure test isolation
+    mock_collection.reset_mock()
+
 
 @pytest.fixture
 def mock_users_collection() -> Generator[MagicMock, None, None]:
@@ -160,6 +155,9 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
         return_value=mock_collection,
     ):
         yield mock_collection
+
+    # Cleanup: reset mock to ensure test isolation
+    mock_collection.reset_mock()
 
 
 @pytest.fixture
