@@ -6,6 +6,7 @@ import allure
 from fastapi.testclient import TestClient
 
 from carry_on.services.authentication_service import AuthenticatedUser
+from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 from tests.unit.conftest import TEST_USER_ID
 
 
@@ -100,12 +101,11 @@ class TestStrokesEndpoint:
 
     def test_get_strokes_with_valid_auth(
         self,
-        client_with_fake_repo: tuple[TestClient, object],
+        client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes with valid authentication should return strokes."""
-        client, _ = client_with_fake_repo
         response = client.get("/api/strokes", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
@@ -124,12 +124,11 @@ class TestStrokesEndpoint:
 
     def test_post_stroke_with_valid_auth(
         self,
-        client_with_fake_repo: tuple[TestClient, object],
+        client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes with valid authentication should create stroke."""
-        client, _ = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
@@ -143,12 +142,11 @@ class TestStrokesEndpoint:
 
     def test_post_failed_stroke(
         self,
-        client_with_fake_repo: tuple[TestClient, object],
+        client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes with fail=true should not require distance."""
-        client, _ = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "d", "fail": True},
@@ -161,12 +159,11 @@ class TestStrokesEndpoint:
 
     def test_post_stroke_without_distance_or_fail_returns_400(
         self,
-        client_with_fake_repo: tuple[TestClient, object],
+        client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes without distance and fail=false should return 400."""
-        client, _ = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i"},
@@ -176,12 +173,14 @@ class TestStrokesEndpoint:
 
     def test_post_stroke_stores_user_id(
         self,
-        client_with_fake_repo: tuple[TestClient, object],
+        client: TestClient,
+        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
+        fake_stroke_repository: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes should store user_id in the document."""
-        client, fake_repo = client_with_fake_repo
+        _, fake_repo = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
@@ -197,12 +196,11 @@ class TestStrokesEndpoint:
 
     def test_get_strokes_filters_by_user_id(
         self,
-        client_with_fake_repo: tuple[TestClient, object],
+        client: TestClient,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/strokes should filter by user_id."""
-        client, _ = client_with_fake_repo
         response = client.get("/api/strokes", headers=auth_headers)
         assert response.status_code == 200
         # With fake repository, filtering is automatic based on the authenticated user
