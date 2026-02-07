@@ -173,18 +173,3 @@ def mock_authenticated_user(
         "activated_at": "2026-01-25T10:00:00Z",
     }
     return mock_users_collection
-
-
-@pytest.fixture
-def mock_authenticated_user_plain_password(
-    mock_users_collection: MagicMock, test_email: str, test_password: str
-) -> MagicMock:
-    """Mock a user with plain text password (legacy, needs rehash)."""
-    mock_users_collection.find_one.return_value = {
-        "_id": TEST_USER_ID,
-        "email": test_email,
-        "display_name": "Test User",
-        "password_hash": test_password,
-        "activated_at": "2026-01-25T10:00:00Z",
-    }
-    return mock_users_collection
