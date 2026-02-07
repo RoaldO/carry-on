@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import allure
 from fastapi.testclient import TestClient
 
-from tests.conftest import TEST_USER_ID
+from tests.unit.conftest import TEST_USER_ID
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
 

@@ -6,7 +6,7 @@ import allure
 from bson import ObjectId
 from fastapi.testclient import TestClient
 
-from tests.conftest import hash_password
+from tests.unit.conftest import hash_password
 
 # Valid ObjectId for test user
 TEST_USER_ID = ObjectId("507f1f77bcf86cd799439011")
