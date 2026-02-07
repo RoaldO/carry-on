@@ -12,13 +12,6 @@ from carry_on.domain.exceptions import (
 )
 from carry_on.domain.repositories.user_repository import UserRepository
 from carry_on.domain.security.password_hasher import PasswordHasher
-from carry_on.infrastructure.repositories.mongo_user_repository import (
-    MongoUserRepository,
-    get_users_collection,
-)
-from carry_on.infrastructure.security.argon2_password_hasher import (
-    get_password_hasher,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,15 +227,3 @@ class AuthenticationService:
             email=user.email,
             display_name=user.display_name,
         )
-
-
-def get_authentication_service() -> AuthenticationService:
-    """Get AuthenticationService with MongoDB repository and Argon2 hasher.
-
-    Returns:
-        An AuthenticationService instance with production dependencies.
-    """
-    collection = get_users_collection()
-    repository = MongoUserRepository(collection)
-    hasher = get_password_hasher()
-    return AuthenticationService(repository, hasher)

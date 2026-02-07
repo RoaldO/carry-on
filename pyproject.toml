@@ -71,6 +71,15 @@ ignore_missing_imports = false
 warn_unreachable = true
 #disallow_any_expr = true
 
+[[tool.mypy.overrides]]
+module = "dependency_injector.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "carry_on.container"
+disallow_any_unimported = false
+disallow_subclassing_any = false
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true

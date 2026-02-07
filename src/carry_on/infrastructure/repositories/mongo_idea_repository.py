@@ -7,7 +7,6 @@ from bson.objectid import ObjectId
 from pymongo.collection import Collection
 
 from carry_on.domain.entities.idea import Idea, IdeaId
-from carry_on.infrastructure.mongodb import get_database
 
 
 class IdeaDoc(TypedDict):
@@ -68,8 +67,3 @@ class MongoIdeaRepository:
             "created_at": datetime.now(UTC).isoformat(),
             "user_id": user_id,
         }
-
-
-def get_ideas_collection() -> Collection[IdeaDoc]:
-    """Get MongoDB collection, initializing connection if needed."""
-    return get_database().ideas

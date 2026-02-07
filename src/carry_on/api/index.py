@@ -4,13 +4,18 @@ import os
 from importlib.resources import files
 
 import sentry_sdk
+from dependency_injector.wiring import Provide, inject
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 
 from carry_on.api import schema as api_schema
+from carry_on.container import Container
 from carry_on.domain import exceptions as domain_exceptions
-from carry_on.services import authentication_service
+from carry_on.services.authentication_service import (
+    AuthenticatedUser,
+    AuthenticationService,
+)
 
 load_dotenv()
 
@@ -40,13 +45,14 @@ if sentry_dsn:
 app = FastAPI(title="CarryOn - Golf Stroke Tracker")
 
 
+@inject
 def verify_password(
     x_password: str = Header(None),
     x_email: str = Header(None),
-    auth_service: authentication_service.AuthenticationService = Depends(
-        authentication_service.get_authentication_service
+    auth_service: AuthenticationService = Depends(
+        Provide[Container.authentication_service]
     ),
-) -> authentication_service.AuthenticatedUser:
+) -> AuthenticatedUser:
     """Verify password from request header and return authenticated user.
 
     Authenticates user by verifying X-Email + X-Password headers against user's
@@ -63,10 +69,11 @@ def verify_password(
 
 
 @app.post("/api/check-email")
+@inject
 async def check_email(
     request: api_schema.EmailCheck,
-    auth_service: authentication_service.AuthenticationService = Depends(
-        authentication_service.get_authentication_service
+    auth_service: AuthenticationService = Depends(
+        Provide[Container.authentication_service]
     ),
 ) -> dict:
     """Check if email exists and get activation status."""
@@ -81,10 +88,11 @@ async def check_email(
 
 
 @app.post("/api/activate")
+@inject
 async def activate_account(
     request: api_schema.ActivateRequest,
-    auth_service: authentication_service.AuthenticationService = Depends(
-        authentication_service.get_authentication_service
+    auth_service: AuthenticationService = Depends(
+        Provide[Container.authentication_service]
     ),
 ) -> dict:
     """Activate account by setting password."""
@@ -104,10 +112,11 @@ async def activate_account(
 
 
 @app.post("/api/login")
+@inject
 async def login(
     request: api_schema.LoginRequest,
-    auth_service: authentication_service.AuthenticationService = Depends(
-        authentication_service.get_authentication_service
+    auth_service: AuthenticationService = Depends(
+        Provide[Container.authentication_service]
     ),
 ) -> dict:
     """Login with email and password."""
@@ -128,10 +137,11 @@ async def login(
 
 
 @app.post("/api/update-password")
+@inject
 async def update_password(
     request: api_schema.UpdatePasswordRequest,
-    auth_service: authentication_service.AuthenticationService = Depends(
-        authentication_service.get_authentication_service
+    auth_service: AuthenticationService = Depends(
+        Provide[Container.authentication_service]
     ),
 ) -> dict:
     """Update password for users with weak passwords."""
@@ -163,7 +173,7 @@ async def serve_form() -> str:
 
 @app.get("/api/me")
 async def get_current_user(
-    user: authentication_service.AuthenticatedUser = Depends(verify_password),
+    user: AuthenticatedUser = Depends(verify_password),
 ) -> dict:
     """Get current authenticated user's profile information."""
     return {
