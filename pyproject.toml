@@ -6,9 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "carry-on"
 version = "0.1.0"
 description = "Golf stroke tracking web app"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = [
     "argon2-cffi>=25.1.0",
+    "dependency-injector>=4.48.3",
     "fastapi[standard]>=0.115.0",
     "pymongo>=4.10.0",
     "python-dotenv>=1.0.0",
@@ -69,6 +70,15 @@ strict_equality = true
 ignore_missing_imports = false
 warn_unreachable = true
 #disallow_any_expr = true
+
+[[tool.mypy.overrides]]
+module = "dependency_injector.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "carry_on.container"
+disallow_any_unimported = false
+disallow_subclassing_any = false
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

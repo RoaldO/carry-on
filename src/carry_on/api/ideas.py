@@ -1,16 +1,19 @@
+from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException
 
 from carry_on.api.index import app, verify_password
 from carry_on.api.schema import IdeaCreate
+from carry_on.container import Container
 from carry_on.services.authentication_service import AuthenticatedUser
-from carry_on.services.idea_service import IdeaService, get_ideas_service
+from carry_on.services.idea_service import IdeaService
 
 
 @app.post("/api/ideas")
+@inject
 async def create_idea(
     idea: IdeaCreate,
     user: AuthenticatedUser = Depends(verify_password),
-    service: IdeaService = Depends(get_ideas_service),
+    service: IdeaService = Depends(Provide[Container.idea_service]),
 ) -> dict:
     """Submit a new idea."""
     try:

@@ -81,12 +81,3 @@ class Argon2PasswordHasher:
             True if the password meets requirements, False otherwise.
         """
         return len(password) >= MIN_PASSWORD_LENGTH
-
-
-def get_password_hasher() -> Argon2PasswordHasher:
-    """Get the default password hasher instance.
-
-    Returns:
-        An Argon2PasswordHasher instance.
-    """
-    return Argon2PasswordHasher()

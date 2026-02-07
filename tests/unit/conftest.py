@@ -2,11 +2,11 @@
 
 from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-import warnings
+from unittest.mock import MagicMock
 
 import pytest
 from bson import ObjectId
+from dependency_injector import providers
 from fastapi.testclient import TestClient
 
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
@@ -80,13 +80,7 @@ def test_password_hashed(test_password: str) -> str:
 
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
-    """Create test client.
-
-    DEPRECATED: Use client_with_fake_repo for proper DI.
-    Kept for backward compatibility with existing tests.
-    """
-    warnings.warn("Use client_with_fake_repo instead for proper DI", DeprecationWarning)
-    # Import app (no need to set MONGODB_URI - mocks will intercept all DB calls)
+    """Create test client with container available for overrides."""
     from carry_on.api.index import app
 
     with TestClient(app) as client:
@@ -97,23 +91,20 @@ def client() -> Generator[TestClient, None, None]:
 def client_with_fake_repo(
     fake_stroke_service: StrokeService,
 ) -> Generator[tuple[TestClient, FakeStrokeRepository], None, None]:
-    """Create test client with fake repository injected via DI.
+    """Create test client with fake repository injected via DI container.
 
     Returns a tuple of (client, fake_repository) so tests can inspect
     the repository state after making requests.
     """
-    # Import app (no need to set MONGODB_URI - dependency injection handles it)
+    from carry_on.api import container
     from carry_on.api.index import app
-    from carry_on.api.strokes import get_stroke_service
 
-    # Override the dependency to use our fake service
-    app.dependency_overrides[get_stroke_service] = lambda: fake_stroke_service
+    container.stroke_service.override(providers.Object(fake_stroke_service))
 
     with TestClient(app) as client:
         yield client, fake_stroke_service._repository  # type: ignore[misc]
 
-    # Cleanup
-    app.dependency_overrides.clear()
+    container.stroke_service.reset_override()
 
 
 @pytest.fixture
@@ -124,39 +115,32 @@ def auth_headers(test_email: str, test_password: str) -> dict[str, str]:
 
 @pytest.fixture
 def mock_ideas_collection() -> Generator[MagicMock, None, None]:
-    """Mock MongoDB ideas collection."""
+    """Mock MongoDB ideas collection via container override."""
+    from carry_on.api import container
+
     mock_collection = MagicMock()
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_idea_123"
 
-    with patch(
-        "carry_on.services.idea_service.get_ideas_collection",
-        return_value=mock_collection,
-    ):
-        yield mock_collection
+    container.ideas_collection.override(providers.Object(mock_collection))
+    yield mock_collection
 
-    # Cleanup: reset mock to ensure test isolation
+    container.ideas_collection.reset_override()
     mock_collection.reset_mock()
 
 
 @pytest.fixture
 def mock_users_collection() -> Generator[MagicMock, None, None]:
-    """Mock MongoDB users collection for authentication service.
+    """Mock MongoDB users collection via container override."""
+    from carry_on.api import container
 
-    DEPRECATED: Authentication now uses AuthenticationService.
-    This fixture mocks get_users_collection at the service factory level.
-    """
-    warnings.warn("Use mock_authentication_service for proper DI", DeprecationWarning)
     mock_collection = MagicMock()
     mock_collection.find_one.return_value = None
 
-    with patch(
-        "carry_on.services.authentication_service.get_users_collection",
-        return_value=mock_collection,
-    ):
-        yield mock_collection
+    container.users_collection.override(providers.Object(mock_collection))
+    yield mock_collection
 
-    # Cleanup: reset mock to ensure test isolation
+    container.users_collection.reset_override()
     mock_collection.reset_mock()
 
 

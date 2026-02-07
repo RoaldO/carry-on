@@ -73,14 +73,14 @@ def final(session: nox.Session):
     """Final checks before pull request."""
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def security(session: nox.Session) -> None:
     """Scan dependencies for known security vulnerabilities."""
     session.install("pip-audit")
     session.run("pip-audit", *session.posargs)
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def secrets(session: nox.Session) -> None:
     """Scan for secrets in the codebase."""
     session.install("detect-secrets")
@@ -100,7 +100,7 @@ def arch(session):
     session.run("deply", "analyze")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def tests(session: nox.Session) -> None:
     """Run the test suite with coverage."""
     session.install(".", "--group", "dev")
@@ -115,7 +115,7 @@ def tests(session: nox.Session) -> None:
         )
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def tests_acceptance(session: nox.Session) -> None:
     """Run only acceptance tests."""
     session.install(".", "--group", "dev")
@@ -128,7 +128,7 @@ def tests_acceptance(session: nox.Session) -> None:
         )
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def tests_acceptance_headed(session: nox.Session) -> None:
     """Run only acceptance tests with browser visible."""
     session.install(".", "--group", "dev")
@@ -142,7 +142,7 @@ def tests_acceptance_headed(session: nox.Session) -> None:
         )
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def allure(session: nox.Session) -> None:
     """Generate Allure report from test results.
 
@@ -169,7 +169,7 @@ def allure(session: nox.Session) -> None:
     session.log("  allure serve allure-results")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def coverage_html(session: nox.Session) -> None:
     """Generate HTML coverage report."""
     session.install(".", "--group", "dev")
@@ -183,28 +183,28 @@ def coverage_html(session: nox.Session) -> None:
     session.log("Open htmlcov/index.html in a browser to view.")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def lint(session: nox.Session) -> None:
     """Run ruff linter."""
-    session.install("ruff")
+    session.install("ruff==0.9.6")
     session.run("ruff", "check", "src/carry_on", "tests", *session.posargs)
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def format(session: nox.Session) -> None:
     """Run ruff formatter."""
-    session.install("ruff")
+    session.install("ruff==0.9.6")
     session.run("ruff", "format", "src/carry_on", "tests", *session.posargs)
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def format_check(session: nox.Session) -> None:
     """Check code formatting without making changes."""
-    session.install("ruff")
+    session.install("ruff==0.9.6")
     session.run("ruff", "format", "--check", "src/carry_on", "tests")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def typecheck(session: nox.Session) -> None:
     """Run mypy type checker."""
     session.install(".", "--group", "dev")
@@ -212,14 +212,14 @@ def typecheck(session: nox.Session) -> None:
     session.run("mypy", "src/carry_on", *session.posargs)
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def dev(session: nox.Session) -> None:
     """Run the development server."""
     session.install(".", "--group", "dev")
     session.run("uvicorn", "carry_on.api.index:app", "--port", "8787", "--reload")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def outdated_all(session: nox.Session) -> None:
     """
     Show all outdated dependencies and where they come from
@@ -259,7 +259,7 @@ def outdated_all(session: nox.Session) -> None:
             session.log("  (could not determine dependency tree)")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.14")
 def outdated_direct(session: nox.Session) -> None:
     """
     Show outdated *direct* dependencies from pyproject.toml.

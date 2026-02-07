@@ -1,12 +1,14 @@
 from datetime import date as date_type
 from typing import Optional
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from carry_on.api.index import app, verify_password
+from carry_on.container import Container
 from carry_on.services.authentication_service import AuthenticatedUser
-from carry_on.services.stroke_service import StrokeService, get_stroke_service
+from carry_on.services.stroke_service import StrokeService
 
 
 class StrokeCreateRequest(BaseModel):
@@ -24,10 +26,11 @@ class StrokeResponse(BaseModel):
 
 
 @app.post("/api/strokes")
+@inject
 async def create_stroke(
     stroke: StrokeCreateRequest,
     user: AuthenticatedUser = Depends(verify_password),
-    service: StrokeService = Depends(get_stroke_service),
+    service: StrokeService = Depends(Provide[Container.stroke_service]),
 ) -> dict:
     """Record a new golf stroke."""
     try:
@@ -55,10 +58,11 @@ async def create_stroke(
 
 
 @app.get("/api/strokes")
+@inject
 async def list_strokes(
     limit: int = 20,
     user: AuthenticatedUser = Depends(verify_password),
-    service: StrokeService = Depends(get_stroke_service),
+    service: StrokeService = Depends(Provide[Container.stroke_service]),
 ) -> dict:
     """List recent strokes for the authenticated user."""
     strokes = service.get_user_strokes(user.id, limit)
