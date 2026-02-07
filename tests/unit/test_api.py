@@ -6,7 +6,7 @@ import allure
 from fastapi.testclient import TestClient
 
 from carry_on.services.authentication_service import AuthenticatedUser
-from tests.conftest import TEST_USER_ID
+from tests.unit.conftest import TEST_USER_ID
 
 
 @allure.feature("REST API")
