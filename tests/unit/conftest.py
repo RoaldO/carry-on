@@ -2,6 +2,7 @@
 
 from collections.abc import Generator
 from pathlib import Path
+from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -79,7 +80,7 @@ def test_password_hashed(test_password: str) -> str:
 
 
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def client() -> Iterator[TestClient]:
     """Create test client with container available for overrides."""
     from carry_on.api.index import app
 
@@ -90,6 +91,7 @@ def client() -> Generator[TestClient, None, None]:
 @pytest.fixture
 def client_with_fake_repo(
     fake_stroke_service: StrokeService,
+    client: TestClient,
 ) -> Generator[tuple[TestClient, FakeStrokeRepository], None, None]:
     """Create test client with fake repository injected via DI container.
 
@@ -97,14 +99,9 @@ def client_with_fake_repo(
     the repository state after making requests.
     """
     from carry_on.api import container
-    from carry_on.api.index import app
 
-    container.stroke_service.override(providers.Object(fake_stroke_service))
-
-    with TestClient(app) as client:
+    with container.stroke_service.override(providers.Object(fake_stroke_service)):
         yield client, fake_stroke_service._repository  # type: ignore[misc]
-
-    container.stroke_service.reset_override()
 
 
 @pytest.fixture
@@ -122,11 +119,8 @@ def mock_ideas_collection() -> Generator[MagicMock, None, None]:
     mock_collection.find.return_value.sort.return_value.limit.return_value = []
     mock_collection.insert_one.return_value.inserted_id = "test_idea_123"
 
-    container.ideas_collection.override(providers.Object(mock_collection))
-    yield mock_collection
-
-    container.ideas_collection.reset_override()
-    mock_collection.reset_mock()
+    with container.ideas_collection.override(providers.Object(mock_collection)):
+        yield mock_collection
 
 
 @pytest.fixture
@@ -137,11 +131,8 @@ def mock_users_collection() -> Generator[MagicMock, None, None]:
     mock_collection = MagicMock()
     mock_collection.find_one.return_value = None
 
-    container.users_collection.override(providers.Object(mock_collection))
-    yield mock_collection
-
-    container.users_collection.reset_override()
-    mock_collection.reset_mock()
+    with container.users_collection.override(providers.Object(mock_collection)):
+        yield mock_collection
 
 
 @pytest.fixture
