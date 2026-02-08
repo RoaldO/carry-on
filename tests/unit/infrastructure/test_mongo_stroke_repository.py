@@ -7,11 +7,11 @@ from bson import ObjectId
 from pymongo.collection import Collection
 import pytest
 
-from carry_on.domain.entities.stroke import Stroke, StrokeId
-from carry_on.domain.repositories.stroke_repository import StrokeRepository
-from carry_on.domain.value_objects.club_type import ClubType
-from carry_on.domain.value_objects.distance import Distance
-from carry_on.infrastructure.repositories.mongo_stroke_repository import (
+from carry_on.domain.training.entities.stroke import Stroke, StrokeId
+from carry_on.domain.training.repositories.stroke_repository import StrokeRepository
+from carry_on.domain.training.value_objects.club_type import ClubType
+from carry_on.domain.training.value_objects.distance import Distance
+from carry_on.infrastructure.repositories.training.mongo_stroke_repository import (
     MongoStrokeRepository,
 )
 

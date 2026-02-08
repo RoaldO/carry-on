@@ -6,9 +6,9 @@ from typing import NotRequired, TypedDict, TypeGuard, TypeVar
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
 
-from carry_on.domain.entities.stroke import Stroke, StrokeId
-from carry_on.domain.value_objects.club_type import ClubType
-from carry_on.domain.value_objects.distance import Distance
+from carry_on.domain.training.entities.stroke import Stroke, StrokeId
+from carry_on.domain.training.value_objects.club_type import ClubType
+from carry_on.domain.training.value_objects.distance import Distance
 
 
 class StrokeDoc(TypedDict):

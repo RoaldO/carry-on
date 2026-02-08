@@ -6,7 +6,7 @@ from carry_on.infrastructure.mongodb import get_database
 from carry_on.infrastructure.repositories.mongo_idea_repository import (
     MongoIdeaRepository,
 )
-from carry_on.infrastructure.repositories.mongo_stroke_repository import (
+from carry_on.infrastructure.repositories.training.mongo_stroke_repository import (
     MongoStrokeRepository,
 )
 from carry_on.infrastructure.repositories.mongo_user_repository import (

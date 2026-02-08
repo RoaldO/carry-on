@@ -2,7 +2,7 @@
 
 from typing import Protocol, runtime_checkable
 
-from carry_on.domain.entities.stroke import Stroke, StrokeId
+from carry_on.domain.training.entities.stroke import Stroke, StrokeId
 
 
 @runtime_checkable
