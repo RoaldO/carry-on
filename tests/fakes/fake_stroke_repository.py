@@ -3,8 +3,8 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from carry_on.domain.entities.stroke import Stroke, StrokeId
-from carry_on.domain.repositories.stroke_repository import StrokeRepository
+from carry_on.domain.training.entities.stroke import Stroke, StrokeId
+from carry_on.domain.training.repositories.stroke_repository import StrokeRepository
 
 
 class FakeStrokeRepository(StrokeRepository):

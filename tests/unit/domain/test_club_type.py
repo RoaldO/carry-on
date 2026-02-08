@@ -6,7 +6,7 @@ from enum import Enum
 import allure
 import pytest
 
-from carry_on.domain.value_objects.club_type import ClubType
+from carry_on.domain.training.value_objects.club_type import ClubType
 
 
 @allure.feature("Domain Model")
