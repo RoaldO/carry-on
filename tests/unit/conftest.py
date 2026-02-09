@@ -11,8 +11,10 @@ from dependency_injector import providers
 from fastapi.testclient import TestClient
 
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
+from carry_on.services.course_service import CourseService
 from carry_on.services.stroke_service import StrokeService
 
+from tests.fakes.fake_course_repository import FakeCourseRepository
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
 # Test password hasher instance
@@ -89,19 +91,47 @@ def client() -> Iterator[TestClient]:
 
 
 @pytest.fixture
-def client_with_fake_repo(
+def override_stroke_repo(
     fake_stroke_service: StrokeService,
     client: TestClient,
-) -> Generator[tuple[TestClient, FakeStrokeRepository], None, None]:
-    """Create test client with fake repository injected via DI container.
+) -> Generator[FakeStrokeRepository, None, None]:
+    """Override stroke service with fake repository in DI container.
 
-    Returns a tuple of (client, fake_repository) so tests can inspect
-    the repository state after making requests.
+    Activates the override so requests through ``client`` use the fake.
+    Yields the fake repository for test assertions.
     """
     from carry_on.api import container
 
     with container.stroke_service.override(providers.Object(fake_stroke_service)):
-        yield client, fake_stroke_service._repository  # type: ignore[misc]
+        yield fake_stroke_service._repository  # type: ignore[misc]
+
+
+@pytest.fixture
+def fake_course_repository() -> FakeCourseRepository:
+    """Create a fresh fake course repository for each test."""
+    return FakeCourseRepository()
+
+
+@pytest.fixture
+def fake_course_service(fake_course_repository: FakeCourseRepository) -> CourseService:
+    """Create a CourseService with the fake repository."""
+    return CourseService(fake_course_repository)
+
+
+@pytest.fixture
+def override_course_repo(
+    fake_course_service: CourseService,
+    client: TestClient,
+) -> Generator[FakeCourseRepository, None, None]:
+    """Override course service with fake repository in DI container.
+
+    Activates the override so requests through ``client`` use the fake.
+    Yields the fake repository for test assertions.
+    """
+    from carry_on.api import container
+
+    with container.course_service.override(providers.Object(fake_course_service)):
+        yield fake_course_service._repository  # type: ignore[misc]
 
 
 @pytest.fixture

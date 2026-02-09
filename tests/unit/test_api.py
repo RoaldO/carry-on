@@ -102,6 +102,7 @@ class TestStrokesEndpoint:
     def test_get_strokes_with_valid_auth(
         self,
         client: TestClient,
+        override_stroke_repo: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
@@ -125,6 +126,7 @@ class TestStrokesEndpoint:
     def test_post_stroke_with_valid_auth(
         self,
         client: TestClient,
+        override_stroke_repo: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
@@ -143,6 +145,7 @@ class TestStrokesEndpoint:
     def test_post_failed_stroke(
         self,
         client: TestClient,
+        override_stroke_repo: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
@@ -160,6 +163,7 @@ class TestStrokesEndpoint:
     def test_post_stroke_without_distance_or_fail_returns_400(
         self,
         client: TestClient,
+        override_stroke_repo: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
@@ -174,13 +178,11 @@ class TestStrokesEndpoint:
     def test_post_stroke_stores_user_id(
         self,
         client: TestClient,
-        client_with_fake_repo: tuple[TestClient, FakeStrokeRepository],
-        fake_stroke_repository: FakeStrokeRepository,
+        override_stroke_repo: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/strokes should store user_id in the document."""
-        _, fake_repo = client_with_fake_repo
         response = client.post(
             "/api/strokes",
             json={"club": "7i", "distance": 150},
@@ -189,14 +191,14 @@ class TestStrokesEndpoint:
         assert response.status_code == 200
 
         # Verify stroke was stored with user_id in fake repository
-        # The repository stores tuples of (stroke, user_id, created_at)
-        assert len(fake_repo._strokes) > 0  # type: ignore[attr-defined]
-        stroke, user_id, _ = fake_repo._strokes[-1]  # type: ignore[attr-defined]
+        assert len(override_stroke_repo._strokes) > 0
+        stroke, user_id, _ = override_stroke_repo._strokes[-1]
         assert user_id == str(TEST_USER_ID)
 
     def test_get_strokes_filters_by_user_id(
         self,
         client: TestClient,
+        override_stroke_repo: FakeStrokeRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:

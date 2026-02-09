@@ -54,6 +54,7 @@ def clear_collections(db: Database[Any]) -> None:
     db.users.delete_many({})
     db.strokes.delete_many({})
     db.ideas.delete_many({})
+    db.courses.delete_many({})
 
 
 def insert_user(
