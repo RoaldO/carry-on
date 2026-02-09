@@ -27,8 +27,9 @@ class RoundPage:
         self.rounds_content = page.locator("#roundsContent")
 
     def goto_rounds_tab(self) -> None:
-        """Navigate to the Rounds tab."""
-        self.rounds_tab.click()
+        """Navigate to the Rounds tab and wait for courses to load."""
+        with self.page.expect_response("**/api/courses"):
+            self.rounds_tab.click()
         self.rounds_content.wait_for(state="visible")
 
     def get_date_value(self) -> str:
