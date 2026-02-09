@@ -31,7 +31,7 @@ jobs:
         run: uv export > requirements.txt
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "deps: Upgrade Python dependencies"
           title: "deps: Upgrade Python dependencies"
