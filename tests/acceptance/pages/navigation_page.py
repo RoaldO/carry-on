@@ -149,6 +149,7 @@ class NavigationPage:
     def click_my_courses_link(self) -> None:
         """Click the My Courses link."""
         self.my_courses_link.click()
+        self.courses_content.wait_for(state="visible")
 
     def is_on_courses_page(self) -> bool:
         """Check if courses content is visible."""
