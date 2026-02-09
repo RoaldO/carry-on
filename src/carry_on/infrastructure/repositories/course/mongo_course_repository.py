@@ -53,6 +53,23 @@ class MongoCourseRepository:
         result = self._collection.insert_one(doc)
         return CourseId(value=str(result.inserted_id))
 
+    def find_by_id(self, course_id: CourseId, user_id: str) -> Course | None:
+        """Find a course by ID for a specific user.
+
+        Args:
+            course_id: The ID of the course to find.
+            user_id: The ID of the user who owns the course.
+
+        Returns:
+            The Course aggregate if found, None otherwise.
+        """
+        doc = self._collection.find_one(
+            {"_id": ObjectId(course_id.value), "user_id": user_id}
+        )
+        if doc is None:
+            return None
+        return self._to_entity(doc)
+
     def find_by_user(self, user_id: str) -> list[Course]:
         """Find courses for a user.
 
