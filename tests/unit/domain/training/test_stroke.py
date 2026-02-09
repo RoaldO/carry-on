@@ -12,29 +12,6 @@ from carry_on.domain.training.value_objects.distance import Distance
 
 @allure.feature("Domain Model")
 @allure.story("Stroke Entity")
-class TestStrokeId:
-    """Tests for StrokeId value object."""
-
-    def test_create_stroke_id(self) -> None:
-        """Should create StrokeId with value."""
-        stroke_id = StrokeId(value="abc123")
-        assert stroke_id.value == "abc123"
-
-    def test_stroke_id_equality(self) -> None:
-        """StrokeIds with same value should be equal."""
-        id1 = StrokeId(value="abc123")
-        id2 = StrokeId(value="abc123")
-        assert id1 == id2
-
-    def test_stroke_id_immutable(self) -> None:
-        """StrokeId should be immutable."""
-        stroke_id = StrokeId(value="abc123")
-        with pytest.raises(AttributeError):
-            stroke_id.value = "new"  # type: ignore[misc]
-
-
-@allure.feature("Domain Model")
-@allure.story("Stroke Entity")
 class TestStrokeCreationSuccessful:
     """Tests for creating successful strokes."""
 

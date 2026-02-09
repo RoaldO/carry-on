@@ -2,19 +2,15 @@
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Self
 
+from carry_on.domain.core.value_objects.identifier import Identifier
 from carry_on.domain.training.value_objects.club_type import ClubType
 from carry_on.domain.training.value_objects.distance import Distance
 
 
-@dataclass(frozen=True, slots=True)
-class StrokeId:
-    """Unique identifier for a Stroke entity.
-
-    Immutable value object wrapping the database ID.
-    """
-
-    value: str
+class StrokeId(Identifier):
+    __slots__ = ()
 
 
 @dataclass
@@ -66,7 +62,7 @@ class Stroke:
         stroke_date: date,
         id: StrokeId | None = None,
         created_at: datetime | None = None,
-    ) -> "Stroke":
+    ) -> Self:
         """Factory method for creating successful strokes.
 
         Args:
