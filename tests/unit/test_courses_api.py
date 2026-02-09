@@ -26,13 +26,11 @@ class TestCoursesWithDependencyInjection:
     def test_post_course_saves_to_repository(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/courses should save course via injected repository."""
-        _, fake_repo = client_with_fake_course_repo
-
         response = client.post(
             "/api/courses",
             json={"name": "Pitch & Putt", "holes": _sample_holes(9)},
@@ -45,8 +43,8 @@ class TestCoursesWithDependencyInjection:
         assert "id" in data
 
         # Verify course was saved to the fake repository
-        assert len(fake_repo.courses) == 1
-        saved_course, user_id = fake_repo.courses[0]
+        assert len(override_course_repo.courses) == 1
+        saved_course, user_id = override_course_repo.courses[0]
         assert saved_course.name == "Pitch & Putt"
         assert saved_course.number_of_holes == 9
         assert user_id == str(TEST_USER_ID)
@@ -54,13 +52,11 @@ class TestCoursesWithDependencyInjection:
     def test_post_18_hole_course(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/courses should support 18-hole courses."""
-        _, fake_repo = client_with_fake_course_repo
-
         response = client.post(
             "/api/courses",
             json={"name": "Championship", "holes": _sample_holes(18)},
@@ -68,20 +64,18 @@ class TestCoursesWithDependencyInjection:
         )
 
         assert response.status_code == 200
-        assert len(fake_repo.courses) == 1
-        saved_course, _ = fake_repo.courses[0]
+        assert len(override_course_repo.courses) == 1
+        saved_course, _ = override_course_repo.courses[0]
         assert saved_course.number_of_holes == 18
 
     def test_post_course_with_empty_name_returns_400(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """POST /api/courses with empty name should return 400."""
-        _, fake_repo = client_with_fake_course_repo
-
         response = client.post(
             "/api/courses",
             json={"name": "", "holes": _sample_holes(9)},
@@ -89,12 +83,12 @@ class TestCoursesWithDependencyInjection:
         )
 
         assert response.status_code == 400
-        assert len(fake_repo.courses) == 0
+        assert len(override_course_repo.courses) == 0
 
     def test_post_course_without_auth_returns_401(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         mock_users_collection: MagicMock,
     ) -> None:
         """POST /api/courses without auth should return 401."""
@@ -108,7 +102,7 @@ class TestCoursesWithDependencyInjection:
     def test_get_courses_returns_saved_courses(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
@@ -140,7 +134,7 @@ class TestCoursesWithDependencyInjection:
     def test_get_courses_returns_course_details(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
@@ -163,13 +157,11 @@ class TestCoursesWithDependencyInjection:
     def test_get_courses_filters_by_user(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
         """GET /api/courses should only return courses for authenticated user."""
-        _, fake_repo = client_with_fake_course_repo
-
         # Create a course for authenticated user
         client.post(
             "/api/courses",
@@ -186,10 +178,10 @@ class TestCoursesWithDependencyInjection:
             Hole(hole_number=i + 1, par=pars[i], stroke_index=i + 1) for i in range(9)
         )
         other_course = Course.create(name="Other Course", holes=holes)
-        fake_repo.save(other_course, user_id="other_user_456")
+        override_course_repo.save(other_course, user_id="other_user_456")
 
         # Verify both in repo
-        assert len(fake_repo.courses) == 2
+        assert len(override_course_repo.courses) == 2
 
         # GET should only return authenticated user's courses
         response = client.get("/api/courses", headers=auth_headers)
@@ -202,7 +194,7 @@ class TestCoursesWithDependencyInjection:
     def test_get_courses_without_auth_returns_401(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         mock_users_collection: MagicMock,
     ) -> None:
         """GET /api/courses without auth should return 401."""
@@ -213,7 +205,7 @@ class TestCoursesWithDependencyInjection:
     def test_get_courses_returns_empty_list(
         self,
         client: TestClient,
-        client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        override_course_repo: FakeCourseRepository,
         auth_headers: dict[str, str],
         mock_authenticated_user: MagicMock,
     ) -> None:
