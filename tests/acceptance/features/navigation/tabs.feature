@@ -10,6 +10,7 @@ Feature: Tab Navigation
   Scenario: Tab bar is visible after login
     Then the tab bar should be visible
     And I should see the Strokes tab
+    And I should see the Rounds tab
     And I should see the Ideas tab
     And I should see the Profile tab
 
@@ -33,6 +34,8 @@ Feature: Tab Navigation
 
   Scenario: URL hash updates when switching tabs
     Given I am on the Strokes tab
+    When I click the Rounds tab
+    Then the URL should contain "#rounds"
     When I click the Ideas tab
     Then the URL should contain "#ideas"
     When I click the Profile tab
@@ -41,6 +44,8 @@ Feature: Tab Navigation
     Then the URL should contain "#strokes"
 
   Scenario: Direct navigation via URL hash
+    When I navigate to "/#rounds"
+    Then I should be on the Rounds tab
     When I navigate to "/#ideas"
     Then I should be on the Ideas tab
     When I navigate to "/#profile"

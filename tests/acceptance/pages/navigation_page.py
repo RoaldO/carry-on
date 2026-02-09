@@ -13,11 +13,13 @@ class NavigationPage:
         # Tab bar elements
         self.tab_bar = page.locator("#tabBar")
         self.strokes_tab = page.locator(".tab[data-tab='strokes']")
+        self.rounds_tab = page.locator(".tab[data-tab='rounds']")
         self.ideas_tab = page.locator(".tab[data-tab='ideas']")
         self.profile_tab = page.locator(".tab[data-tab='profile']")
 
         # Content sections
         self.strokes_content = page.locator("#strokesContent")
+        self.rounds_content = page.locator("#roundsContent")
         self.ideas_content = page.locator("#ideasContent")
         self.profile_content = page.locator("#profileContent")
 
@@ -43,6 +45,10 @@ class NavigationPage:
         """Check if Strokes tab button exists."""
         return self.strokes_tab.is_visible()
 
+    def is_rounds_tab_visible(self) -> bool:
+        """Check if Rounds tab button exists."""
+        return self.rounds_tab.is_visible()
+
     def is_ideas_tab_visible(self) -> bool:
         """Check if Ideas tab button exists."""
         return self.ideas_tab.is_visible()
@@ -54,6 +60,10 @@ class NavigationPage:
     def click_strokes_tab(self) -> None:
         """Click the Strokes tab."""
         self.strokes_tab.click()
+
+    def click_rounds_tab(self) -> None:
+        """Click the Rounds tab."""
+        self.rounds_tab.click()
 
     def click_ideas_tab(self) -> None:
         """Click the Ideas tab."""
@@ -67,6 +77,10 @@ class NavigationPage:
         """Check if Strokes tab content is visible."""
         return self.strokes_content.is_visible()
 
+    def is_on_rounds_tab(self) -> bool:
+        """Check if Rounds tab content is visible."""
+        return self.rounds_content.is_visible()
+
     def is_on_ideas_tab(self) -> bool:
         """Check if Ideas tab content is visible."""
         return self.ideas_content.is_visible()
@@ -78,6 +92,11 @@ class NavigationPage:
     def is_strokes_tab_active(self) -> bool:
         """Check if Strokes tab is marked active."""
         classes = self.strokes_tab.get_attribute("class") or ""
+        return "active" in classes
+
+    def is_rounds_tab_active(self) -> bool:
+        """Check if Rounds tab is marked active."""
+        classes = self.rounds_tab.get_attribute("class") or ""
         return "active" in classes
 
     def is_ideas_tab_active(self) -> bool:
