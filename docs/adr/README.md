@@ -20,6 +20,7 @@ All contributors MUST adhere to these decisions.
 | [0010](0010-two-click-navigation.md) | Usability - Navigation and Interaction Limits | Accepted |
 | [0011](0011-specification-acceptance-tests.md) | Specification Acceptance Tests                | Accepted |
 | [0012](0012-development-workflow.md) | Development Workflow                          | Accepted |
+| [0013](0013-ci-workflow-generation.md) | CI Workflow Generation from Noxfile           | Accepted |
 
 ## What is an ADR?
 
