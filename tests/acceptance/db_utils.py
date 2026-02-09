@@ -1,7 +1,7 @@
 """Database utilities for acceptance tests."""
 
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pymongo import MongoClient
@@ -88,4 +88,31 @@ def insert_user(
         "activated_at": activated_at,
     }
     result = db.users.insert_one(doc)
+    return str(result.inserted_id)
+
+
+def insert_course(
+    db: Database[Any],
+    user_id: str,
+    name: str,
+    holes: list[dict[str, int]],
+) -> str:
+    """Insert a course document into the database.
+
+    Args:
+        db: The MongoDB database instance.
+        user_id: The ID of the user who owns the course.
+        name: The course name.
+        holes: List of hole dicts with hole_number, par, stroke_index.
+
+    Returns:
+        The string representation of the inserted course's _id.
+    """
+    doc = {
+        "name": name,
+        "holes": holes,
+        "created_at": datetime.now(UTC).isoformat(),
+        "user_id": user_id,
+    }
+    result = db.courses.insert_one(doc)
     return str(result.inserted_id)
