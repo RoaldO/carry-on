@@ -60,7 +60,7 @@ async def list_rounds(
         "rounds": [
             {
                 "id": r.id.value if r.id else None,
-                "course": r.course,
+                "course_name": r.course_name,
                 "date": r.date.isoformat(),
                 "total_strokes": r.total_strokes,
                 "holes_played": len(r.holes),

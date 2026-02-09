@@ -45,7 +45,7 @@ class RoundService:
             ValueError: If round data is invalid.
         """
         round = Round.create(
-            course=course_name,
+            course_name=course_name,
             date=datetime.date.fromisoformat(date),
         )
 

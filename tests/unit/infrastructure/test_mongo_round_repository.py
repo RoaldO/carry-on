@@ -56,7 +56,7 @@ class TestMongoRoundRepositorySave:
         collection.insert_one.return_value = Mock(inserted_id=inserted_id)
 
         round = Round.create(
-            course="Pitch & Putt",
+            course_name="Pitch & Putt",
             date=datetime.date(2026, 2, 1),
         )
         result = repo.save(round, user_id="user123")
@@ -73,7 +73,7 @@ class TestMongoRoundRepositorySave:
         collection.insert_one.return_value = Mock(inserted_id=ObjectId())
 
         round = Round.create(
-            course="Pitch & Putt",
+            course_name="Pitch & Putt",
             date=datetime.date(2026, 2, 1),
         )
         round.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1))
@@ -84,7 +84,7 @@ class TestMongoRoundRepositorySave:
         collection.insert_one.assert_called_once()
         doc = collection.insert_one.call_args[0][0]
 
-        assert doc["course"] == "Pitch & Putt"
+        assert doc["course_name"] == "Pitch & Putt"
         assert doc["date"] == "2026-02-01"
         assert doc["user_id"] == "user123"
         assert "created_at" in doc
@@ -116,7 +116,7 @@ class TestMongoRoundRepositoryFindByUser:
         docs = [
             {
                 "_id": doc_id,
-                "course": "Pitch & Putt",
+                "course_name": "Pitch & Putt",
                 "date": "2026-02-01",
                 "holes": [
                     {
@@ -138,7 +138,7 @@ class TestMongoRoundRepositoryFindByUser:
         round = result[0]
         assert isinstance(round, Round)
         assert round.id == RoundId(value=str(doc_id))
-        assert round.course == "Pitch & Putt"
+        assert round.course_name == "Pitch & Putt"
 
     def test_find_by_user_returns_empty_list(
         self,
@@ -162,7 +162,7 @@ class TestMongoRoundRepositoryFindByUser:
         docs = [
             {
                 "_id": doc_id,
-                "course": "Test Course",
+                "course_name": "Test Course",
                 "date": "2026-02-01",
                 "holes": [
                     {

@@ -54,7 +54,7 @@ class TestRoundsWithDependencyInjection:
         # Verify round was saved to the fake repository
         assert len(override_round_repo.rounds) == 1
         saved_round, user_id = override_round_repo.rounds[0]
-        assert saved_round.course == "Pitch & Putt"
+        assert saved_round.course_name == "Pitch & Putt"
         assert len(saved_round.holes) == 9
         assert user_id == str(TEST_USER_ID)
 
@@ -122,7 +122,7 @@ class TestRoundsWithDependencyInjection:
         data = response.json()
         assert data["count"] == 1
         assert len(data["rounds"]) == 1
-        assert data["rounds"][0]["course"] == "Pitch & Putt"
+        assert data["rounds"][0]["course_name"] == "Pitch & Putt"
 
     def test_get_rounds_returns_empty_list(
         self,

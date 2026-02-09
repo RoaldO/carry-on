@@ -19,7 +19,7 @@ class HoleResultDoc(TypedDict):
 
 class RoundDoc(TypedDict):
     _id: NotRequired[ObjectId]
-    course: str
+    course_name: str
     date: str
     holes: list[HoleResultDoc]
     created_at: str
@@ -70,7 +70,7 @@ class MongoRoundRepository:
     def _to_document(self, round: Round, user_id: str) -> RoundDoc:
         """Map domain aggregate to MongoDB document."""
         return {
-            "course": round.course,
+            "course_name": round.course_name,
             "date": round.date.isoformat(),
             "holes": [
                 {
@@ -88,7 +88,7 @@ class MongoRoundRepository:
     def _to_entity(self, doc: RoundDoc) -> Round:
         """Map MongoDB document to domain aggregate."""
         round = Round.create(
-            course=doc["course"],
+            course_name=doc["course_name"],
             date=datetime.date.fromisoformat(doc["date"]),
             id=RoundId(value=str(doc["_id"])),
             created_at=(

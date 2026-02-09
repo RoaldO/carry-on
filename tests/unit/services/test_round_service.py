@@ -64,7 +64,7 @@ class TestRoundServiceCreateRound:
         round, user_id = repository.save.call_args[0]
 
         assert isinstance(round, Round)
-        assert round.course == "Pitch & Putt"
+        assert round.course_name == "Pitch & Putt"
         assert round.date == datetime.date(2026, 2, 1)
         assert user_id == "user123"
 
@@ -113,7 +113,7 @@ class TestRoundServiceGetUserRounds:
         repository = MagicMock(spec=RoundRepository)
         expected_rounds = [
             Round.create(
-                course="Test Course",
+                course_name="Test Course",
                 date=datetime.date(2026, 2, 1),
                 id=RoundId(value="r1"),
             ),
@@ -124,7 +124,7 @@ class TestRoundServiceGetUserRounds:
         result = service.get_user_rounds("user123")
 
         assert len(result) == 1
-        assert result[0].course == "Test Course"
+        assert result[0].course_name == "Test Course"
         repository.find_by_user.assert_called_once_with("user123")
 
     def test_get_user_rounds_returns_empty_list(self) -> None:

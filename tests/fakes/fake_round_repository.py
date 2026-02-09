@@ -28,7 +28,7 @@ class FakeRoundRepository:
         """
         round_id = RoundId(value=str(uuid4()))
         saved_round = Round.create(
-            course=round.course,
+            course_name=round.course_name,
             date=round.date,
             id=round_id,
         )

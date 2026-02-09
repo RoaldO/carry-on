@@ -13,10 +13,10 @@ class TestRoundCreation:
     def test_create_round(self) -> None:
         """Should create round with a course."""
         round = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
-        assert round.course == "Old Course, St Andrews Links, Scotland"
+        assert round.course_name == "Old Course, St Andrews Links, Scotland"
         assert round.date == date(2024, 1, 15)
         assert round.id is None
 
@@ -24,7 +24,7 @@ class TestRoundCreation:
         """Should create successful stroke with provided ID."""
         round_id = RoundId(value="round123")
         round = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
             id=round_id,
         )
@@ -35,7 +35,7 @@ class TestRoundCreation:
         with pytest.raises(ValueError, match="Course name required"):
             Round(
                 id=None,
-                course="",
+                course_name="",
                 date=date(2024, 1, 15),
             )
 
@@ -46,11 +46,11 @@ class TestRoundAttributes:
     def test_round_has_all_required_attributes(self) -> None:
         """Round should expose all required attributes."""
         stroke = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         assert hasattr(stroke, "id")
-        assert hasattr(stroke, "course")
+        assert hasattr(stroke, "course_name")
         assert hasattr(stroke, "date")
 
 
@@ -60,7 +60,7 @@ class TestRoundHoles:
     def test_new_round_starts_with_empty_holes(self) -> None:
         """A newly created round should have no hole results."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         assert round_.holes == []
@@ -68,7 +68,7 @@ class TestRoundHoles:
     def test_record_hole_adds_hole_result(self) -> None:
         """Recording a hole should add it to the round's holes."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7)
@@ -79,7 +79,7 @@ class TestRoundHoles:
     def test_record_hole_rejects_duplicate_hole_number(self) -> None:
         """Recording the same hole number twice should raise an error."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7)
@@ -91,7 +91,7 @@ class TestRoundHoles:
     def test_total_strokes_returns_sum(self) -> None:
         """Total strokes should be the sum of all recorded hole strokes."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         round_.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7))
@@ -102,7 +102,7 @@ class TestRoundHoles:
     def test_total_strokes_returns_zero_when_no_holes(self) -> None:
         """Total strokes should be 0 for a round with no recorded holes."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         assert round_.total_strokes == 0
@@ -110,7 +110,7 @@ class TestRoundHoles:
     def test_is_complete_returns_false_when_fewer_than_18_holes(self) -> None:
         """A round with fewer than 18 holes is not complete."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         round_.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7))
@@ -119,7 +119,7 @@ class TestRoundHoles:
     def test_is_complete_returns_true_when_all_18_holes_recorded(self) -> None:
         """A round with all 18 holes recorded is complete."""
         round_ = Round.create(
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         for i in range(1, 19):
@@ -132,7 +132,7 @@ class TestRoundHoles:
         """Round created via direct constructor should also have empty holes."""
         round_ = Round(
             id=None,
-            course="Old Course, St Andrews Links, Scotland",
+            course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
         assert round_.holes == []
