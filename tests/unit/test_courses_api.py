@@ -95,6 +95,7 @@ class TestCoursesWithDependencyInjection:
         self,
         client: TestClient,
         client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        mock_users_collection: MagicMock,
     ) -> None:
         """POST /api/courses without auth should return 401."""
         response = client.post(
@@ -202,6 +203,7 @@ class TestCoursesWithDependencyInjection:
         self,
         client: TestClient,
         client_with_fake_course_repo: tuple[TestClient, FakeCourseRepository],
+        mock_users_collection: MagicMock,
     ) -> None:
         """GET /api/courses without auth should return 401."""
         response = client.get("/api/courses")
