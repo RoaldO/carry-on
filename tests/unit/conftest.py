@@ -135,6 +135,38 @@ def override_course_repo(
 
 
 @pytest.fixture
+def fake_round_repository():  # type: ignore[no-untyped-def]
+    """Create a fresh fake round repository for each test."""
+    from tests.fakes.fake_round_repository import FakeRoundRepository
+
+    return FakeRoundRepository()
+
+
+@pytest.fixture
+def fake_round_service(fake_round_repository):  # type: ignore[no-untyped-def]
+    """Create a RoundService with the fake repository."""
+    from carry_on.services.round_service import RoundService
+
+    return RoundService(fake_round_repository)
+
+
+@pytest.fixture
+def override_round_repo(
+    fake_round_service,  # type: ignore[no-untyped-def]
+    client: TestClient,
+) -> Generator:
+    """Override round service with fake repository in DI container.
+
+    Activates the override so requests through ``client`` use the fake.
+    Yields the fake repository for test assertions.
+    """
+    from carry_on.api import container
+
+    with container.round_service.override(providers.Object(fake_round_service)):
+        yield fake_round_service._repository
+
+
+@pytest.fixture
 def auth_headers(test_email: str, test_password: str) -> dict[str, str]:
     """Headers with valid email and password for authenticated requests."""
     return {"X-Email": test_email, "X-Password": test_password}
