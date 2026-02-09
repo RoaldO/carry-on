@@ -42,10 +42,17 @@ class TestCourseRepositoryProtocol:
             def save(self, course: Course, user_id: str) -> CourseId:
                 return CourseId(value="dummy")
 
+            def find_by_id(self, course_id: CourseId, user_id: str) -> Course | None:
+                return None
+
             def find_by_user(self, user_id: str) -> list[Course]:
                 return []
 
         assert isinstance(DummyRepo(), CourseRepository)
+
+    def test_protocol_has_find_by_id_method(self) -> None:
+        """CourseRepository should define a find_by_id method."""
+        assert hasattr(CourseRepository, "find_by_id")
 
     def test_non_conforming_class_is_not_instance(self) -> None:
         """A class missing methods should not satisfy the protocol."""

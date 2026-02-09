@@ -28,6 +28,17 @@ class CourseRepository(Protocol):
             The CourseId of the saved course.
         """
 
+    def find_by_id(self, course_id: CourseId, user_id: str) -> Course | None:
+        """Find a course by ID for a specific user.
+
+        Args:
+            course_id: The ID of the course to find.
+            user_id: The ID of the user who owns the course.
+
+        Returns:
+            The Course aggregate if found, None otherwise.
+        """
+
     def find_by_user(self, user_id: str) -> list[Course]:
         """Find courses for a user.
 

@@ -377,6 +377,64 @@
             margin-top: 8px;
             font-size: 14px;
         }
+        .course-search-wrapper {
+            position: relative;
+        }
+        .course-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .course-suggestions:empty {
+            display: none;
+        }
+        .course-suggestion {
+            padding: 12px 14px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .course-suggestion:hover {
+            background: #e8f5e6;
+        }
+        .hole-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .hole-nav button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 20px;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hole-nav .hole-display {
+            text-align: center;
+            min-width: 80px;
+        }
+        .hole-nav .hole-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d5a27;
+        }
+        .hole-nav .hole-par-label {
+            font-size: 14px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -492,6 +550,42 @@
     </div>
     </div>
 
+    <!-- Rounds Tab Content -->
+    <div id="roundsContent" class="tab-content">
+        <div class="form-group">
+            <label for="roundDate">Date</label>
+            <input type="date" id="roundDate" name="roundDate" required>
+        </div>
+
+        <div class="form-group">
+            <label for="courseSearch">Course</label>
+            <div class="course-search-wrapper">
+                <input type="text" id="courseSearch" placeholder="Search your courses..." autocomplete="off">
+                <div id="courseSuggestions" class="course-suggestions"></div>
+            </div>
+        </div>
+
+        <div id="holeNavigator" style="display: none;">
+            <div class="hole-nav">
+                <button type="button" id="prevHoleBtn">&#8249;</button>
+                <div class="hole-display">
+                    <div class="hole-number" id="currentHoleNumber">1</div>
+                    <div class="hole-par-label">Par <span id="currentHolePar">4</span></div>
+                </div>
+                <button type="button" id="nextHoleBtn">&#8250;</button>
+            </div>
+
+            <div class="form-group">
+                <label for="holeStrokes">Strokes</label>
+                <input type="number" id="holeStrokes" min="1" max="20" placeholder="Enter strokes">
+            </div>
+
+            <button type="button" id="submitRoundBtn">Submit Round</button>
+        </div>
+
+        <div id="roundMessage"></div>
+    </div>
+
     <!-- Ideas Tab Content -->
     <div id="ideasContent" class="tab-content">
         <form id="ideaForm">
@@ -582,6 +676,10 @@
             <span class="tab-icon">&#9971;</span>
             Strokes
         </button>
+        <button class="tab" data-tab="rounds">
+            <span class="tab-icon">&#127948;</span>
+            Rounds
+        </button>
         <button class="tab" data-tab="ideas">
             <span class="tab-icon">&#128161;</span>
             Ideas
@@ -623,6 +721,7 @@
         const tabBar = document.getElementById('tabBar');
         const tabs = document.querySelectorAll('.tab');
         const strokesContent = document.getElementById('strokesContent');
+        const roundsContent = document.getElementById('roundsContent');
         const ideasContent = document.getElementById('ideasContent');
         const profileContent = document.getElementById('profileContent');
         const coursesContent = document.getElementById('coursesContent');
@@ -1024,6 +1123,7 @@
         function showTab(tabName) {
             // Update content visibility
             strokesContent.classList.toggle('active', tabName === 'strokes');
+            roundsContent.classList.toggle('active', tabName === 'rounds');
             ideasContent.classList.toggle('active', tabName === 'ideas');
             profileContent.classList.toggle('active', tabName === 'profile');
             coursesContent.classList.toggle('active', tabName === 'courses');
@@ -1041,6 +1141,12 @@
 
             // Update URL hash without scrolling
             history.replaceState(null, '', '#' + tabName);
+
+            // Set round date to today and load courses when switching to rounds tab
+            if (tabName === 'rounds') {
+                document.getElementById('roundDate').valueAsDate = new Date();
+                loadUserCourses();
+            }
 
             // Load profile data when switching to profile tab
             if (tabName === 'profile') {
@@ -1064,7 +1170,7 @@
         // Handle URL hash changes
         function handleHashChange() {
             const hash = window.location.hash.slice(1);
-            if (['ideas', 'strokes', 'profile', 'courses'].includes(hash)) {
+            if (['ideas', 'strokes', 'rounds', 'profile', 'courses'].includes(hash)) {
                 showTab(hash);
             } else {
                 showTab('strokes');
@@ -1291,6 +1397,179 @@
                 courseList.innerHTML = '<div class="empty-state">Could not load courses</div>';
             }
         }
+
+        // ─── Round Registration ───
+
+        let cachedCourses = [];
+        let selectedCourse = null;
+        let currentHoleIndex = 0;
+        let holeStrokes = [];
+
+        async function loadUserCourses() {
+            try {
+                const response = await fetch('/api/courses', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                cachedCourses = data.courses || [];
+            } catch (err) {
+                cachedCourses = [];
+            }
+        }
+
+        const courseSearchInput = document.getElementById('courseSearch');
+        const courseSuggestionsDiv = document.getElementById('courseSuggestions');
+
+        courseSearchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            courseSuggestionsDiv.innerHTML = '';
+
+            if (!query) return;
+
+            const matches = cachedCourses.filter(c =>
+                c.name.toLowerCase().includes(query)
+            );
+
+            matches.forEach(course => {
+                const div = document.createElement('div');
+                div.className = 'course-suggestion';
+                div.textContent = course.name;
+                div.addEventListener('click', () => selectCourse(course));
+                courseSuggestionsDiv.appendChild(div);
+            });
+        });
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.course-search-wrapper')) {
+                courseSuggestionsDiv.innerHTML = '';
+            }
+        });
+
+        async function selectCourse(courseSummary) {
+            courseSearchInput.value = courseSummary.name;
+            courseSuggestionsDiv.innerHTML = '';
+
+            // Fetch full course detail with holes
+            try {
+                const response = await fetch(
+                    '/api/courses/' + courseSummary.id,
+                    { headers: getAuthHeaders() }
+                );
+                if (!response.ok) return;
+                selectedCourse = await response.json();
+            } catch {
+                return;
+            }
+
+            // Initialize hole strokes array
+            holeStrokes = new Array(selectedCourse.holes.length).fill(null);
+            currentHoleIndex = 0;
+            updateHoleDisplay();
+
+            // Show hole navigator
+            document.getElementById('holeNavigator').style.display = 'block';
+        }
+
+        function updateHoleDisplay() {
+            if (!selectedCourse) return;
+
+            const hole = selectedCourse.holes[currentHoleIndex];
+            document.getElementById('currentHoleNumber').textContent = hole.hole_number;
+            document.getElementById('currentHolePar').textContent = hole.par;
+
+            const strokesInput = document.getElementById('holeStrokes');
+            strokesInput.value = holeStrokes[currentHoleIndex] || '';
+            strokesInput.focus();
+        }
+
+        // Save current strokes before navigating
+        function saveCurrentStrokes() {
+            const val = document.getElementById('holeStrokes').value;
+            if (val) {
+                holeStrokes[currentHoleIndex] = parseInt(val);
+            }
+        }
+
+        document.getElementById('prevHoleBtn').addEventListener('click', function() {
+            saveCurrentStrokes();
+            if (currentHoleIndex > 0) {
+                currentHoleIndex--;
+                updateHoleDisplay();
+            }
+        });
+
+        document.getElementById('nextHoleBtn').addEventListener('click', function() {
+            saveCurrentStrokes();
+            if (currentHoleIndex < selectedCourse.holes.length - 1) {
+                currentHoleIndex++;
+                updateHoleDisplay();
+            }
+        });
+
+        document.getElementById('submitRoundBtn').addEventListener('click', async function() {
+            saveCurrentStrokes();
+
+            if (!selectedCourse) return;
+
+            const holes = selectedCourse.holes.map((hole, i) => ({
+                hole_number: hole.hole_number,
+                strokes: holeStrokes[i] || 0,
+                par: hole.par,
+                stroke_index: hole.stroke_index,
+            }));
+
+            // Check all holes have strokes
+            if (holes.some(h => h.strokes < 1)) {
+                const roundMsg = document.getElementById('roundMessage');
+                roundMsg.textContent = 'Please enter strokes for all holes';
+                roundMsg.className = 'message error';
+                return;
+            }
+
+            const roundDate = document.getElementById('roundDate').value;
+
+            try {
+                const response = await fetch('/api/rounds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({
+                        course_name: selectedCourse.name,
+                        date: roundDate,
+                        holes: holes,
+                    })
+                });
+
+                const roundMsg = document.getElementById('roundMessage');
+
+                if (response.ok) {
+                    roundMsg.textContent = 'Round recorded successfully!';
+                    roundMsg.className = 'message success';
+
+                    // Reset form
+                    selectedCourse = null;
+                    holeStrokes = [];
+                    currentHoleIndex = 0;
+                    courseSearchInput.value = '';
+                    document.getElementById('holeNavigator').style.display = 'none';
+                    document.getElementById('holeStrokes').value = '';
+                } else if (response.status === 401) {
+                    clearAuth();
+                    showLoginScreen();
+                } else {
+                    const data = await response.json();
+                    roundMsg.textContent = data.detail || 'Error recording round';
+                    roundMsg.className = 'message error';
+                }
+            } catch (err) {
+                const roundMsg = document.getElementById('roundMessage');
+                roundMsg.textContent = 'Network error: ' + err.message;
+                roundMsg.className = 'message error';
+            }
+        });
 
         // Initialize: check hash and auth
         handleHashChange();

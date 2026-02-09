@@ -143,6 +143,41 @@ class TestCourseServiceAddCourse:
 
 @allure.feature("Application Services")
 @allure.story("Course Service")
+class TestCourseServiceGetCourseDetail:
+    """Tests for CourseService.get_course_detail() method."""
+
+    def test_get_course_detail_returns_course(self) -> None:
+        """Should return Course when found by repository."""
+        repository = MagicMock(spec=CourseRepository)
+        pars = [4, 4, 3, 5, 4, 3, 4, 5, 4]
+        holes = tuple(
+            Hole(hole_number=i + 1, par=pars[i], stroke_index=i + 1) for i in range(9)
+        )
+        expected_course = Course.create(
+            name="Test Course", holes=holes, id=CourseId(value="c1")
+        )
+        repository.find_by_id.return_value = expected_course
+        service = CourseService(repository)
+
+        result = service.get_course_detail("c1", "user123")
+
+        assert result is not None
+        assert result.name == "Test Course"
+        repository.find_by_id.assert_called_once_with(CourseId(value="c1"), "user123")
+
+    def test_get_course_detail_returns_none_when_not_found(self) -> None:
+        """Should return None when repository returns None."""
+        repository = MagicMock(spec=CourseRepository)
+        repository.find_by_id.return_value = None
+        service = CourseService(repository)
+
+        result = service.get_course_detail("nonexistent", "user123")
+
+        assert result is None
+
+
+@allure.feature("Application Services")
+@allure.story("Course Service")
 class TestCourseServiceGetUserCourses:
     """Tests for CourseService.get_user_courses() method."""
 

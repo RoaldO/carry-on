@@ -15,7 +15,7 @@ class RoundId(Identifier):
 @dataclass
 class Round:
     id: RoundId | None
-    course: str
+    course_name: str
     date: datetime.date
     holes: list[HoleResult] = field(default_factory=list)
     created_at: datetime.datetime | None = None
@@ -23,14 +23,14 @@ class Round:
     @classmethod
     def create(
         cls,
-        course: str,
+        course_name: str,
         date: datetime.date,
         id: RoundId | None = None,
         created_at: datetime.datetime | None = None,
     ) -> Self:
         return cls(
             id=id,
-            course=course,
+            course_name=course_name,
             date=date,
             created_at=created_at,
         )
@@ -40,7 +40,7 @@ class Round:
         self._validate()
 
     def _validate(self) -> None:
-        if not self.course.strip():
+        if not self.course_name.strip():
             raise ValueError("Course name required")
 
     def record_hole(self, hole: HoleResult) -> None:

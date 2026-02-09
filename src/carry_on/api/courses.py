@@ -44,6 +44,34 @@ async def create_course(
     }
 
 
+@app.get("/api/courses/{course_id}")
+@inject
+async def get_course_detail(
+    course_id: str,
+    user: AuthenticatedUser = Depends(verify_password),
+    service: CourseService = Depends(Provide[Container.course_service]),
+) -> dict:
+    """Get a specific course with full hole details."""
+    course = service.get_course_detail(course_id, user.id)
+    if course is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    return {
+        "id": course.id.value if course.id else None,
+        "name": course.name,
+        "number_of_holes": course.number_of_holes,
+        "total_par": course.total_par,
+        "holes": [
+            {
+                "hole_number": h.hole_number,
+                "par": h.par,
+                "stroke_index": h.stroke_index,
+            }
+            for h in course.holes
+        ],
+    }
+
+
 @app.get("/api/courses")
 @inject
 async def list_courses(

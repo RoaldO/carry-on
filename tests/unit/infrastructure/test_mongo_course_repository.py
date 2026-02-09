@@ -210,6 +210,65 @@ class TestMongoCourseRepositoryFindByUser:
 
 @allure.feature("Infrastructure")
 @allure.story("MongoDB Course Repository")
+class TestMongoCourseRepositoryFindById:
+    """Tests for MongoCourseRepository.find_by_id() method."""
+
+    def test_find_by_id_returns_course(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Should return a Course when document is found."""
+        doc_id = ObjectId()
+        collection.find_one.return_value = {
+            "_id": doc_id,
+            "name": "Test Course",
+            "holes": [
+                {"hole_number": i + 1, "par": 4, "stroke_index": i + 1}
+                for i in range(9)
+            ],
+            "created_at": "2026-01-15T10:00:00+00:00",
+            "user_id": "user123",
+        }
+
+        result = repo.find_by_id(CourseId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert isinstance(result, Course)
+        assert result.id == CourseId(value=str(doc_id))
+        assert result.name == "Test Course"
+        assert result.number_of_holes == 9
+
+    def test_find_by_id_returns_none_when_not_found(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Should return None when no document matches."""
+        collection.find_one.return_value = None
+
+        result = repo.find_by_id(CourseId(value=str(ObjectId())), user_id="user123")
+
+        assert result is None
+
+    def test_find_by_id_queries_with_object_id_and_user_id(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Should query MongoDB with both ObjectId and user_id."""
+        doc_id = ObjectId()
+        collection.find_one.return_value = None
+
+        repo.find_by_id(CourseId(value=str(doc_id)), user_id="user123")
+
+        collection.find_one.assert_called_once_with(
+            {"_id": doc_id, "user_id": "user123"}
+        )
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Course Repository")
 class TestMongoCourseRepositoryMapping:
     """Tests for document-to-entity and entity-to-document mapping."""
 

@@ -12,8 +12,9 @@ from tests.acceptance.db_utils import insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.navigation_page import NavigationPage
 
-# Link this file to the feature file
+# Link this file to the feature files
 scenarios("../features/navigation/tabs.feature")
+scenarios("../features/navigation/rounds.feature")
 
 
 @pytest.fixture
@@ -69,6 +70,13 @@ def on_strokes_tab(nav_page: NavigationPage) -> None:
     assert nav_page.is_on_strokes_tab()
 
 
+@given("I am on the Rounds tab")
+def on_rounds_tab(nav_page: NavigationPage) -> None:
+    """Ensure we're on the Rounds tab."""
+    nav_page.click_rounds_tab()
+    assert nav_page.is_on_rounds_tab()
+
+
 @given("I am on the Ideas tab")
 def on_ideas_tab(nav_page: NavigationPage) -> None:
     """Ensure we're on the Ideas tab."""
@@ -88,6 +96,12 @@ def on_profile_tab(nav_page: NavigationPage) -> None:
 def click_strokes_tab(nav_page: NavigationPage) -> None:
     """Click the Strokes tab."""
     nav_page.click_strokes_tab()
+
+
+@when("I click the Rounds tab")
+def click_rounds_tab(nav_page: NavigationPage) -> None:
+    """Click the Rounds tab."""
+    nav_page.click_rounds_tab()
 
 
 @when("I click the Ideas tab")
@@ -136,6 +150,12 @@ def see_strokes_tab(nav_page: NavigationPage) -> None:
     assert nav_page.is_strokes_tab_visible(), "Strokes tab should be visible"
 
 
+@then("I should see the Rounds tab")
+def see_rounds_tab(nav_page: NavigationPage) -> None:
+    """Verify Rounds tab is visible."""
+    assert nav_page.is_rounds_tab_visible(), "Rounds tab should be visible"
+
+
 @then("I should see the Ideas tab")
 def see_ideas_tab(nav_page: NavigationPage) -> None:
     """Verify Ideas tab is visible."""
@@ -153,6 +173,13 @@ def should_be_on_strokes_tab(nav_page: NavigationPage) -> None:
     """Verify Strokes content is visible."""
     nav_page.page.wait_for_timeout(300)
     assert nav_page.is_on_strokes_tab(), "Should be on Strokes tab"
+
+
+@then("I should be on the Rounds tab")
+def should_be_on_rounds_tab(nav_page: NavigationPage) -> None:
+    """Verify Rounds content is visible."""
+    nav_page.page.wait_for_timeout(300)
+    assert nav_page.is_on_rounds_tab(), "Should be on Rounds tab"
 
 
 @then("I should be on the Ideas tab")
@@ -173,6 +200,12 @@ def should_be_on_profile_tab(nav_page: NavigationPage) -> None:
 def strokes_tab_active(nav_page: NavigationPage) -> None:
     """Verify Strokes tab is marked active."""
     assert nav_page.is_strokes_tab_active(), "Strokes tab should be active"
+
+
+@then("the Rounds tab should be active")
+def rounds_tab_active(nav_page: NavigationPage) -> None:
+    """Verify Rounds tab is marked active."""
+    assert nav_page.is_rounds_tab_active(), "Rounds tab should be active"
 
 
 @then("the Ideas tab should be active")

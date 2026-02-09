@@ -3,10 +3,9 @@
 from uuid import uuid4
 
 from carry_on.domain.course.aggregates.course import Course, CourseId
-from carry_on.domain.course.repositories.course_repository import CourseRepository
 
 
-class FakeCourseRepository(CourseRepository):
+class FakeCourseRepository:
     """In-memory implementation of CourseRepository for testing.
 
     Stores courses in memory and provides the same interface as the
@@ -35,6 +34,21 @@ class FakeCourseRepository(CourseRepository):
         )
         self._courses.append((saved_course, user_id))
         return course_id
+
+    def find_by_id(self, course_id: CourseId, user_id: str) -> Course | None:
+        """Find a course by ID for a specific user.
+
+        Args:
+            course_id: The ID of the course to find.
+            user_id: The ID of the user who owns the course.
+
+        Returns:
+            The Course aggregate if found, None otherwise.
+        """
+        for course, uid in self._courses:
+            if course.id and course.id.value == course_id.value and uid == user_id:
+                return course
+        return None
 
     def find_by_user(self, user_id: str) -> list[Course]:
         """Find courses for a user.

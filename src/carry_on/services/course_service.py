@@ -51,6 +51,18 @@ class CourseService:
         course = Course.create(name=name, holes=hole_objects)
         return self._repository.save(course, user_id)
 
+    def get_course_detail(self, course_id: str, user_id: str) -> Course | None:
+        """Get a specific course with full details.
+
+        Args:
+            course_id: The ID of the course to retrieve.
+            user_id: The user requesting the course.
+
+        Returns:
+            The Course if found and owned by user, None otherwise.
+        """
+        return self._repository.find_by_id(CourseId(value=course_id), user_id)
+
     def get_user_courses(self, user_id: str) -> list[Course]:
         """Get courses for a user.
 
