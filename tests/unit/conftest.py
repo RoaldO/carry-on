@@ -12,9 +12,11 @@ from fastapi.testclient import TestClient
 
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
 from carry_on.services.course_service import CourseService
+from carry_on.services.round_service import RoundService
 from carry_on.services.stroke_service import StrokeService
 
 from tests.fakes.fake_course_repository import FakeCourseRepository
+from tests.fakes.fake_round_repository import FakeRoundRepository
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
 # Test password hasher instance
@@ -135,26 +137,22 @@ def override_course_repo(
 
 
 @pytest.fixture
-def fake_round_repository():  # type: ignore[no-untyped-def]
+def fake_round_repository() -> FakeRoundRepository:
     """Create a fresh fake round repository for each test."""
-    from tests.fakes.fake_round_repository import FakeRoundRepository
-
     return FakeRoundRepository()
 
 
 @pytest.fixture
-def fake_round_service(fake_round_repository):  # type: ignore[no-untyped-def]
+def fake_round_service(fake_round_repository: FakeRoundRepository) -> RoundService:
     """Create a RoundService with the fake repository."""
-    from carry_on.services.round_service import RoundService
-
     return RoundService(fake_round_repository)
 
 
 @pytest.fixture
 def override_round_repo(
-    fake_round_service,  # type: ignore[no-untyped-def]
+    fake_round_service: RoundService,
     client: TestClient,
-) -> Generator:
+) -> Generator[FakeRoundRepository, None, None]:
     """Override round service with fake repository in DI container.
 
     Activates the override so requests through ``client`` use the fake.
@@ -163,7 +161,7 @@ def override_round_repo(
     from carry_on.api import container
 
     with container.round_service.override(providers.Object(fake_round_service)):
-        yield fake_round_service._repository
+        yield fake_round_service._repository  # type: ignore[misc]
 
 
 @pytest.fixture
