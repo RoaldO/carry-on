@@ -26,6 +26,11 @@ class NavigationPage:
         self.profile_email = page.locator("#profileEmail")
         self.logout_button = page.locator("#logoutBtn")
 
+        # Courses elements
+        self.my_courses_link = page.locator("#myCoursesLink")
+        self.courses_content = page.locator("#coursesContent")
+        self.courses_back_link = page.locator("#coursesBackLink")
+
         # Login screen
         self.login_screen = page.locator("#loginScreen")
 
@@ -136,6 +141,22 @@ class NavigationPage:
         self.page.wait_for_function(
             "document.getElementById('profileName').textContent !== 'Loading...'"
         )
+
+    def is_my_courses_link_visible(self) -> bool:
+        """Check if My Courses link is visible."""
+        return self.my_courses_link.is_visible()
+
+    def click_my_courses_link(self) -> None:
+        """Click the My Courses link."""
+        self.my_courses_link.click()
+
+    def is_on_courses_page(self) -> bool:
+        """Check if courses content is visible."""
+        return self.courses_content.is_visible()
+
+    def click_courses_back_link(self) -> None:
+        """Click the back link on the courses page."""
+        self.courses_back_link.click()
 
     def reload(self) -> None:
         """Reload the page."""
