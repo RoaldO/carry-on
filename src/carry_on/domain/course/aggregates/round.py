@@ -3,17 +3,13 @@ import datetime
 from dataclasses import dataclass, field
 from typing import Self
 
+from carry_on.domain.core.value_objects.identifier import Identifier
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 
 
 @dataclass(frozen=True, slots=True)
-class RoundId:
-    """Unique identifier for a Round aggregate.
-
-    Immutable value object wrapping the database ID.
-    """
-
-    value: str
+class RoundId(Identifier):
+    """Unique identifier for a Round aggregate."""
 
 
 @dataclass
