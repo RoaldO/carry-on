@@ -216,3 +216,57 @@ class TestCoursesWithDependencyInjection:
         data = response.json()
         assert data["count"] == 0
         assert data["courses"] == []
+
+    def test_get_course_detail_returns_course_with_holes(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/courses/{id} should return course with holes array."""
+        # Create a course first
+        create_response = client.post(
+            "/api/courses",
+            json={"name": "Pitch & Putt", "holes": _sample_holes(9)},
+            headers=auth_headers,
+        )
+        course_id = create_response.json()["id"]
+
+        # Get the detail
+        response = client.get(f"/api/courses/{course_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Pitch & Putt"
+        assert data["number_of_holes"] == 9
+        assert "total_par" in data
+        assert "holes" in data
+        assert len(data["holes"]) == 9
+        first_hole = data["holes"][0]
+        assert "hole_number" in first_hole
+        assert "par" in first_hole
+        assert "stroke_index" in first_hole
+
+    def test_get_course_detail_returns_404_when_not_found(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/courses/{id} should return 404 for unknown course."""
+        response = client.get("/api/courses/nonexistent-id", headers=auth_headers)
+
+        assert response.status_code == 404
+
+    def test_get_course_detail_without_auth_returns_401(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        mock_users_collection: MagicMock,
+    ) -> None:
+        """GET /api/courses/{id} without auth should return 401."""
+        response = client.get("/api/courses/some-id")
+
+        assert response.status_code == 401
