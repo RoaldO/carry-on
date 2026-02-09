@@ -23,7 +23,6 @@ class PasswordHasher(Protocol):
         Returns:
             The hashed password string.
         """
-        ...
 
     def verify(self, password: str, hash: str) -> bool:
         """Verify a password against a stored hash.
@@ -35,7 +34,6 @@ class PasswordHasher(Protocol):
         Returns:
             True if the password matches, False otherwise.
         """
-        ...
 
     def needs_rehash(self, hash: str) -> bool:
         """Check if a hash needs to be upgraded.
@@ -51,7 +49,6 @@ class PasswordHasher(Protocol):
         Returns:
             True if the hash should be updated, False otherwise.
         """
-        ...
 
     def is_compliant(self, password: str) -> bool:
         """Check if a password meets complexity requirements.
@@ -62,4 +59,3 @@ class PasswordHasher(Protocol):
         Returns:
             True if the password meets requirements, False otherwise.
         """
-        ...
