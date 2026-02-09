@@ -492,6 +492,11 @@
     </div>
     </div>
 
+    <!-- Rounds Tab Content -->
+    <div id="roundsContent" class="tab-content">
+        <div class="empty-state">Rounds coming soon</div>
+    </div>
+
     <!-- Ideas Tab Content -->
     <div id="ideasContent" class="tab-content">
         <form id="ideaForm">
@@ -582,6 +587,10 @@
             <span class="tab-icon">&#9971;</span>
             Strokes
         </button>
+        <button class="tab" data-tab="rounds">
+            <span class="tab-icon">&#127948;</span>
+            Rounds
+        </button>
         <button class="tab" data-tab="ideas">
             <span class="tab-icon">&#128161;</span>
             Ideas
@@ -623,6 +632,7 @@
         const tabBar = document.getElementById('tabBar');
         const tabs = document.querySelectorAll('.tab');
         const strokesContent = document.getElementById('strokesContent');
+        const roundsContent = document.getElementById('roundsContent');
         const ideasContent = document.getElementById('ideasContent');
         const profileContent = document.getElementById('profileContent');
         const coursesContent = document.getElementById('coursesContent');
@@ -1024,6 +1034,7 @@
         function showTab(tabName) {
             // Update content visibility
             strokesContent.classList.toggle('active', tabName === 'strokes');
+            roundsContent.classList.toggle('active', tabName === 'rounds');
             ideasContent.classList.toggle('active', tabName === 'ideas');
             profileContent.classList.toggle('active', tabName === 'profile');
             coursesContent.classList.toggle('active', tabName === 'courses');
@@ -1064,7 +1075,7 @@
         // Handle URL hash changes
         function handleHashChange() {
             const hash = window.location.hash.slice(1);
-            if (['ideas', 'strokes', 'profile', 'courses'].includes(hash)) {
+            if (['ideas', 'strokes', 'rounds', 'profile', 'courses'].includes(hash)) {
                 showTab(hash);
             } else {
                 showTab('strokes');
