@@ -258,6 +258,42 @@
         .logout-btn:active {
             background: #a71d2a;
         }
+        .profile-menu {
+            margin-bottom: 20px;
+        }
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #333;
+            font-size: 16px;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+        .profile-menu-item:active {
+            background: #f0f0f0;
+        }
+        .courses-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .back-link {
+            color: #2d5a27;
+            text-decoration: none;
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: auto;
+        }
     </style>
 </head>
 <body>
@@ -400,8 +436,22 @@
                     <div id="profileEmail">Loading...</div>
                 </div>
             </div>
+            <div class="profile-menu">
+                <a id="myCoursesLink" class="profile-menu-item" href="#courses">
+                    My Courses <span>›</span>
+                </a>
+            </div>
             <button id="logoutBtn" class="logout-btn">Logout</button>
         </div>
+    </div>
+
+    <!-- Courses Content -->
+    <div id="coursesContent" class="tab-content">
+        <div class="courses-header">
+            <button id="coursesBackLink" class="back-link" onclick="showTab('profile')">‹</button>
+            <h2 style="margin: 0; color: #2d5a27;">My Courses</h2>
+        </div>
+        <p style="color: #666;">No courses yet. Course management coming soon.</p>
     </div>
 
     <!-- Tab Bar -->
@@ -453,6 +503,7 @@
         const strokesContent = document.getElementById('strokesContent');
         const ideasContent = document.getElementById('ideasContent');
         const profileContent = document.getElementById('profileContent');
+        const coursesContent = document.getElementById('coursesContent');
 
         // Profile elements
         const profileName = document.getElementById('profileName');
@@ -853,11 +904,18 @@
             strokesContent.classList.toggle('active', tabName === 'strokes');
             ideasContent.classList.toggle('active', tabName === 'ideas');
             profileContent.classList.toggle('active', tabName === 'profile');
+            coursesContent.classList.toggle('active', tabName === 'courses');
 
-            // Update tab states
-            tabs.forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.tab === tabName);
-            });
+            // Update tab states — keep profile tab active when on courses
+            if (tabName === 'courses') {
+                tabs.forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.tab === 'profile');
+                });
+            } else {
+                tabs.forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.tab === tabName);
+                });
+            }
 
             // Update URL hash without scrolling
             history.replaceState(null, '', '#' + tabName);
@@ -876,7 +934,7 @@
         // Handle URL hash changes
         function handleHashChange() {
             const hash = window.location.hash.slice(1);
-            if (hash === 'ideas' || hash === 'strokes' || hash === 'profile') {
+            if (['ideas', 'strokes', 'profile', 'courses'].includes(hash)) {
                 showTab(hash);
             } else {
                 showTab('strokes');
