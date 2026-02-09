@@ -294,6 +294,89 @@
             padding: 0;
             width: auto;
         }
+        .course-card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .course-name {
+            font-weight: 600;
+            color: #2d5a27;
+        }
+        .course-info {
+            color: #666;
+            font-size: 14px;
+        }
+        .empty-state {
+            color: #666;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .hole-count-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .hole-count-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+        }
+        .hole-count-btn.active {
+            border-color: #2d5a27;
+            background: #e8f5e6;
+            color: #2d5a27;
+            font-weight: 600;
+        }
+        .hole-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+        .hole-table th {
+            text-align: left;
+            padding: 8px 4px;
+            font-size: 13px;
+            color: #666;
+            border-bottom: 2px solid #ddd;
+        }
+        .hole-table td {
+            padding: 4px;
+        }
+        .hole-table td:first-child {
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            width: 40px;
+        }
+        .hole-table select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:active {
+            background: #565e64;
+        }
+        .course-form-error {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -447,11 +530,50 @@
 
     <!-- Courses Content -->
     <div id="coursesContent" class="tab-content">
-        <div class="courses-header">
-            <button id="coursesBackLink" class="back-link" onclick="showTab('profile')">‹</button>
-            <h2 style="margin: 0; color: #2d5a27;">My Courses</h2>
+        <!-- Course List View -->
+        <div id="courseListView">
+            <div class="courses-header">
+                <button id="coursesBackLink" class="back-link" onclick="showTab('profile')">‹</button>
+                <h2 style="margin: 0; color: #2d5a27;">My Courses</h2>
+            </div>
+            <div id="courseList"></div>
+            <button id="addCourseBtn" onclick="showCourseForm()">Add Course</button>
         </div>
-        <p style="color: #666;">No courses yet. Course management coming soon.</p>
+
+        <!-- Course Form View -->
+        <div id="courseForm" style="display: none;">
+            <div class="courses-header">
+                <button class="back-link" onclick="hideCourseForm()">‹</button>
+                <h2 style="margin: 0; color: #2d5a27;">Add Course</h2>
+            </div>
+
+            <div class="form-group">
+                <label for="courseName">Course Name</label>
+                <input type="text" id="courseName" placeholder="Enter course name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Number of Holes</label>
+                <div class="hole-count-toggle">
+                    <button type="button" id="holes9Btn" class="hole-count-btn active" onclick="setHoleCount(9)">9 Holes</button>
+                    <button type="button" id="holes18Btn" class="hole-count-btn" onclick="setHoleCount(18)">18 Holes</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Hole Details</label>
+                <table class="hole-table">
+                    <thead>
+                        <tr><th>Hole</th><th>Par</th><th>SI</th></tr>
+                    </thead>
+                    <tbody id="holeDetailsTable"></tbody>
+                </table>
+            </div>
+
+            <div id="courseFormError" class="course-form-error" style="display: none;"></div>
+            <button id="saveCourseBtn" onclick="submitCourseForm()">Save Course</button>
+            <button id="cancelCourseBtn" class="btn-secondary" onclick="hideCourseForm()">Cancel</button>
+        </div>
     </div>
 
     <!-- Tab Bar -->
@@ -924,6 +1046,14 @@
             if (tabName === 'profile') {
                 loadProfile();
             }
+
+            // Load courses when switching to courses tab
+            if (tabName === 'courses') {
+                loadCourses();
+                // Reset to list view (hide form if open)
+                document.getElementById('courseForm').style.display = 'none';
+                document.getElementById('courseListView').style.display = 'block';
+            }
         }
 
         // Tab click handlers
@@ -1020,6 +1150,147 @@
             clearAuth();
             showLoginScreen();
         });
+
+        // ─── Course Management ───
+
+        let currentHoleCount = 9;
+
+        function showCourseForm() {
+            document.getElementById('courseListView').style.display = 'none';
+            document.getElementById('courseForm').style.display = 'block';
+            document.getElementById('courseName').value = '';
+            document.getElementById('courseFormError').style.display = 'none';
+            setHoleCount(9);
+        }
+
+        function hideCourseForm() {
+            document.getElementById('courseForm').style.display = 'none';
+            document.getElementById('courseListView').style.display = 'block';
+        }
+
+        function setHoleCount(count) {
+            currentHoleCount = count;
+            document.getElementById('holes9Btn').classList.toggle('active', count === 9);
+            document.getElementById('holes18Btn').classList.toggle('active', count === 18);
+            generateHoleTable(count);
+        }
+
+        function generateHoleTable(count) {
+            const tbody = document.getElementById('holeDetailsTable');
+            tbody.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                const row = document.createElement('tr');
+                // Hole number
+                const tdNum = document.createElement('td');
+                tdNum.textContent = i;
+                row.appendChild(tdNum);
+                // Par dropdown
+                const tdPar = document.createElement('td');
+                const parSelect = document.createElement('select');
+                parSelect.id = 'par_' + i;
+                [3, 4, 5].forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    if (p === 4) opt.selected = true;
+                    parSelect.appendChild(opt);
+                });
+                tdPar.appendChild(parSelect);
+                row.appendChild(tdPar);
+                // Stroke index dropdown
+                const tdSi = document.createElement('td');
+                const siSelect = document.createElement('select');
+                siSelect.id = 'si_' + i;
+                for (let s = 1; s <= count; s++) {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    if (s === i) opt.selected = true;
+                    siSelect.appendChild(opt);
+                }
+                tdSi.appendChild(siSelect);
+                row.appendChild(tdSi);
+                tbody.appendChild(row);
+            }
+        }
+
+        async function submitCourseForm() {
+            const name = document.getElementById('courseName').value.trim();
+            const errorEl = document.getElementById('courseFormError');
+            errorEl.style.display = 'none';
+
+            if (!name) {
+                errorEl.textContent = 'Please enter a course name';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            const holes = [];
+            for (let i = 1; i <= currentHoleCount; i++) {
+                holes.push({
+                    hole_number: i,
+                    par: parseInt(document.getElementById('par_' + i).value),
+                    stroke_index: parseInt(document.getElementById('si_' + i).value),
+                });
+            }
+
+            const saveBtn = document.getElementById('saveCourseBtn');
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/courses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({ name, holes })
+                });
+
+                if (response.ok) {
+                    hideCourseForm();
+                    loadCourses();
+                } else if (response.status === 401) {
+                    clearAuth();
+                    showLoginScreen();
+                } else {
+                    const data = await response.json();
+                    errorEl.textContent = data.detail || 'Error creating course';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Network error: ' + err.message;
+                errorEl.style.display = 'block';
+            }
+
+            saveBtn.disabled = false;
+        }
+
+        async function loadCourses() {
+            const courseList = document.getElementById('courseList');
+            try {
+                const response = await fetch('/api/courses', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                if (data.courses.length === 0) {
+                    courseList.innerHTML = '<div class="empty-state">No courses yet. Add your first course!</div>';
+                    return;
+                }
+
+                courseList.innerHTML = data.courses.map(course => `
+                    <div class="course-card">
+                        <div>
+                            <div class="course-name">${course.name}</div>
+                            <div class="course-info">${course.number_of_holes} holes &middot; Par ${course.total_par}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                courseList.innerHTML = '<div class="empty-state">Could not load courses</div>';
+            }
+        }
 
         // Initialize: check hash and auth
         handleHashChange();
