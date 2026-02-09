@@ -10,10 +10,12 @@ Generate CI workflow from noxfile.py to avoid duplication and drift.
 
 ### 1. Golf Course Management
 Store golf course information including:
-- Course name
-- Number of holes (9/18)
-- Par per hole
-- Stroke index per hole (for handicap allocation)
+- [x] Course name
+- [x] Number of holes (9/18)
+- [x] Par per hole
+- [x] Stroke index per hole (for handicap allocation)
+- [x] Course creation form and list UI
+- [x] Course detail endpoint (GET /api/courses/{id} with hole data)
 
 ### 2. Player Handicap
 - Store player handicap index
@@ -28,11 +30,13 @@ Store golf course information including:
 
 ### 4. Round Tracking
 Use the app during a round to:
-- Select a course
-- Track strokes per hole
-- Tally total hits in real-time
-- Mark penalties, putts, etc.
-- Measure stroke distances (club + distance per stroke)
+- [x] Select a course (type-ahead course selector)
+- [x] Track strokes per hole (hole navigator with prev/next)
+- [x] Submit completed rounds (POST /api/rounds)
+- [x] View recorded rounds (GET /api/rounds)
+- [ ] Tally total hits in real-time
+- [ ] Mark penalties, putts, etc.
+- [ ] Measure stroke distances (club + distance per stroke)
 
 ### 5. GPS & Club Advice
 - Mark hole locations by GPS when on the course (tee, green/pin)
