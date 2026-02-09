@@ -1,17 +1,13 @@
 from dataclasses import dataclass
 from typing import Self
 
+from carry_on.domain.core.value_objects.identifier import Identifier
 from carry_on.domain.course.value_objects.hole import Hole
 
 
 @dataclass(frozen=True, slots=True)
-class CourseId:
-    """Unique identifier for a Course aggregate.
-
-    Immutable value object wrapping the database ID.
-    """
-
-    value: str
+class CourseId(Identifier):
+    """Unique identifier for a Course aggregate."""
 
 
 @dataclass
