@@ -105,6 +105,14 @@ def tests(session: nox.Session) -> None:
     """Run the test suite with coverage."""
     session.install(".", "--group", "dev")
 
+    # Prevent stale .pyc files from masking moved/deleted modules
+    session.run(
+        "python",
+        "-Bc",
+        "import pathlib, shutil;"
+        " [shutil.rmtree(p) for p in pathlib.Path('.').rglob('__pycache__')]",
+    )
+
     with mongodb(session):
         session.run(
             "pytest",

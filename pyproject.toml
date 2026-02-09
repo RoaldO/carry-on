@@ -35,7 +35,7 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--cov=carry_on --cov-report=term-missing --cov-fail-under=70"
+addopts = "--import-mode=importlib --cov=carry_on --cov-report=term-missing --cov-fail-under=70"
 #filterwarnings = [
 #    "error::DeprecationWarning",
 #    "error::PendingDeprecationWarning"
