@@ -3,10 +3,10 @@
 ## Planned Features
 ### 0r. Infer GitHub Actions from Project Configuration
 Generate CI workflow from noxfile.py to avoid duplication and drift.
-- [ ] Evaluate approach (nox session to generate workflow, or template-based)
-- [ ] Create script/session to generate `.github/workflows/ci.yml`
-- [ ] Ensure generated workflow matches current CI behavior
-- [ ] Document regeneration process
+- [x] Evaluate approach (nox session to generate workflow, or template-based)
+- [x] Create script/session to generate `.github/workflows/ci.yml`
+- [x] Ensure generated workflow matches current CI behavior
+- [x] Document regeneration process
 
 ### 1. Golf Course Management
 Store golf course information including:

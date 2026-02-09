@@ -27,3 +27,12 @@ repos:
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
+
+  - repo: local
+    hooks:
+      - id: check-ci-drift
+        name: Check CI workflow is up to date
+        entry: uv run python scripts/generate_ci.py --check
+        language: system
+        files: ^(noxfile\.py|\.github/workflows/ci\.yml\.j2)$
+        pass_filenames: false

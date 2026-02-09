@@ -26,31 +26,12 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Set up Python
-        run: uv python install 3.14
+        run: uv python install [[ python_version ]]
+[%- for step in lint_sessions %]
 
-      - name: Check outdated direct dependencies
-        run: uv run nox -s outdated_direct
-
-      - name: Check formatting
-        run: uv run nox -s format_check
-
-      - name: Run linter
-        run: uv run nox -s lint
-
-      - name: Type check
-        run: uv run nox -s typecheck
-
-      - name: Architecture check
-        run: uv run nox -s arch
-
-      - name: Security scan
-        run: uv run nox -s security
-
-      - name: Secrets scan
-        run: uv run nox -s secrets
-
-      - name: Verify CI workflow is up to date
-        run: uv run nox -s check_ci
+      - name: [[ step.name ]]
+        run: uv run nox -s [[ step.session ]]
+[%- endfor %]
 
   test:
     needs: lint
@@ -73,7 +54,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Set up Python
-        run: uv python install 3.14
+        run: uv python install [[ python_version ]]
 
       - name: Install dependencies
         run: uv sync --dev

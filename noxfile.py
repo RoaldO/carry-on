@@ -67,6 +67,7 @@ def mongodb(session: nox.Session):
         "arch",
         "security",
         "secrets",
+        "check_ci",
     ]
 )
 def final(session: nox.Session):
@@ -217,6 +218,20 @@ def dev(session: nox.Session) -> None:
     """Run the development server."""
     session.install(".", "--group", "dev")
     session.run("uvicorn", "carry_on.api.index:app", "--port", "8787", "--reload")
+
+
+@nox.session(python="3.14")
+def generate_ci(session: nox.Session) -> None:
+    """Regenerate .github/workflows/ci.yml from the Jinja2 template."""
+    session.install("jinja2")
+    session.run("python", "scripts/generate_ci.py", *session.posargs)
+
+
+@nox.session(python="3.14")
+def check_ci(session: nox.Session) -> None:
+    """Check that ci.yml matches the Jinja2 template (drift detection)."""
+    session.install("jinja2")
+    session.run("python", "scripts/generate_ci.py", "--check", *session.posargs)
 
 
 @nox.session(python="3.14")
