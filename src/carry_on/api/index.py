@@ -26,7 +26,7 @@ _env_mapping = {
     "preview": "staging",
     "development": "development",
 }
-if sentry_dsn:
+if sentry_dsn:  # pragma: no cover
     sentry_sdk.init(
         dsn=sentry_dsn,
         # Set traces_sample_rate to capture performance data
