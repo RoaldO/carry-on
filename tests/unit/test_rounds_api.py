@@ -149,3 +149,125 @@ class TestRoundsWithDependencyInjection:
         response = client.get("/api/rounds")
 
         assert response.status_code == 401
+
+    def test_post_round_with_empty_holes_succeeds(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/rounds with empty holes should succeed for incremental workflow."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "id" in data
+
+        # Verify round was saved with no holes
+        assert len(override_round_repo.rounds) == 1
+        saved_round, _ = override_round_repo.rounds[0]
+        assert len(saved_round.holes) == 0
+
+    def test_patch_hole_updates_single_hole(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """PATCH /api/rounds/{round_id}/holes/{hole_number} should update hole."""
+        # Create a round first
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        # Update a hole
+        response = client.patch(
+            f"/api/rounds/{round_id}/holes/1",
+            json={"strokes": 4, "par": 4, "stroke_index": 1},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["message"] == "Hole updated successfully"
+
+        # Verify hole was saved
+        saved_round, _ = override_round_repo.rounds[0]
+        assert len(saved_round.holes) == 1
+        assert saved_round.holes[0].hole_number == 1
+        assert saved_round.holes[0].strokes == 4
+
+    def test_patch_hole_returns_404_for_nonexistent_round(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """PATCH endpoint should return 404 for missing round."""
+        response = client.patch(
+            "/api/rounds/nonexistent/holes/1",
+            json={"strokes": 4, "par": 4, "stroke_index": 1},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 404
+
+    def test_get_round_by_id_returns_round_details(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds/{round_id} should return round with holes."""
+        # Create a round with holes
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": _sample_holes(2),
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        # Retrieve the round
+        response = client.get(f"/api/rounds/{round_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == round_id
+        assert data["course_name"] == "Pitch & Putt"
+        assert data["date"] == "2026-02-01"
+        assert len(data["holes"]) == 2
+        assert data["is_complete"] is False
+
+    def test_get_round_by_id_returns_404_for_nonexistent(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds/{round_id} should return 404 for missing round."""
+        response = client.get("/api/rounds/nonexistent", headers=auth_headers)
+
+        assert response.status_code == 404

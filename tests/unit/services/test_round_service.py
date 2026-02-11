@@ -136,3 +136,145 @@ class TestRoundServiceGetUserRounds:
         result = service.get_user_rounds("user123")
 
         assert result == []
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service")
+class TestRoundServiceCreateRoundPartial:
+    """Tests for creating rounds with partial holes."""
+
+    def test_create_round_with_no_holes(self) -> None:
+        """Should create a round with no holes for incremental saving."""
+        repository = MagicMock(spec=RoundRepository)
+        expected_id = RoundId(value="round-123")
+        repository.save.return_value = expected_id
+        service = RoundService(repository)
+
+        result = service.create_round(
+            user_id="user123",
+            course_name="Pitch & Putt",
+            date="2026-02-01",
+            holes=[],
+        )
+
+        assert result == expected_id
+        repository.save.assert_called_once()
+        round, user_id = repository.save.call_args[0]
+        assert len(round.holes) == 0
+        assert user_id == "user123"
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service")
+class TestRoundServiceUpdateHole:
+    """Tests for RoundService.update_hole() method."""
+
+    def test_update_hole_result(self) -> None:
+        """Should update an existing hole in a round."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        # Existing round with one hole
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        existing_round.record_hole(
+            HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1)
+        )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        service = RoundService(repository)
+
+        service.update_hole(
+            user_id="user123",
+            round_id=round_id,
+            hole={"hole_number": 1, "strokes": 5, "par": 4, "stroke_index": 1},
+        )
+
+        repository.find_by_id.assert_called_once_with(round_id, "user123")
+        repository.save.assert_called_once()
+
+        # Verify the round was updated
+        saved_round, user_id = repository.save.call_args[0]
+        assert saved_round.holes[0].strokes == 5
+
+    def test_update_hole_records_new_hole(self) -> None:
+        """Should record a new hole if it doesn't exist yet."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        # Existing round with no holes
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        service = RoundService(repository)
+
+        service.update_hole(
+            user_id="user123",
+            round_id=round_id,
+            hole={"hole_number": 1, "strokes": 4, "par": 4, "stroke_index": 1},
+        )
+
+        # Verify the hole was recorded
+        saved_round, _ = repository.save.call_args[0]
+        assert len(saved_round.holes) == 1
+        assert saved_round.holes[0].strokes == 4
+
+    def test_update_hole_raises_when_round_not_found(self) -> None:
+        """Should raise ValueError when round doesn't exist."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="nonexistent")
+        repository.find_by_id.return_value = None
+
+        service = RoundService(repository)
+
+        with pytest.raises(ValueError, match="Round nonexistent not found"):
+            service.update_hole(
+                user_id="user123",
+                round_id=round_id,
+                hole={"hole_number": 1, "strokes": 4, "par": 4, "stroke_index": 1},
+            )
+
+        repository.save.assert_not_called()
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service")
+class TestRoundServiceGetRound:
+    """Tests for RoundService.get_round() method."""
+
+    def test_get_round_by_id(self) -> None:
+        """Should return a round by ID."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+        expected_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        repository.find_by_id.return_value = expected_round
+
+        service = RoundService(repository)
+        result = service.get_round(user_id="user123", round_id=round_id)
+
+        assert result == expected_round
+        repository.find_by_id.assert_called_once_with(round_id, "user123")
+
+    def test_get_round_returns_none_when_not_found(self) -> None:
+        """Should return None when round doesn't exist."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="nonexistent")
+        repository.find_by_id.return_value = None
+
+        service = RoundService(repository)
+        result = service.get_round(user_id="user123", round_id=round_id)
+
+        assert result is None
