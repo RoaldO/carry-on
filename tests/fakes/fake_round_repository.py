@@ -17,7 +17,7 @@ class FakeRoundRepository:
         self._rounds: list[tuple[Round, str]] = []  # (round, user_id)
 
     def save(self, round: Round, user_id: str) -> RoundId:
-        """Save a round and return its ID.
+        """Save a round (insert if new, update if existing).
 
         Args:
             round: The round aggregate to save.
@@ -26,16 +26,41 @@ class FakeRoundRepository:
         Returns:
             The RoundId of the saved round.
         """
-        round_id = RoundId(value=str(uuid4()))
-        saved_round = Round.create(
-            course_name=round.course_name,
-            date=round.date,
-            id=round_id,
-        )
-        for hole in round.holes:
-            saved_round.record_hole(hole)
-        self._rounds.append((saved_round, user_id))
-        return round_id
+        if round.id is None:
+            # Insert new round
+            round_id = RoundId(value=str(uuid4()))
+            saved_round = Round.create(
+                course_name=round.course_name,
+                date=round.date,
+                id=round_id,
+            )
+            for hole in round.holes:
+                saved_round.record_hole(hole)
+            self._rounds.append((saved_round, user_id))
+            return round_id
+        else:
+            # Update existing round
+            for i, (existing_round, uid) in enumerate(self._rounds):
+                if existing_round.id == round.id and uid == user_id:
+                    saved_round = Round.create(
+                        course_name=round.course_name,
+                        date=round.date,
+                        id=round.id,
+                    )
+                    for hole in round.holes:
+                        saved_round.record_hole(hole)
+                    self._rounds[i] = (saved_round, user_id)
+                    return round.id
+            # If not found, treat as insert
+            saved_round = Round.create(
+                course_name=round.course_name,
+                date=round.date,
+                id=round.id,
+            )
+            for hole in round.holes:
+                saved_round.record_hole(hole)
+            self._rounds.append((saved_round, user_id))
+            return round.id
 
     def find_by_user(self, user_id: str) -> list[Round]:
         """Find rounds for a user.
@@ -47,6 +72,21 @@ class FakeRoundRepository:
             List of Round aggregates owned by the user.
         """
         return [round for round, uid in self._rounds if uid == user_id]
+
+    def find_by_id(self, round_id: RoundId, user_id: str) -> Round | None:
+        """Find a round by ID for a specific user.
+
+        Args:
+            round_id: The ID of the round to find.
+            user_id: The ID of the user who owns the round.
+
+        Returns:
+            The Round aggregate if found, None otherwise.
+        """
+        for round, uid in self._rounds:
+            if round.id == round_id and uid == user_id:
+                return round
+        return None
 
     def clear(self) -> None:
         """Clear all stored rounds. Useful for test setup/teardown."""

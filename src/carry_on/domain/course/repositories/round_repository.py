@@ -33,3 +33,14 @@ class RoundRepository(Protocol):
         Returns:
             List of Round aggregates owned by the user.
         """
+
+    def find_by_id(self, round_id: RoundId, user_id: str) -> Round | None:
+        """Find a round by ID for a specific user.
+
+        Args:
+            round_id: The ID of the round to find.
+            user_id: The ID of the user who owns the round.
+
+        Returns:
+            The Round aggregate if found, None otherwise.
+        """

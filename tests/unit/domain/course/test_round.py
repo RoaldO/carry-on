@@ -136,3 +136,41 @@ class TestRoundHoles:
             date=date(2024, 1, 15),
         )
         assert round_.holes == []
+
+    def test_update_hole_replaces_existing_hole_result(self) -> None:
+        """Updating a hole should replace the existing result."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        original = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7)
+        round_.record_hole(original)
+
+        updated = HoleResult(hole_number=1, strokes=5, par=4, stroke_index=7)
+        round_.update_hole(updated)
+
+        assert len(round_.holes) == 1
+        assert round_.holes[0].strokes == 5
+
+    def test_update_hole_raises_error_if_hole_not_recorded(self) -> None:
+        """Updating a non-existent hole should raise an error."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7)
+
+        with pytest.raises(ValueError, match="Hole 1 not yet recorded"):
+            round_.update_hole(hole)
+
+    def test_round_allows_partial_holes(self) -> None:
+        """Round can exist with fewer than 18 holes."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        round_.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7))
+        round_.record_hole(HoleResult(hole_number=2, strokes=3, par=3, stroke_index=15))
+
+        assert len(round_.holes) == 2
+        assert round_.is_complete is False

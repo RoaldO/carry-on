@@ -27,16 +27,16 @@ class RoundService:
         user_id: str,
         course_name: str,
         date: str,
-        holes: list[dict],
+        holes: list[dict] | None = None,
     ) -> RoundId:
-        """Record a new golf round.
+        """Record a new golf round (partial or complete).
 
         Args:
             user_id: The user recording the round.
             course_name: Name of the course played.
             date: Date of the round (ISO format string).
-            holes: List of hole result dicts with hole_number, strokes,
-                par, stroke_index.
+            holes: Optional list of hole result dicts with hole_number, strokes,
+                par, stroke_index. Defaults to empty list for incremental workflow.
 
         Returns:
             The ID of the saved round.
@@ -49,15 +49,16 @@ class RoundService:
             date=datetime.date.fromisoformat(date),
         )
 
-        for h in holes:
-            round.record_hole(
-                HoleResult(
-                    hole_number=h["hole_number"],
-                    strokes=h["strokes"],
-                    par=h["par"],
-                    stroke_index=h["stroke_index"],
+        if holes:
+            for h in holes:
+                round.record_hole(
+                    HoleResult(
+                        hole_number=h["hole_number"],
+                        strokes=h["strokes"],
+                        par=h["par"],
+                        stroke_index=h["stroke_index"],
+                    )
                 )
-            )
 
         return self._repository.save(round, user_id)
 
@@ -71,3 +72,45 @@ class RoundService:
             List of rounds owned by the user.
         """
         return self._repository.find_by_user(user_id)
+
+    def update_hole(
+        self,
+        user_id: str,
+        round_id: RoundId,
+        hole: dict,
+    ) -> None:
+        """Update a single hole in an existing round.
+
+        Args:
+            user_id: The user who owns the round.
+            round_id: The ID of the round to update.
+            hole: Hole result dict with hole_number, strokes, par, stroke_index.
+
+        Raises:
+            ValueError: If round doesn't exist.
+        """
+        round = self._repository.find_by_id(round_id, user_id)
+        if round is None:
+            raise ValueError(f"Round {round_id.value} not found")
+
+        hole_result = HoleResult(**hole)
+
+        # Update if exists, record if new
+        if any(h.hole_number == hole_result.hole_number for h in round.holes):
+            round.update_hole(hole_result)
+        else:
+            round.record_hole(hole_result)
+
+        self._repository.save(round, user_id)
+
+    def get_round(self, user_id: str, round_id: RoundId) -> Round | None:
+        """Get a round by ID.
+
+        Args:
+            user_id: The user who owns the round.
+            round_id: The ID of the round to retrieve.
+
+        Returns:
+            The Round aggregate if found, None otherwise.
+        """
+        return self._repository.find_by_id(round_id, user_id)

@@ -194,3 +194,128 @@ class TestMongoRoundRepositoryFindByUser:
         assert round.holes[1] == HoleResult(
             hole_number=2, strokes=3, par=3, stroke_index=7
         )
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository")
+class TestMongoRoundRepositoryInsertUpdate:
+    """Tests for MongoRoundRepository insert/update pattern."""
+
+    def test_save_inserts_new_round_when_id_is_none(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should insert a new round when round.id is None."""
+        inserted_id = ObjectId()
+        collection.insert_one.return_value = Mock(inserted_id=inserted_id)
+
+        round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+        )
+        round.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1))
+
+        result = repo.save(round, user_id="user123")
+
+        collection.insert_one.assert_called_once()
+        collection.update_one.assert_not_called()
+        assert result.value == str(inserted_id)
+
+    def test_save_updates_existing_round_when_id_provided(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should update existing round when round.id is provided."""
+        round_id = RoundId(value=str(ObjectId()))
+        round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        round.record_hole(HoleResult(hole_number=1, strokes=5, par=4, stroke_index=1))
+
+        result = repo.save(round, user_id="user123")
+
+        collection.update_one.assert_called_once()
+        collection.insert_one.assert_not_called()
+
+        # Verify the filter and update
+        call_args = collection.update_one.call_args[0]
+        assert call_args[0] == {"_id": ObjectId(round_id.value), "user_id": "user123"}
+        assert "$set" in call_args[1]
+        assert result == round_id
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository")
+class TestMongoRoundRepositoryFindById:
+    """Tests for MongoRoundRepository.find_by_id() method."""
+
+    def test_find_by_id_returns_round_with_holes(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should return round with all hole results."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [
+                {
+                    "hole_number": 1,
+                    "strokes": 4,
+                    "par": 4,
+                    "stroke_index": 1,
+                },
+                {
+                    "hole_number": 2,
+                    "strokes": 3,
+                    "par": 3,
+                    "stroke_index": 2,
+                },
+            ],
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.id == RoundId(value=str(doc_id))
+        assert result.course_name == "Pitch & Putt"
+        assert len(result.holes) == 2
+        assert result.holes[0].hole_number == 1
+        assert result.holes[1].hole_number == 2
+
+    def test_find_by_id_returns_none_when_not_found(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should return None when round doesn't exist."""
+        collection.find_one.return_value = None
+
+        result = repo.find_by_id(RoundId(value=str(ObjectId())), user_id="user123")
+
+        assert result is None
+
+    def test_find_by_id_returns_none_for_different_user(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should return None when round exists but belongs to different user."""
+        doc_id = ObjectId()
+        collection.find_one.return_value = None  # Simulates filtering by user_id
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="different_user")
+
+        assert result is None
+        # Verify the filter includes user_id for security
+        call_args = collection.find_one.call_args[0]
+        assert call_args[0]["user_id"] == "different_user"
