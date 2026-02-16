@@ -9,6 +9,7 @@ import pytest
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
 from carry_on.domain.course.value_objects.hole_result import HoleResult
+from carry_on.domain.course.value_objects.round_status import RoundStatus
 from carry_on.services.round_service import RoundService
 
 
@@ -278,3 +279,128 @@ class TestRoundServiceGetRound:
         result = service.get_round(user_id="user123", round_id=round_id)
 
         assert result is None
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service - Status")
+class TestRoundServiceUpdateStatus:
+    """Tests for RoundService.update_round_status() method."""
+
+    def test_update_round_status_finish(self) -> None:
+        """Should call finish() method on the round."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        # Existing round in IN_PROGRESS state
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        service = RoundService(repository)
+        service.update_round_status(
+            user_id="user123",
+            round_id=round_id,
+            action="finish",
+        )
+
+        repository.find_by_id.assert_called_once_with(round_id, "user123")
+        repository.save.assert_called_once()
+
+        # Verify the round was finished
+        saved_round, user_id = repository.save.call_args[0]
+        assert saved_round.status == RoundStatus.FINISHED
+
+    def test_update_round_status_abort(self) -> None:
+        """Should call abort() method on the round."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        # Existing round in IN_PROGRESS state
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        service = RoundService(repository)
+        service.update_round_status(
+            user_id="user123",
+            round_id=round_id,
+            action="abort",
+        )
+
+        # Verify the round was aborted
+        saved_round, _ = repository.save.call_args[0]
+        assert saved_round.status == RoundStatus.ABORTED
+
+    def test_update_round_status_resume(self) -> None:
+        """Should call resume() method on the round."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        # Existing round in ABORTED state
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+            status=RoundStatus.ABORTED,
+        )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        service = RoundService(repository)
+        service.update_round_status(
+            user_id="user123",
+            round_id=round_id,
+            action="resume",
+        )
+
+        # Verify the round was resumed
+        saved_round, _ = repository.save.call_args[0]
+        assert saved_round.status == RoundStatus.IN_PROGRESS
+
+    def test_update_round_status_invalid_action_raises(self) -> None:
+        """Should raise ValueError for invalid action."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+        )
+        repository.find_by_id.return_value = existing_round
+
+        service = RoundService(repository)
+
+        with pytest.raises(ValueError, match="Invalid action: invalid"):
+            service.update_round_status(
+                user_id="user123",
+                round_id=round_id,
+                action="invalid",
+            )
+
+        repository.save.assert_not_called()
+
+    def test_update_round_status_round_not_found_raises(self) -> None:
+        """Should raise ValueError when round doesn't exist."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="nonexistent")
+        repository.find_by_id.return_value = None
+
+        service = RoundService(repository)
+
+        with pytest.raises(ValueError, match="Round nonexistent not found"):
+            service.update_round_status(
+                user_id="user123",
+                round_id=round_id,
+                action="finish",
+            )
+
+        repository.save.assert_not_called()
