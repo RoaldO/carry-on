@@ -290,3 +290,93 @@ class TestRoundStatus:
         round2.abort()
         assert round2.status == RoundStatus.ABORTED
         assert round2.is_complete is True
+
+    def test_finish_requires_9_or_18_holes(self) -> None:
+        """Finishing a round requires exactly 9 or 18 holes."""
+        # Test with 0 holes
+        round0 = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        with pytest.raises(
+            ValueError, match="Round must have either 9 or 18 holes to finish"
+        ):
+            round0.finish()
+
+        # Test with invalid count (5 holes)
+        round5 = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        for i in range(1, 6):
+            round5.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        with pytest.raises(
+            ValueError, match="Round must have either 9 or 18 holes to finish"
+        ):
+            round5.finish()
+
+        # Test with 19 holes (more than allowed)
+        round19 = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        for i in range(1, 20):
+            round19.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        with pytest.raises(
+            ValueError, match="Round must have either 9 or 18 holes to finish"
+        ):
+            round19.finish()
+
+    def test_finish_succeeds_with_9_holes(self) -> None:
+        """Finishing a round with exactly 9 holes should succeed."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.status == RoundStatus.FINISHED
+        assert len(round_.holes) == 9
+
+    def test_finish_succeeds_with_18_holes(self) -> None:
+        """Finishing a round with exactly 18 holes should succeed."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.status == RoundStatus.FINISHED
+        assert len(round_.holes) == 18
+
+    def test_in_progress_round_allows_any_number_of_holes(self) -> None:
+        """In-progress rounds can have any number of holes."""
+        # 0 holes is fine
+        round0 = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        assert round0.status == RoundStatus.IN_PROGRESS
+        assert len(round0.holes) == 0
+
+        # 5 holes is fine
+        round5 = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        for i in range(1, 6):
+            round5.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        assert round5.status == RoundStatus.IN_PROGRESS
+        assert len(round5.holes) == 5
