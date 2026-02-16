@@ -188,6 +188,16 @@
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 10px;
+            border-left: 4px solid #ddd;
+        }
+        .round-item.status-finished {
+            border-left-color: #28a745;
+        }
+        .round-item.status-in-progress {
+            border-left-color: #ffc107;
+        }
+        .round-item.status-aborted {
+            border-left-color: #dc3545;
         }
         .round-course {
             font-weight: 600;
@@ -1159,8 +1169,15 @@
                     .sort((a, b) => new Date(b.date) - new Date(a.date))
                     .slice(0, 5);
 
+                // Map status codes to CSS classes
+                const statusClass = {
+                    'f': 'status-finished',
+                    'ip': 'status-in-progress',
+                    'a': 'status-aborted'
+                };
+
                 container.innerHTML = recentRounds.map(round => `
-                    <div class="round-item">
+                    <div class="round-item ${statusClass[round.status] || ''}">
                         <div class="round-course">${round.course_name}</div>
                         <div class="round-details">
                             <span>${round.date}</span>
