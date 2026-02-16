@@ -71,6 +71,7 @@ async def list_rounds(
                 "date": r.date.isoformat(),
                 "total_strokes": r.total_strokes,
                 "holes_played": len(r.holes),
+                "status": r.status.value,
             }
             for r in rounds
         ],
@@ -104,6 +105,7 @@ async def get_round(
             for h in round.holes
         ],
         "is_complete": round.is_complete,
+        "status": round.status.value,
     }
 
 
@@ -131,3 +133,40 @@ async def update_hole(
         return {"message": "Hole updated successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.patch("/api/rounds/{round_id}/status")
+@inject
+async def update_round_status(
+    round_id: str,
+    action: str,
+    user: AuthenticatedUser = Depends(verify_password),
+    service: RoundService = Depends(Provide[Container.round_service]),
+) -> dict:
+    """Update the status of a round.
+
+    Args:
+        round_id: The ID of the round to update.
+        action: The action to perform: "finish", "abort", or "resume".
+        user: Authenticated user.
+        service: Round service.
+
+    Returns:
+        Success message.
+
+    Raises:
+        HTTPException: 404 if round not found, 400 if action is invalid.
+    """
+    try:
+        service.update_round_status(
+            user_id=user.id,
+            round_id=RoundId(value=round_id),
+            action=action,
+        )
+        return {"message": "Round status updated successfully"}
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
