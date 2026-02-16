@@ -114,3 +114,34 @@ class RoundService:
             The Round aggregate if found, None otherwise.
         """
         return self._repository.find_by_id(round_id, user_id)
+
+    def update_round_status(
+        self,
+        user_id: str,
+        round_id: RoundId,
+        action: str,
+    ) -> None:
+        """Update the status of a round.
+
+        Args:
+            user_id: The user who owns the round.
+            round_id: The ID of the round to update.
+            action: Status action to perform: "finish", "abort", or "resume".
+
+        Raises:
+            ValueError: If round doesn't exist or action is invalid.
+        """
+        round = self._repository.find_by_id(round_id, user_id)
+        if round is None:
+            raise ValueError(f"Round {round_id.value} not found")
+
+        if action == "finish":
+            round.finish()
+        elif action == "abort":
+            round.abort()
+        elif action == "resume":
+            round.resume()
+        else:
+            raise ValueError(f"Invalid action: {action}")
+
+        self._repository.save(round, user_id)
