@@ -36,3 +36,9 @@ Feature: Register a Golf Round
     And I fill all 9 holes with 4 strokes each
     And I click the submit round button
     Then I should see a round success message
+
+  Scenario: View recent rounds history
+    Given the user has completed rounds
+    When I view the recent rounds section
+    Then I should see recent rounds displayed
+    And each round should show course name, date, and total strokes

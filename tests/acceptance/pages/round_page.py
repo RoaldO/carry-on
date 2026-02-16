@@ -22,6 +22,9 @@ class RoundPage:
         self.submit_round_btn = page.locator("#submitRoundBtn")
         self.round_message = page.locator("#roundMessage")
 
+        # Recent rounds elements
+        self.recent_rounds = page.locator("#recentRounds")
+
         # Navigation
         self.rounds_tab = page.locator(".tab[data-tab='rounds']")
         self.rounds_content = page.locator("#roundsContent")
@@ -102,3 +105,20 @@ class RoundPage:
     def is_hole_navigator_visible(self) -> bool:
         """Check if the hole navigator is visible."""
         return self.current_hole_number.is_visible()
+
+    def wait_for_recent_rounds(self) -> None:
+        """Wait for recent rounds to load."""
+        self.page.wait_for_function(
+            """() => {
+                const container = document.getElementById('recentRounds');
+                return container && !container.textContent.includes('Loading');
+            }"""
+        )
+
+    def has_round_items(self) -> bool:
+        """Check if there are round items displayed."""
+        return self.page.locator(".round-item").count() > 0
+
+    def get_recent_rounds_text(self) -> str:
+        """Get the text content of the recent rounds section."""
+        return self.recent_rounds.text_content() or ""
