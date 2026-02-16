@@ -115,7 +115,7 @@ class MongoRoundRepository:
     def _to_entity(self, doc: RoundDoc) -> Round:
         """Map MongoDB document to domain aggregate."""
         round = Round.create(
-            course_name=doc["course_name"],
+            course_name=doc.get("course_name", "Unknown Course"),
             date=datetime.date.fromisoformat(doc["date"]),
             id=RoundId(value=str(doc["_id"])),
             created_at=(
