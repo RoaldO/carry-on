@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from carry_on.api.index import app, verify_password
 from carry_on.container import Container
+from carry_on.domain.course.aggregates.round import RoundId
 from carry_on.services.authentication_service import AuthenticatedUser
 from carry_on.services.round_service import RoundService
 
@@ -17,10 +18,16 @@ class HoleResultRequest(BaseModel):
     stroke_index: int
 
 
+class HoleUpdateRequest(BaseModel):
+    strokes: int
+    par: int
+    stroke_index: int
+
+
 class RoundCreateRequest(BaseModel):
     course_name: str
     date: str
-    holes: list[HoleResultRequest]
+    holes: list[HoleResultRequest] = []
 
 
 @app.post("/api/rounds")
@@ -69,3 +76,58 @@ async def list_rounds(
         ],
         "count": len(rounds),
     }
+
+
+@app.get("/api/rounds/{round_id}")
+@inject
+async def get_round(
+    round_id: str,
+    user: AuthenticatedUser = Depends(verify_password),
+    service: RoundService = Depends(Provide[Container.round_service]),
+) -> dict:
+    """Get a specific round by ID."""
+    round = service.get_round(user.id, RoundId(value=round_id))
+    if round is None:
+        raise HTTPException(status_code=404, detail="Round not found")
+
+    return {
+        "id": round.id.value if round.id else None,
+        "course_name": round.course_name,
+        "date": round.date.isoformat(),
+        "holes": [
+            {
+                "hole_number": h.hole_number,
+                "strokes": h.strokes,
+                "par": h.par,
+                "stroke_index": h.stroke_index,
+            }
+            for h in round.holes
+        ],
+        "is_complete": round.is_complete,
+    }
+
+
+@app.patch("/api/rounds/{round_id}/holes/{hole_number}")
+@inject
+async def update_hole(
+    round_id: str,
+    hole_number: int,
+    hole_data: HoleUpdateRequest,
+    user: AuthenticatedUser = Depends(verify_password),
+    service: RoundService = Depends(Provide[Container.round_service]),
+) -> dict:
+    """Update a single hole result."""
+    try:
+        service.update_hole(
+            user_id=user.id,
+            round_id=RoundId(value=round_id),
+            hole={
+                "hole_number": hole_number,
+                "strokes": hole_data.strokes,
+                "par": hole_data.par,
+                "stroke_index": hole_data.stroke_index,
+            },
+        )
+        return {"message": "Hole updated successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

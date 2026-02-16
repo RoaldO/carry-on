@@ -25,8 +25,12 @@ class TestRoundRepositoryProtocol:
         """RoundRepository should define a find_by_user method."""
         assert hasattr(RoundRepository, "find_by_user")
 
+    def test_protocol_has_find_by_id_method(self) -> None:
+        """RoundRepository should define a find_by_id method."""
+        assert hasattr(RoundRepository, "find_by_id")
+
     def test_conforming_class_is_instance(self) -> None:
-        """A class implementing save and find_by_user should satisfy the protocol."""
+        """A class implementing all protocol methods should satisfy the protocol."""
 
         class DummyRepo:
             def save(self, round: Round, user_id: str) -> RoundId:
@@ -34,6 +38,9 @@ class TestRoundRepositoryProtocol:
 
             def find_by_user(self, user_id: str) -> list[Round]:
                 return []
+
+            def find_by_id(self, round_id: RoundId, user_id: str) -> Round | None:
+                return None
 
         assert isinstance(DummyRepo(), RoundRepository)
 

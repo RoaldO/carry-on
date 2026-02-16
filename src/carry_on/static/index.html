@@ -183,6 +183,23 @@
             color: #dc3545;
             font-weight: 600;
         }
+        .round-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .round-course {
+            font-weight: 600;
+            color: #2d5a27;
+            margin-bottom: 4px;
+        }
+        .round-details {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 14px;
+        }
         #loginScreen {
             position: fixed;
             top: 0;
@@ -584,6 +601,11 @@
         </div>
 
         <div id="roundMessage"></div>
+
+        <div class="recent-strokes">
+            <h3>Recent Rounds</h3>
+            <div id="recentRounds">Loading...</div>
+        </div>
     </div>
 
     <!-- Ideas Tab Content -->
@@ -1119,6 +1141,38 @@
             }
         }
 
+        async function loadRecentRounds() {
+            try {
+                const response = await fetch('/api/rounds', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                const container = document.getElementById('recentRounds');
+                if (data.rounds.length === 0) {
+                    container.innerHTML = '<p>No rounds recorded yet</p>';
+                    return;
+                }
+
+                // Sort by date descending and take the 5 most recent
+                const recentRounds = data.rounds
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 5);
+
+                container.innerHTML = recentRounds.map(round => `
+                    <div class="round-item">
+                        <div class="round-course">${round.course_name}</div>
+                        <div class="round-details">
+                            <span>${round.date}</span>
+                            <span>${round.total_strokes} strokes (${round.holes_played} holes)</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('recentRounds').innerHTML = '<p>Could not load rounds</p>';
+            }
+        }
+
         // Tab navigation
         function showTab(tabName) {
             // Update content visibility
@@ -1146,6 +1200,7 @@
             if (tabName === 'rounds') {
                 document.getElementById('roundDate').valueAsDate = new Date();
                 loadUserCourses();
+                loadRecentRounds();
             }
 
             // Load profile data when switching to profile tab
@@ -1404,6 +1459,7 @@
         let selectedCourse = null;
         let currentHoleIndex = 0;
         let holeStrokes = [];
+        let currentRoundId = null;  // Track the round ID for incremental saving
 
         async function loadUserCourses() {
             try {
@@ -1462,6 +1518,32 @@
                 return;
             }
 
+            // Create round immediately with empty holes for incremental saving
+            try {
+                const roundDate = document.getElementById('roundDate').value;
+                const response = await fetch('/api/rounds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({
+                        course_name: selectedCourse.name,
+                        date: roundDate,
+                        holes: []  // Empty holes for incremental workflow
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentRoundId = data.id;
+                } else {
+                    currentRoundId = null;
+                }
+            } catch (err) {
+                currentRoundId = null;
+            }
+
             // Initialize hole strokes array
             holeStrokes = new Array(selectedCourse.holes.length).fill(null);
             currentHoleIndex = 0;
@@ -1483,6 +1565,42 @@
             strokesInput.focus();
         }
 
+        // Auto-save hole to server
+        async function saveCurrentHoleToServer() {
+            if (!currentRoundId || !selectedCourse) return;
+
+            const hole = selectedCourse.holes[currentHoleIndex];
+            const strokes = parseInt(document.getElementById('holeStrokes').value);
+
+            if (!strokes || strokes < 1) return;
+
+            try {
+                await fetch(`/api/rounds/${currentRoundId}/holes/${hole.hole_number}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({
+                        strokes: strokes,
+                        par: hole.par,
+                        stroke_index: hole.stroke_index,
+                    })
+                });
+            } catch (err) {
+                console.error('Failed to save hole:', err);
+            }
+        }
+
+        // Debounced save on input change
+        let saveTimeout = null;
+        function debouncedSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveCurrentHoleToServer, 500);
+        }
+
+        document.getElementById('holeStrokes').addEventListener('input', debouncedSave);
+
         // Save current strokes before navigating
         function saveCurrentStrokes() {
             const val = document.getElementById('holeStrokes').value;
@@ -1491,7 +1609,8 @@
             }
         }
 
-        document.getElementById('prevHoleBtn').addEventListener('click', function() {
+        document.getElementById('prevHoleBtn').addEventListener('click', async function() {
+            await saveCurrentHoleToServer();
             saveCurrentStrokes();
             if (currentHoleIndex > 0) {
                 currentHoleIndex--;
@@ -1499,7 +1618,8 @@
             }
         });
 
-        document.getElementById('nextHoleBtn').addEventListener('click', function() {
+        document.getElementById('nextHoleBtn').addEventListener('click', async function() {
+            await saveCurrentHoleToServer();
             saveCurrentStrokes();
             if (currentHoleIndex < selectedCourse.holes.length - 1) {
                 currentHoleIndex++;
@@ -1508,67 +1628,37 @@
         });
 
         document.getElementById('submitRoundBtn').addEventListener('click', async function() {
+            // Save current hole before validation
+            await saveCurrentHoleToServer();
             saveCurrentStrokes();
 
             if (!selectedCourse) return;
 
-            const holes = selectedCourse.holes.map((hole, i) => ({
-                hole_number: hole.hole_number,
-                strokes: holeStrokes[i] || 0,
-                par: hole.par,
-                stroke_index: hole.stroke_index,
-            }));
-
             // Check all holes have strokes
-            if (holes.some(h => h.strokes < 1)) {
+            if (holeStrokes.some(s => !s || s < 1)) {
                 const roundMsg = document.getElementById('roundMessage');
                 roundMsg.textContent = 'Please enter strokes for all holes';
                 roundMsg.className = 'message error';
                 return;
             }
 
-            const roundDate = document.getElementById('roundDate').value;
+            const roundMsg = document.getElementById('roundMessage');
 
-            try {
-                const response = await fetch('/api/rounds', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...getAuthHeaders()
-                    },
-                    body: JSON.stringify({
-                        course_name: selectedCourse.name,
-                        date: roundDate,
-                        holes: holes,
-                    })
-                });
+            // Round is already saved incrementally, just show success
+            roundMsg.textContent = 'Round recorded successfully!';
+            roundMsg.className = 'message success';
 
-                const roundMsg = document.getElementById('roundMessage');
+            // Reset form
+            selectedCourse = null;
+            holeStrokes = [];
+            currentHoleIndex = 0;
+            currentRoundId = null;
+            courseSearchInput.value = '';
+            document.getElementById('holeNavigator').style.display = 'none';
+            document.getElementById('holeStrokes').value = '';
 
-                if (response.ok) {
-                    roundMsg.textContent = 'Round recorded successfully!';
-                    roundMsg.className = 'message success';
-
-                    // Reset form
-                    selectedCourse = null;
-                    holeStrokes = [];
-                    currentHoleIndex = 0;
-                    courseSearchInput.value = '';
-                    document.getElementById('holeNavigator').style.display = 'none';
-                    document.getElementById('holeStrokes').value = '';
-                } else if (response.status === 401) {
-                    clearAuth();
-                    showLoginScreen();
-                } else {
-                    const data = await response.json();
-                    roundMsg.textContent = data.detail || 'Error recording round';
-                    roundMsg.className = 'message error';
-                }
-            } catch (err) {
-                const roundMsg = document.getElementById('roundMessage');
-                roundMsg.textContent = 'Network error: ' + err.message;
-                roundMsg.className = 'message error';
-            }
+            // Reload recent rounds
+            loadRecentRounds();
         });
 
         // Initialize: check hash and auth

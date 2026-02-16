@@ -42,7 +42,7 @@ class MongoRoundRepository:
         self._collection = collection
 
     def save(self, round: Round, user_id: str) -> RoundId:
-        """Save a round and return its ID.
+        """Save a round (insert if new, update if existing).
 
         Args:
             round: The round aggregate to save.
@@ -52,8 +52,18 @@ class MongoRoundRepository:
             The RoundId of the saved round.
         """
         doc = self._to_document(round, user_id)
-        result = self._collection.insert_one(doc)
-        return RoundId(value=str(result.inserted_id))
+
+        if round.id is None:
+            # Insert new round
+            result = self._collection.insert_one(doc)
+            return RoundId(value=str(result.inserted_id))
+        else:
+            # Update existing round
+            self._collection.update_one(
+                {"_id": ObjectId(round.id.value), "user_id": user_id},
+                {"$set": doc},
+            )
+            return round.id
 
     def find_by_user(self, user_id: str) -> list[Round]:
         """Find rounds for a user.
@@ -66,6 +76,23 @@ class MongoRoundRepository:
         """
         cursor = self._collection.find({"user_id": user_id})
         return [self._to_entity(doc) for doc in cursor]
+
+    def find_by_id(self, round_id: RoundId, user_id: str) -> Round | None:
+        """Find a round by ID for a specific user.
+
+        Args:
+            round_id: The ID of the round to find.
+            user_id: The ID of the user who owns the round.
+
+        Returns:
+            The Round aggregate if found, None otherwise.
+        """
+        doc = self._collection.find_one(
+            {"_id": ObjectId(round_id.value), "user_id": user_id}
+        )
+        if doc is None:
+            return None
+        return self._to_entity(doc)
 
     def _to_document(self, round: Round, user_id: str) -> RoundDoc:
         """Map domain aggregate to MongoDB document."""
@@ -88,7 +115,7 @@ class MongoRoundRepository:
     def _to_entity(self, doc: RoundDoc) -> Round:
         """Map MongoDB document to domain aggregate."""
         round = Round.create(
-            course_name=doc["course_name"],
+            course_name=doc.get("course_name", "Unknown Course"),
             date=datetime.date.fromisoformat(doc["date"]),
             id=RoundId(value=str(doc["_id"])),
             created_at=(

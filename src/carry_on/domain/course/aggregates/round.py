@@ -49,6 +49,14 @@ class Round:
             raise ValueError(f"Hole {hole.hole_number} already recorded")
         self.holes.append(hole)
 
+    def update_hole(self, hole: HoleResult) -> None:
+        """Update an existing hole result. Raises ValueError if hole not found."""
+        for i, h in enumerate(self.holes):
+            if h.hole_number == hole.hole_number:
+                self.holes[i] = hole
+                return
+        raise ValueError(f"Hole {hole.hole_number} not yet recorded")
+
     @property
     def total_strokes(self) -> int:
         """Sum of strokes across all recorded holes."""
