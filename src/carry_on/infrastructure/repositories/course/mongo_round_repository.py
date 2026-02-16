@@ -8,6 +8,7 @@ from pymongo.collection import Collection
 
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.value_objects.hole_result import HoleResult
+from carry_on.domain.course.value_objects.round_status import RoundStatus
 
 
 class HoleResultDoc(TypedDict):
@@ -22,6 +23,7 @@ class RoundDoc(TypedDict):
     course_name: str
     date: str
     holes: list[HoleResultDoc]
+    status: NotRequired[str]  # For backward compatibility with old documents
     created_at: str
     user_id: str
 
@@ -108,6 +110,7 @@ class MongoRoundRepository:
                 }
                 for h in round.holes
             ],
+            "status": round.status.value,
             "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
             "user_id": user_id,
         }
@@ -118,6 +121,9 @@ class MongoRoundRepository:
             course_name=doc.get("course_name", "Unknown Course"),
             date=datetime.date.fromisoformat(doc["date"]),
             id=RoundId(value=str(doc["_id"])),
+            status=RoundStatus(
+                doc.get("status", "ip")
+            ),  # Default to IN_PROGRESS for old docs
             created_at=(
                 datetime.datetime.fromisoformat(doc["created_at"])
                 if "created_at" in doc

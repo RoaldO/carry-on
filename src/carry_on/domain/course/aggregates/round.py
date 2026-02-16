@@ -5,6 +5,7 @@ from typing import Self
 
 from carry_on.domain.core.value_objects.identifier import Identifier
 from carry_on.domain.course.value_objects.hole_result import HoleResult
+from carry_on.domain.course.value_objects.round_status import RoundStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +19,7 @@ class Round:
     course_name: str
     date: datetime.date
     holes: list[HoleResult] = field(default_factory=list)
+    status: RoundStatus = RoundStatus.IN_PROGRESS
     created_at: datetime.datetime | None = None
 
     @classmethod
@@ -26,12 +28,14 @@ class Round:
         course_name: str,
         date: datetime.date,
         id: RoundId | None = None,
+        status: RoundStatus = RoundStatus.IN_PROGRESS,
         created_at: datetime.datetime | None = None,
     ) -> Self:
         return cls(
             id=id,
             course_name=course_name,
             date=date,
+            status=status,
             created_at=created_at,
         )
 
@@ -66,3 +70,30 @@ class Round:
     def is_complete(self) -> bool:
         """True when all 18 holes are recorded."""
         return len(self.holes) == 18
+
+    def finish(self) -> None:
+        """Mark the round as finished.
+
+        Raises:
+            ValueError: If the round is already finished.
+        """
+        if self.status == RoundStatus.FINISHED:
+            raise ValueError("Round is already finished")
+        self.status = RoundStatus.FINISHED
+
+    def abort(self) -> None:
+        """Mark the round as aborted/cancelled.
+
+        Can be called from any state to invalidate a round.
+        """
+        self.status = RoundStatus.ABORTED
+
+    def resume(self) -> None:
+        """Resume an aborted round.
+
+        Raises:
+            ValueError: If the round is not in ABORTED state.
+        """
+        if self.status != RoundStatus.ABORTED:
+            raise ValueError("Can only resume aborted rounds")
+        self.status = RoundStatus.IN_PROGRESS

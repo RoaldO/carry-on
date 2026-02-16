@@ -11,6 +11,7 @@ from pymongo.collection import Collection
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
 from carry_on.domain.course.value_objects.hole_result import HoleResult
+from carry_on.domain.course.value_objects.round_status import RoundStatus
 from carry_on.infrastructure.repositories.course.mongo_round_repository import (
     MongoRoundRepository,
 )
@@ -319,3 +320,175 @@ class TestMongoRoundRepositoryFindById:
         # Verify the filter includes user_id for security
         call_args = collection.find_one.call_args[0]
         assert call_args[0]["user_id"] == "different_user"
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Status")
+class TestMongoRoundRepositoryStatus:
+    """Tests for Round status field persistence."""
+
+    def test_save_serializes_status_field(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize status field to short string value."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            status=RoundStatus.FINISHED,
+        )
+
+        repo.save(round, user_id="user123")
+
+        collection.insert_one.assert_called_once()
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["status"] == "f"
+
+    def test_save_serializes_default_status(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize default IN_PROGRESS status."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+        )
+
+        repo.save(round, user_id="user123")
+
+        collection.insert_one.assert_called_once()
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["status"] == "ip"
+
+    def test_find_deserializes_status_field(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize status field from string value."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Test Course",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "f",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.status == RoundStatus.FINISHED
+
+    def test_find_defaults_to_in_progress_when_status_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should default to IN_PROGRESS for old documents without status field."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Test Course",
+            "date": "2026-02-01",
+            "holes": [],
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+            # No status field - simulates old document
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.status == RoundStatus.IN_PROGRESS
+
+    def test_status_persists_across_save_load_cycle(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should preserve status through save and load operations."""
+        doc_id = ObjectId()
+
+        # Save with ABORTED status
+        collection.insert_one.return_value = Mock(inserted_id=doc_id)
+        round = Round.create(
+            course_name="Test Course",
+            date=datetime.date(2026, 2, 1),
+            status=RoundStatus.ABORTED,
+        )
+        repo.save(round, user_id="user123")
+
+        # Extract saved document
+        saved_doc = collection.insert_one.call_args[0][0]
+
+        # Load it back
+        load_doc = {
+            "_id": doc_id,
+            **saved_doc,
+        }
+        collection.find_one.return_value = load_doc
+        loaded_round = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert loaded_round is not None
+        assert loaded_round.status == RoundStatus.ABORTED
+
+    def _create_mock_cursor(self, docs: list[dict[str, Any]]) -> MagicMock:
+        """Create a mock cursor that returns documents."""
+        cursor = MagicMock()
+        cursor.__iter__ = Mock(return_value=iter(docs))
+        return cursor
+
+    def test_find_by_user_deserializes_all_statuses(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should correctly deserialize all three status values."""
+        docs = [
+            {
+                "_id": ObjectId(),
+                "course_name": "Course 1",
+                "date": "2026-02-01",
+                "holes": [],
+                "status": "ip",
+                "created_at": "2026-02-01T10:00:00+00:00",
+                "user_id": "user123",
+            },
+            {
+                "_id": ObjectId(),
+                "course_name": "Course 2",
+                "date": "2026-02-02",
+                "holes": [],
+                "status": "f",
+                "created_at": "2026-02-02T10:00:00+00:00",
+                "user_id": "user123",
+            },
+            {
+                "_id": ObjectId(),
+                "course_name": "Course 3",
+                "date": "2026-02-03",
+                "holes": [],
+                "status": "a",
+                "created_at": "2026-02-03T10:00:00+00:00",
+                "user_id": "user123",
+            },
+        ]
+        collection.find.return_value = self._create_mock_cursor(docs)
+
+        results = repo.find_by_user("user123")
+
+        assert len(results) == 3
+        assert results[0].status == RoundStatus.IN_PROGRESS
+        assert results[1].status == RoundStatus.FINISHED
+        assert results[2].status == RoundStatus.ABORTED
