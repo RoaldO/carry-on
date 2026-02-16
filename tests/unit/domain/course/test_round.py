@@ -205,6 +205,11 @@ class TestRoundStatus:
             course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
+        # Add 9 holes to meet the finish requirement
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
         round_.finish()
         assert round_.status == RoundStatus.FINISHED
 
@@ -317,19 +322,19 @@ class TestRoundStatus:
         ):
             round5.finish()
 
-        # Test with 19 holes (more than allowed)
-        round19 = Round.create(
+        # Test with invalid count (10 holes - between 9 and 18)
+        round10 = Round.create(
             course_name="Old Course, St Andrews Links, Scotland",
             date=date(2024, 1, 15),
         )
-        for i in range(1, 20):
-            round19.record_hole(
+        for i in range(1, 11):
+            round10.record_hole(
                 HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
             )
         with pytest.raises(
             ValueError, match="Round must have either 9 or 18 holes to finish"
         ):
-            round19.finish()
+            round10.finish()
 
     def test_finish_succeeds_with_9_holes(self) -> None:
         """Finishing a round with exactly 9 holes should succeed."""
