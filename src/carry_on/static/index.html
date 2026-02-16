@@ -183,6 +183,23 @@
             color: #dc3545;
             font-weight: 600;
         }
+        .round-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .round-course {
+            font-weight: 600;
+            color: #2d5a27;
+            margin-bottom: 4px;
+        }
+        .round-details {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 14px;
+        }
         #loginScreen {
             position: fixed;
             top: 0;
@@ -584,6 +601,11 @@
         </div>
 
         <div id="roundMessage"></div>
+
+        <div class="recent-strokes">
+            <h3>Recent Rounds</h3>
+            <div id="recentRounds">Loading...</div>
+        </div>
     </div>
 
     <!-- Ideas Tab Content -->
@@ -1119,6 +1141,38 @@
             }
         }
 
+        async function loadRecentRounds() {
+            try {
+                const response = await fetch('/api/rounds', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                const container = document.getElementById('recentRounds');
+                if (data.rounds.length === 0) {
+                    container.innerHTML = '<p>No rounds recorded yet</p>';
+                    return;
+                }
+
+                // Sort by date descending and take the 5 most recent
+                const recentRounds = data.rounds
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 5);
+
+                container.innerHTML = recentRounds.map(round => `
+                    <div class="round-item">
+                        <div class="round-course">${round.course_name}</div>
+                        <div class="round-details">
+                            <span>${round.date}</span>
+                            <span>${round.total_strokes} strokes (${round.holes_played} holes)</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('recentRounds').innerHTML = '<p>Could not load rounds</p>';
+            }
+        }
+
         // Tab navigation
         function showTab(tabName) {
             // Update content visibility
@@ -1146,6 +1200,7 @@
             if (tabName === 'rounds') {
                 document.getElementById('roundDate').valueAsDate = new Date();
                 loadUserCourses();
+                loadRecentRounds();
             }
 
             // Load profile data when switching to profile tab
@@ -1601,6 +1656,9 @@
             courseSearchInput.value = '';
             document.getElementById('holeNavigator').style.display = 'none';
             document.getElementById('holeStrokes').value = '';
+
+            // Reload recent rounds
+            loadRecentRounds();
         });
 
         // Initialize: check hash and auth
