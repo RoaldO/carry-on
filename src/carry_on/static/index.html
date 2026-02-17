@@ -200,6 +200,17 @@
             color: #666;
             font-size: 14px;
         }
+        .round-item.clickable {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .round-item.clickable:hover {
+            background: #f0f0f0;
+        }
+        .round-item.editing {
+            background: #e8f5e9;
+            border-left: 4px solid #2d5a27;
+        }
         #loginScreen {
             position: fixed;
             top: 0;
@@ -1160,7 +1171,9 @@
                     .slice(0, 5);
 
                 container.innerHTML = recentRounds.map(round => `
-                    <div class="round-item">
+                    <div class="round-item ${round.status === 'ip' ? 'clickable' : ''} ${round.id === currentRoundId ? 'editing' : ''}"
+                         data-round-id="${round.id}"
+                         data-status="${round.status}">
                         <div class="round-course">${round.course_name}</div>
                         <div class="round-details">
                             <span>${round.date}</span>
@@ -1168,6 +1181,14 @@
                         </div>
                     </div>
                 `).join('');
+
+                // Add click listener for editing rounds
+                container.querySelectorAll('.round-item.clickable').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const roundId = this.dataset.roundId;
+                        loadRoundForEditing(roundId);
+                    });
+                });
             } catch (err) {
                 document.getElementById('recentRounds').innerHTML = '<p>Could not load rounds</p>';
             }
@@ -1589,6 +1610,90 @@
                 });
             } catch (err) {
                 console.error('Failed to save hole:', err);
+            }
+        }
+
+        /**
+         * Auto-save the current round before switching to another round.
+         * Saves the current hole if there's input and stores to localStorage as backup.
+         */
+        async function autoSaveCurrentRound() {
+            if (!currentRoundId || !selectedCourse) return;
+
+            // Save the current hole if there's input
+            await saveCurrentHoleToServer();
+
+            // Also save to localStorage as backup
+            saveCurrentStrokes();
+        }
+
+        /**
+         * Load a round for editing by its ID.
+         * Auto-saves the current round first, then fetches and displays the selected round.
+         * @param {string} roundId - The ID of the round to load
+         */
+        async function loadRoundForEditing(roundId) {
+            try {
+                // Auto-save current work first
+                await autoSaveCurrentRound();
+
+                // Fetch full round details
+                const roundResponse = await fetch(`/api/rounds/${roundId}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!roundResponse.ok) {
+                    const roundMsg = document.getElementById('roundMessage');
+                    roundMsg.textContent = 'Failed to load round';
+                    roundMsg.className = 'message error';
+                    return;
+                }
+
+                const roundData = await roundResponse.json();
+
+                // Fetch course details
+                const courseResponse = await fetch(`/api/courses?name=${encodeURIComponent(roundData.course_name)}`, {
+                    headers: getAuthHeaders()
+                });
+                const courseData = await courseResponse.json();
+                const course = courseData.courses.find(c => c.name === roundData.course_name);
+
+                if (!course) {
+                    const roundMsg = document.getElementById('roundMessage');
+                    roundMsg.textContent = 'Course not found';
+                    roundMsg.className = 'message error';
+                    return;
+                }
+
+                // Set state
+                selectedCourse = course;
+                currentRoundId = roundId;
+
+                // Populate strokes array with existing data
+                holeStrokes = new Array(selectedCourse.holes.length).fill(null);
+                for (const hole of roundData.holes) {
+                    holeStrokes[hole.hole_number - 1] = hole.strokes;
+                }
+
+                // Start at first incomplete hole or hole 1
+                currentHoleIndex = roundData.holes.length < selectedCourse.holes.length
+                    ? roundData.holes.length
+                    : 0;
+
+                // Update UI
+                const courseSearchInput = document.getElementById('courseSearch');
+                courseSearchInput.value = selectedCourse.name;
+                document.getElementById('holeNavigator').style.display = 'block';
+                updateHoleDisplay();
+
+                // Refresh round list to show editing state
+                loadRecentRounds();
+
+            } catch (err) {
+                console.error('Failed to load round for editing:', err);
+                const roundMsg = document.getElementById('roundMessage');
+                roundMsg.textContent = 'Failed to load round';
+                roundMsg.className = 'message error';
             }
         }
 
