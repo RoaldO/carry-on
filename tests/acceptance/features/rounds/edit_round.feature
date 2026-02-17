@@ -19,6 +19,7 @@ Feature: Edit In-Progress Round
     Then I should see the hole navigator
     And the current hole should be 4
     And holes 1-3 should show the recorded strokes
+    And I should see the par for the current hole
 
   Scenario: Auto-save current round before switching
     Given I start a new round for "Pitch & Putt"

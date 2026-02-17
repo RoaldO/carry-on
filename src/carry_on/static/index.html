@@ -1656,19 +1656,31 @@
 
                 const roundData = await roundResponse.json();
 
-                // Fetch course details
-                const courseResponse = await fetch(`/api/courses?name=${encodeURIComponent(roundData.course_name)}`, {
+                // Fetch course list to get course ID
+                const courseListResponse = await fetch('/api/courses', {
                     headers: getAuthHeaders()
                 });
-                const courseData = await courseResponse.json();
-                const course = courseData.courses.find(c => c.name === roundData.course_name);
+                const courseListData = await courseListResponse.json();
+                const courseSummary = courseListData.courses.find(c => c.name === roundData.course_name);
 
-                if (!course) {
+                if (!courseSummary) {
                     const roundMsg = document.getElementById('roundMessage');
                     roundMsg.textContent = 'Course not found';
                     roundMsg.className = 'message error';
                     return;
                 }
+
+                // Fetch full course details with holes
+                const courseDetailResponse = await fetch(`/api/courses/${courseSummary.id}`, {
+                    headers: getAuthHeaders()
+                });
+                if (!courseDetailResponse.ok) {
+                    const roundMsg = document.getElementById('roundMessage');
+                    roundMsg.textContent = 'Failed to load course details';
+                    roundMsg.className = 'message error';
+                    return;
+                }
+                const course = await courseDetailResponse.json();
 
                 // Set state
                 selectedCourse = course;

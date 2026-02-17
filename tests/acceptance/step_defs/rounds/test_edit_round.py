@@ -252,3 +252,17 @@ def see_hole_navigator_without_errors(round_page: RoundPage) -> None:
 
     # If we got here without an exception, no JS errors occurred
     # (Playwright would fail the test if there were uncaught exceptions)
+
+
+@then("I should see the par for the current hole")
+def see_par_for_current_hole(round_page: RoundPage) -> None:
+    """Verify par is displayed for the current hole.
+
+    This tests that the course data (including holes with par values)
+    was successfully loaded when loading the round for editing.
+    If the course holes weren't loaded, this would fail.
+    """
+    par = round_page.get_current_par()
+    assert par and par.strip(), (
+        "Par should be displayed for current hole (course holes must be loaded)"
+    )
