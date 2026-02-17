@@ -291,12 +291,17 @@ class TestRoundServiceUpdateStatus:
         repository = MagicMock(spec=RoundRepository)
         round_id = RoundId(value="round-123")
 
-        # Existing round in IN_PROGRESS state
+        # Existing round in IN_PROGRESS state with 9 holes
         existing_round = Round.create(
             course_name="Pitch & Putt",
             date=datetime.date(2026, 2, 1),
             id=round_id,
         )
+        # Add 9 holes to meet finish requirement
+        for i in range(1, 10):
+            existing_round.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
         repository.find_by_id.return_value = existing_round
         repository.save.return_value = round_id
 

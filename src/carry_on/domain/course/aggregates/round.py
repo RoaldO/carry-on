@@ -76,9 +76,12 @@ class Round:
 
         Raises:
             ValueError: If the round is already finished.
+            ValueError: If the round does not have exactly 9 or 18 holes.
         """
         if self.status == RoundStatus.FINISHED:
             raise ValueError("Round is already finished")
+        if len(self.holes) not in (9, 18):
+            raise ValueError("Round must have either 9 or 18 holes to finish")
         self.status = RoundStatus.FINISHED
 
     def abort(self) -> None:
