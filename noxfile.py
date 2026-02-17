@@ -283,6 +283,103 @@ def outdated_all(session: nox.Session) -> None:
 
 
 @nox.session(python="3.14")
+def profile(session: nox.Session) -> None:
+    """Profile test execution and display performance report.
+
+    Usage:
+        nox -s profile -- tests/acceptance/path/to/test.py::test_name
+        nox -s profile -- tests/unit/test_something.py
+        nox -s profile    # profiles all tests (slow!)
+
+    The session will:
+    - Start MongoDB if needed
+    - Run tests with cProfile
+    - Generate and display profiling statistics
+
+    Examples:
+        # Profile a specific slow test
+        nox -s profile -- \\
+            tests/acceptance/step_defs/rounds/test_register_round.py::test_view_recent_rounds_history
+
+        # Profile all acceptance tests
+        nox -s profile -- tests/acceptance/
+    """
+    import tempfile
+
+    session.install(".", "--group", "dev")
+
+    # Check if we need Playwright (for acceptance tests)
+    test_path = session.posargs[0] if session.posargs else "tests"
+    needs_playwright = "acceptance" in test_path
+
+    if needs_playwright:
+        session.run("playwright", "install", "chromium")
+        session.log("Note: If Playwright fails, install system deps with:")
+        session.log("  playwright install-deps chromium")
+
+    # Create temporary file for profile output
+    with tempfile.NamedTemporaryFile(suffix=".prof", delete=False) as tmp:
+        profile_file = tmp.name
+
+    session.log("Running tests with profiling enabled...")
+    session.log(f"Profile data will be saved to: {profile_file}")
+
+    try:
+        with mongodb(session):
+            # Run pytest with cProfile
+            session.run(
+                "python",
+                "-m",
+                "cProfile",
+                "-o",
+                profile_file,
+                "-m",
+                "pytest",
+                "-v",
+                "--no-cov",  # Disable coverage for cleaner profiling
+                *(session.posargs or ["tests"]),
+            )
+
+        # Analyze and display the profile
+        session.log("\n" + "=" * 80)
+        session.log("PROFILING REPORT")
+        session.log("=" * 80 + "\n")
+
+        # Create analysis script inline
+        analysis_script = f"""
+import pstats
+from pstats import SortKey
+
+stats = pstats.Stats('{profile_file}')
+
+print("=" * 80)
+print("TOP 20 FUNCTIONS BY CUMULATIVE TIME")
+print("=" * 80)
+stats.sort_stats(SortKey.CUMULATIVE).print_stats(20)
+
+print("\\n" + "=" * 80)
+print("TOP 20 FUNCTIONS BY TOTAL TIME (self time)")
+print("=" * 80)
+stats.sort_stats(SortKey.TIME).print_stats(20)
+
+print("\\n" + "=" * 80)
+print("APPLICATION CODE (carry_on and tests modules)")
+print("=" * 80)
+stats.sort_stats(SortKey.CUMULATIVE).print_stats('carry_on|tests', 30)
+"""
+
+        session.run("python", "-c", analysis_script)
+
+        session.log("\n" + "=" * 80)
+        session.log(f"Full profile data saved to: {profile_file}")
+        session.log("You can analyze it further with pstats or visualization tools")
+        session.log("=" * 80)
+
+    except Exception as e:
+        session.error(f"Profiling failed: {e}")
+
+
+@nox.session(python="3.14")
 def outdated_direct(session: nox.Session) -> None:
     """
     Show outdated *direct* dependencies from pyproject.toml.
