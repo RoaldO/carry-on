@@ -1211,7 +1211,13 @@
         }
 
         // Tab navigation
-        function showTab(tabName) {
+        async function showTab(tabName) {
+            // Auto-save current round before leaving Rounds tab
+            const currentTab = document.querySelector('.tab.active')?.dataset.tab;
+            if (currentTab === 'rounds' && tabName !== 'rounds') {
+                await autoSaveCurrentRound();
+            }
+
             // Update content visibility
             strokesContent.classList.toggle('active', tabName === 'strokes');
             roundsContent.classList.toggle('active', tabName === 'rounds');

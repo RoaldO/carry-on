@@ -133,7 +133,9 @@ def enter_strokes_hole_1(round_page: RoundPage) -> None:
 
 @given("I have another in-progress round")
 def have_another_in_progress_round(
-    test_database: Database[Any], test_user: dict[str, Any]
+    round_page: RoundPage,
+    test_database: Database[Any],
+    test_user: dict[str, Any],
 ) -> str:
     """Create another in-progress round."""
     round_id = insert_round(
@@ -147,6 +149,10 @@ def have_another_in_progress_round(
         ],
         status="ip",
     )
+    # Trigger UI refresh by navigating to Ideas tab and back
+    round_page.page.locator(".tab[data-tab='ideas']").click()
+    round_page.page.wait_for_timeout(200)
+    round_page.goto_rounds_tab()
     return round_id
 
 
@@ -156,20 +162,14 @@ def click_other_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
     # Wait for recent rounds to load and show the newly created round
     round_page.page.wait_for_timeout(500)  # Give time for auto-refresh
     round_page.wait_for_recent_rounds()
-    # Get in-progress rounds
+    # Get in-progress rounds that are NOT currently being edited
     round_items = round_page.page.locator(
-        f".round-item.clickable:has-text('{test_user['course_name']}')"
+        f".round-item.clickable:not(.editing):has-text('{test_user['course_name']}')"
     )
-    # Find and click the round with more holes (the one just created with 2 holes)
-    # It should be the first (most recent) in the list
-    count = round_items.count()
-    if count >= 2:
-        # If there are 2 rounds, click the first one (most recent, with 2 holes)
+    # Click the first non-editing round (the "other" round)
+    if round_items.count() > 0:
         round_items.nth(0).click()
-    elif count == 1:
-        # If only 1 round, click it (it's the one with 2 holes)
-        round_items.nth(0).click()
-    round_page.page.wait_for_timeout(500)
+        round_page.page.wait_for_timeout(500)
 
 
 @then("the first round should be saved")
