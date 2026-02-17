@@ -1,0 +1,225 @@
+"""Step definitions for editing in-progress rounds feature."""
+
+import datetime
+from typing import Any
+
+import pytest
+from pymongo.database import Database
+from pytest_bdd import given, scenarios, then, when
+
+from tests.acceptance.db_utils import insert_round
+from tests.acceptance.pages.round_page import RoundPage
+
+# Link this file to the feature file
+scenarios("../../features/rounds/edit_round.feature")
+
+
+@pytest.fixture
+def in_progress_round_id(
+    test_database: Database[Any], test_user: dict[str, Any]
+) -> dict[str, str]:
+    """Create an in-progress round with 3 holes completed."""
+    round_id = insert_round(
+        test_database,
+        user_id=test_user["user_id"],
+        course_name=test_user["course_name"],
+        date=datetime.date.today().isoformat(),
+        holes=[
+            {"hole_number": 1, "strokes": 4},
+            {"hole_number": 2, "strokes": 3},
+            {"hole_number": 3, "strokes": 5},
+        ],
+        status="ip",
+    )
+    return {"round_id": round_id}
+
+
+@pytest.fixture
+def finished_round_id(
+    test_database: Database[Any], test_user: dict[str, Any]
+) -> dict[str, str]:
+    """Create a finished round."""
+    round_id = insert_round(
+        test_database,
+        user_id=test_user["user_id"],
+        course_name=test_user["course_name"],
+        date=(datetime.date.today() - datetime.timedelta(days=1)).isoformat(),
+        holes=[{"hole_number": i + 1, "strokes": 4} for i in range(9)],
+        status="f",
+    )
+    return {"round_id": round_id}
+
+
+@given("I have an in-progress round with 3 holes completed")
+def have_in_progress_round(
+    round_page: RoundPage, in_progress_round_id: dict[str, str]
+) -> None:
+    """Create an in-progress round (already done in fixture)."""
+    # Refresh the page to load recent rounds
+    round_page.goto_rounds_tab()
+
+
+@given("finished rounds should not be clickable")
+def have_finished_round(
+    round_page: RoundPage, finished_round_id: dict[str, str]
+) -> None:
+    """Create a finished round (already done in fixture)."""
+    # Just ensure it exists
+    pass
+
+
+@then("the in-progress round should be clickable")
+def in_progress_round_clickable(
+    round_page: RoundPage, test_user: dict[str, Any]
+) -> None:
+    """Verify the in-progress round has clickable class."""
+    round_page.wait_for_recent_rounds()
+    assert round_page.is_round_clickable(test_user["course_name"]), (
+        "In-progress round should be clickable"
+    )
+
+
+@then("finished rounds should not be clickable")
+def finished_rounds_not_clickable(round_page: RoundPage) -> None:
+    """Verify finished rounds don't have clickable class."""
+    round_page.wait_for_recent_rounds()
+    # Check that there's at least one round without clickable class
+    all_rounds = round_page.page.locator(".round-item")
+    count = all_rounds.count()
+    clickable_count = round_page.page.locator(".round-item.clickable").count()
+    assert clickable_count < count, "Not all rounds should be clickable"
+
+
+@when("I click on the in-progress round")
+def click_in_progress_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
+    """Click on the in-progress round."""
+    round_page.wait_for_recent_rounds()
+    round_page.click_round_by_course_name(test_user["course_name"])
+
+
+@then("holes 1-3 should show the recorded strokes")
+def holes_show_recorded_strokes(round_page: RoundPage) -> None:
+    """Verify holes 1-3 have the recorded strokes."""
+    # Navigate to hole 1
+    while int(round_page.get_current_hole()) > 1:
+        round_page.click_prev_hole()
+
+    # Check hole 1 (should be 4 strokes)
+    assert round_page.hole_strokes.input_value() == "4", "Hole 1 should have 4 strokes"
+
+    # Check hole 2 (should be 3 strokes)
+    round_page.click_next_hole()
+    assert round_page.hole_strokes.input_value() == "3", "Hole 2 should have 3 strokes"
+
+    # Check hole 3 (should be 5 strokes)
+    round_page.click_next_hole()
+    assert round_page.hole_strokes.input_value() == "5", "Hole 3 should have 5 strokes"
+
+
+@given('I start a new round for "Pitch & Putt"')
+def start_new_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
+    """Start a new round by selecting the course."""
+    round_page.type_course_search(test_user["course_name"])
+    round_page.select_course_suggestion(test_user["course_name"])
+
+
+@given('I enter strokes "4" for hole 1')
+def enter_strokes_hole_1(round_page: RoundPage) -> None:
+    """Enter strokes for hole 1."""
+    round_page.enter_strokes("4")
+    # Wait a bit to ensure the value is set
+    round_page.page.wait_for_timeout(200)
+
+
+@given("I have another in-progress round")
+def have_another_in_progress_round(
+    test_database: Database[Any], test_user: dict[str, Any]
+) -> str:
+    """Create another in-progress round."""
+    round_id = insert_round(
+        test_database,
+        user_id=test_user["user_id"],
+        course_name=test_user["course_name"],
+        date=datetime.date.today().isoformat(),
+        holes=[
+            {"hole_number": 1, "strokes": 5},
+            {"hole_number": 2, "strokes": 4},
+        ],
+        status="ip",
+    )
+    return round_id
+
+
+@when("I click on the other in-progress round")
+def click_other_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
+    """Click on the other in-progress round (second one in the list)."""
+    round_page.wait_for_recent_rounds()
+    # Get the second round item (most recent)
+    round_items = round_page.page.locator(
+        f".round-item.clickable:has-text('{test_user['course_name']}')"
+    )
+    if round_items.count() >= 2:
+        round_items.nth(0).click()  # Click the first one (most recent)
+    round_page.page.wait_for_timeout(500)
+
+
+@then("the first round should be saved")
+def first_round_saved(test_database: Database[Any], test_user: dict[str, Any]) -> None:
+    """Verify the first round was saved with hole 1 strokes."""
+    # Query for rounds with exactly 1 hole
+    rounds = list(
+        test_database.rounds.find(
+            {
+                "user_id": test_user["user_id"],
+                "status": "ip",
+            }
+        )
+    )
+    # Find a round with 1 hole that has 4 strokes
+    found = False
+    for round_doc in rounds:
+        if len(round_doc["holes"]) == 1 and round_doc["holes"][0]["strokes"] == 4:
+            found = True
+            break
+    assert found, "First round should be saved with 1 hole (4 strokes)"
+
+
+@then("the second round should be loaded")
+def second_round_loaded(round_page: RoundPage) -> None:
+    """Verify the second round is now active."""
+    # Should be on hole 3 (first incomplete hole after 2 completed)
+    current_hole = int(round_page.get_current_hole())
+    assert current_hole == 3, f"Expected hole 3, got {current_hole}"
+
+
+@then("I should see the second round's data")
+def see_second_round_data(round_page: RoundPage) -> None:
+    """Verify the second round's holes are loaded."""
+    # Navigate to hole 1
+    while int(round_page.get_current_hole()) > 1:
+        round_page.click_prev_hole()
+
+    # Check hole 1 (should be 5 strokes)
+    assert round_page.hole_strokes.input_value() == "5", "Hole 1 should have 5 strokes"
+
+    # Check hole 2 (should be 4 strokes)
+    round_page.click_next_hole()
+    assert round_page.hole_strokes.input_value() == "4", "Hole 2 should have 4 strokes"
+
+
+@given("I have an in-progress round")
+def have_simple_in_progress_round(
+    round_page: RoundPage, in_progress_round_id: dict[str, str]
+) -> None:
+    """Create an in-progress round (already done in fixture)."""
+    # Refresh the page to load recent rounds
+    round_page.goto_rounds_tab()
+
+
+@then("that round should be highlighted as active")
+def round_highlighted(round_page: RoundPage, test_user: dict[str, Any]) -> None:
+    """Verify the round is highlighted with editing class."""
+    round_page.wait_for_recent_rounds()
+    assert round_page.is_round_highlighted(test_user["course_name"]), (
+        "Active round should be highlighted"
+    )

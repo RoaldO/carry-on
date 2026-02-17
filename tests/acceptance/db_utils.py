@@ -116,3 +116,41 @@ def insert_course(
     }
     result = db.courses.insert_one(doc)
     return str(result.inserted_id)
+
+
+def insert_round(
+    db: Database[Any],
+    user_id: str,
+    course_name: str,
+    date: datetime | str,
+    holes: list[dict[str, int]] | None = None,
+    status: str = "ip",
+) -> str:
+    """Insert a round document into the database.
+
+    Args:
+        db: The MongoDB database instance.
+        user_id: The ID of the user who owns the round.
+        course_name: The course name.
+        date: The round date (datetime object or ISO date string).
+        holes: Optional list of hole dicts with hole_number and strokes.
+        status: Round status ('ip' for in-progress, 'f' for finished, 'a' for aborted).
+
+    Returns:
+        The string representation of the inserted round's _id.
+    """
+    if isinstance(date, datetime):
+        date_str = date.date().isoformat()
+    else:
+        date_str = date
+
+    doc = {
+        "course_name": course_name,
+        "date": date_str,
+        "holes": holes or [],
+        "status": status,
+        "created_at": datetime.now(UTC).isoformat(),
+        "user_id": user_id,
+    }
+    result = db.rounds.insert_one(doc)
+    return str(result.inserted_id)
