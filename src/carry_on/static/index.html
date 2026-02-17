@@ -1772,19 +1772,41 @@
 
             if (!selectedCourse) return;
 
-            // Check all holes have strokes
-            if (holeStrokes.some(s => !s || s < 1)) {
-                const roundMsg = document.getElementById('roundMessage');
-                roundMsg.textContent = 'Please enter strokes for all holes';
-                roundMsg.className = 'message error';
-                return;
-            }
-
             const roundMsg = document.getElementById('roundMessage');
+            const allHolesFilled = !holeStrokes.some(s => !s || s < 1);
 
-            // Round is already saved incrementally, just show success
-            roundMsg.textContent = 'Round recorded successfully!';
-            roundMsg.className = 'message success';
+            // If editing an existing round (in-progress)
+            if (currentRoundId) {
+                if (allHolesFilled) {
+                    // All holes filled - mark as finished
+                    try {
+                        await fetch(`/api/rounds/${currentRoundId}/status?action=finish`, {
+                            method: 'PATCH',
+                            headers: getAuthHeaders()
+                        });
+                        roundMsg.textContent = 'Round finished successfully!';
+                        roundMsg.className = 'message success';
+                    } catch (err) {
+                        console.error('Failed to finish round:', err);
+                        roundMsg.textContent = 'Failed to finish round';
+                        roundMsg.className = 'message error';
+                        return;
+                    }
+                } else {
+                    // Partial progress - already auto-saved
+                    roundMsg.textContent = 'Progress saved! You can continue this round later.';
+                    roundMsg.className = 'message success';
+                }
+            } else {
+                // Creating new round - require all holes
+                if (!allHolesFilled) {
+                    roundMsg.textContent = 'Please enter strokes for all holes';
+                    roundMsg.className = 'message error';
+                    return;
+                }
+                roundMsg.textContent = 'Round recorded successfully!';
+                roundMsg.className = 'message success';
+            }
 
             // Reset form
             selectedCourse = null;

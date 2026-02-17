@@ -41,3 +41,11 @@ Feature: Edit In-Progress Round
     When I click on the in-progress round
     Then I should see the hole navigator without errors
     And the current hole should be 4
+
+  Scenario: Continue adding holes to in-progress round
+    Given I have an in-progress round with 3 holes completed
+    When I click on the in-progress round
+    And I enter strokes "6" for the current hole
+    And I navigate away from the Rounds tab
+    Then the round should still be in progress
+    And the round should have 4 holes recorded

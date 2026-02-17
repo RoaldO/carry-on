@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from pymongo.database import Database
-from pytest_bdd import given, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from tests.acceptance.db_utils import insert_round
 from tests.acceptance.pages.round_page import RoundPage
@@ -265,4 +265,43 @@ def see_par_for_current_hole(round_page: RoundPage) -> None:
     par = round_page.get_current_par()
     assert par and par.strip(), (
         "Par should be displayed for current hole (course holes must be loaded)"
+    )
+
+
+@when("I navigate away from the Rounds tab")
+def navigate_away_from_rounds(round_page: RoundPage) -> None:
+    """Navigate to a different tab to test auto-save."""
+    # Switch to a different tab (e.g., Ideas)
+    round_page.page.locator(".tab[data-tab='ideas']").click()
+    round_page.page.wait_for_timeout(500)
+
+
+@then("the round should still be in progress")
+def round_still_in_progress(
+    test_database: Database[Any], test_user: dict[str, Any]
+) -> None:
+    """Verify the round status is still 'ip' (in-progress) in database."""
+    rounds = list(
+        test_database.rounds.find({"user_id": test_user["user_id"], "status": "ip"})
+    )
+    assert len(rounds) > 0, "Should have at least one in-progress round"
+
+
+@then(parsers.parse("the round should have {count:d} holes recorded"))
+def round_has_holes_recorded(
+    test_database: Database[Any], test_user: dict[str, Any], count: int
+) -> None:
+    """Verify the round has the expected number of holes."""
+    # Find the most recently updated in-progress round
+    rounds = list(
+        test_database.rounds.find(
+            {"user_id": test_user["user_id"], "status": "ip"}
+        ).sort("created_at", -1)
+    )
+    assert len(rounds) > 0, "Should have at least one in-progress round"
+
+    # Check the first (most recent) round
+    round_doc = rounds[0]
+    assert len(round_doc["holes"]) == count, (
+        f"Expected {count} holes, got {len(round_doc['holes'])}"
     )
