@@ -1590,7 +1590,12 @@
         async function saveCurrentHoleToServer() {
             if (!currentRoundId || !selectedCourse) return;
 
+            // Check if currentHoleIndex is valid
+            if (currentHoleIndex === undefined || currentHoleIndex === null) return;
+
             const hole = selectedCourse.holes[currentHoleIndex];
+            if (!hole) return; // Hole doesn't exist in course
+
             const strokes = parseInt(document.getElementById('holeStrokes').value);
 
             if (!strokes || strokes < 1) return;

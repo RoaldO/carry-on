@@ -33,3 +33,10 @@ Feature: Edit In-Progress Round
     Given I have an in-progress round
     When I click on the in-progress round
     Then that round should be highlighted as active
+
+  Scenario: Click in-progress round when not editing any round
+    Given I have an in-progress round with 3 holes completed
+    And I am not currently editing any round
+    When I click on the in-progress round
+    Then I should see the hole navigator without errors
+    And the current hole should be 4

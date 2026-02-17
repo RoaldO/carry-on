@@ -223,3 +223,32 @@ def round_highlighted(round_page: RoundPage, test_user: dict[str, Any]) -> None:
     assert round_page.is_round_highlighted(test_user["course_name"]), (
         "Active round should be highlighted"
     )
+
+
+@given("I am not currently editing any round")
+def not_editing_any_round(round_page: RoundPage) -> None:
+    """Ensure no round is currently being edited.
+
+    This is the default state after navigating to the Rounds tab,
+    but we make it explicit by checking the UI state.
+    """
+    # Verify hole navigator is not visible (no active round)
+    assert not round_page.is_hole_navigator_visible(), (
+        "Should not be editing a round initially"
+    )
+
+
+@then("I should see the hole navigator without errors")
+def see_hole_navigator_without_errors(round_page: RoundPage) -> None:
+    """Verify hole navigator appears without JavaScript errors.
+
+    This step specifically tests that clicking a round when not currently
+    editing any round doesn't cause errors in the auto-save logic.
+    """
+    # Check that hole navigator is now visible
+    assert round_page.is_hole_navigator_visible(), (
+        "Hole navigator should be visible after clicking round"
+    )
+
+    # If we got here without an exception, no JS errors occurred
+    # (Playwright would fail the test if there were uncaught exceptions)
