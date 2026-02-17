@@ -59,13 +59,13 @@ def have_in_progress_round(
     round_page.goto_rounds_tab()
 
 
-@given("finished rounds should not be clickable")
+@given("I have a finished round")
 def have_finished_round(
     round_page: RoundPage, finished_round_id: dict[str, str]
 ) -> None:
     """Create a finished round (already done in fixture)."""
-    # Just ensure it exists
-    pass
+    # Refresh the page to load recent rounds
+    round_page.goto_rounds_tab()
 
 
 @then("the in-progress round should be clickable")
@@ -152,14 +152,23 @@ def have_another_in_progress_round(
 
 @when("I click on the other in-progress round")
 def click_other_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
-    """Click on the other in-progress round (second one in the list)."""
+    """Click on the other in-progress round (the one with 2 holes completed)."""
+    # Wait for recent rounds to load and show the newly created round
+    round_page.page.wait_for_timeout(500)  # Give time for auto-refresh
     round_page.wait_for_recent_rounds()
-    # Get the second round item (most recent)
+    # Get in-progress rounds
     round_items = round_page.page.locator(
         f".round-item.clickable:has-text('{test_user['course_name']}')"
     )
-    if round_items.count() >= 2:
-        round_items.nth(0).click()  # Click the first one (most recent)
+    # Find and click the round with more holes (the one just created with 2 holes)
+    # It should be the first (most recent) in the list
+    count = round_items.count()
+    if count >= 2:
+        # If there are 2 rounds, click the first one (most recent, with 2 holes)
+        round_items.nth(0).click()
+    elif count == 1:
+        # If only 1 round, click it (it's the one with 2 holes)
+        round_items.nth(0).click()
     round_page.page.wait_for_timeout(500)
 
 
@@ -187,6 +196,8 @@ def first_round_saved(test_database: Database[Any], test_user: dict[str, Any]) -
 @then("the second round should be loaded")
 def second_round_loaded(round_page: RoundPage) -> None:
     """Verify the second round is now active."""
+    # Wait for hole navigator to update
+    round_page.page.wait_for_timeout(500)
     # Should be on hole 3 (first incomplete hole after 2 completed)
     current_hole = int(round_page.get_current_hole())
     assert current_hole == 3, f"Expected hole 3, got {current_hole}"

@@ -9,6 +9,7 @@ Feature: Edit In-Progress Round
 
   Scenario: In-progress rounds are clickable
     Given I have an in-progress round with 3 holes completed
+    And I have a finished round
     When I view the recent rounds section
     Then the in-progress round should be clickable
     And finished rounds should not be clickable
