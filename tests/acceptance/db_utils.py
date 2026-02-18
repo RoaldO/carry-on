@@ -116,3 +116,66 @@ def insert_course(
     }
     result = db.courses.insert_one(doc)
     return str(result.inserted_id)
+
+
+def insert_round(
+    db: Database[Any],
+    user_id: str,
+    course_name: str,
+    date: datetime | str,
+    holes: list[dict[str, int]] | None = None,
+    status: str = "ip",
+) -> str:
+    """Insert a round document into the database.
+
+    Args:
+        db: The MongoDB database instance.
+        user_id: The ID of the user who owns the round.
+        course_name: The course name.
+        date: The round date (datetime object or ISO date string).
+        holes: Optional list of hole dicts with hole_number and strokes.
+               Will be enriched with par and stroke_index from the course.
+        status: Round status ('ip' for in-progress, 'f' for finished, 'a' for aborted).
+
+    Returns:
+        The string representation of the inserted round's _id.
+    """
+    if isinstance(date, datetime):
+        date_str = date.date().isoformat()
+    else:
+        date_str = date
+
+    # Enrich holes with par and stroke_index from course
+    enriched_holes: list[dict[str, int]] = []
+    if holes:
+        course = db.courses.find_one({"user_id": user_id, "name": course_name})
+        if not course:
+            raise ValueError(f"Course '{course_name}' not found for user {user_id}")
+
+        course_holes_by_number = {h["hole_number"]: h for h in course["holes"]}
+        for hole in holes:
+            hole_number = hole["hole_number"]
+            course_hole = course_holes_by_number.get(hole_number)
+            if not course_hole:
+                raise ValueError(
+                    f"Hole {hole_number} not found in course '{course_name}'"
+                )
+            enriched_holes.append(
+                {
+                    "hole_number": hole_number,
+                    "strokes": hole["strokes"],
+                    "par": course_hole["par"],
+                    "stroke_index": course_hole["stroke_index"],
+                }
+            )
+
+    doc = {
+        "course_name": course_name,
+        "date": date_str,
+        "holes": enriched_holes,
+        "status": status,
+        "created_at": datetime.now(UTC).isoformat(),
+        "user_id": user_id,
+    }
+    result = db.rounds.insert_one(doc)
+    return str(result.inserted_id)

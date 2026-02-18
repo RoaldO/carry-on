@@ -122,3 +122,71 @@ class RoundPage:
     def get_recent_rounds_text(self) -> str:
         """Get the text content of the recent rounds section."""
         return self.recent_rounds.text_content() or ""
+
+    def get_round_by_course_name(self, course_name: str):
+        """Get a round item locator by course name.
+
+        Args:
+            course_name: The course name to search for.
+
+        Returns:
+            Playwright locator for the round item.
+        """
+        return self.page.locator(f".round-item:has-text('{course_name}')").first
+
+    def is_round_clickable(self, course_name: str) -> bool:
+        """Check if a round is clickable (has clickable class).
+
+        Args:
+            course_name: The course name to check.
+
+        Returns:
+            True if the round has the clickable class.
+        """
+        round_item = self.get_round_by_course_name(course_name)
+        class_attr = round_item.get_attribute("class") or ""
+        return "clickable" in class_attr
+
+    def is_round_highlighted(self, course_name: str) -> bool:
+        """Check if a round is highlighted as active (has editing class).
+
+        Args:
+            course_name: The course name to check.
+
+        Returns:
+            True if the round has the editing class.
+        """
+        round_item = self.get_round_by_course_name(course_name)
+        class_attr = round_item.get_attribute("class") or ""
+        return "editing" in class_attr
+
+    def click_round_by_course_name(self, course_name: str) -> None:
+        """Click a round item by its course name.
+
+        Args:
+            course_name: The course name to click.
+        """
+        round_item = self.get_round_by_course_name(course_name)
+        round_item.click()
+        # Wait for the UI to update
+        self.page.wait_for_timeout(500)
+
+    def get_hole_strokes_value(self, hole_number: int) -> str:
+        """Get the strokes value for a specific hole by navigating to it.
+
+        Args:
+            hole_number: The hole number to check (1-indexed).
+
+        Returns:
+            The strokes value as a string.
+        """
+        # Navigate to the hole (assuming we're already in edit mode)
+        current_hole = int(self.get_current_hole())
+        while current_hole < hole_number:
+            self.click_next_hole()
+            current_hole += 1
+        while current_hole > hole_number:
+            self.click_prev_hole()
+            current_hole -= 1
+
+        return self.hole_strokes.input_value()
