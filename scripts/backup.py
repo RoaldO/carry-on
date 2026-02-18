@@ -29,7 +29,6 @@ from pymongo import MongoClient
 load_dotenv()
 
 DATABASE_NAME = "carryon"
-COLLECTIONS = ["users", "strokes", "ideas"]
 
 
 class MongoJSONEncoder(json.JSONEncoder):
@@ -98,7 +97,8 @@ def main():
 
     # Backup each collection
     total_docs = 0
-    for collection_name in COLLECTIONS:
+    collection_names = [collection["name"] for collection in db.list_collections()]
+    for collection_name in collection_names:
         count = backup_collection(db, collection_name, backup_dir)
         print(f"  {collection_name}: {count} documents")
         total_docs += count
@@ -107,8 +107,10 @@ def main():
     metadata = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "database": DATABASE_NAME,
-        "collections": COLLECTIONS,
-        "document_counts": {name: len(list(db[name].find())) for name in COLLECTIONS},
+        "collections": collection_names,
+        "document_counts": {
+            name: len(list(db[name].find())) for name in collection_names
+        },
     }
     with open(backup_dir / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
