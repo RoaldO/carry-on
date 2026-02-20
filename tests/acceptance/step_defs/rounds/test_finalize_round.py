@@ -23,17 +23,6 @@ def see_button(round_page: RoundPage, button_name: str) -> None:
         raise ValueError(f"Unknown button: {button_name}")
 
 
-@when(parsers.parse('I click the "{button_name}" button'))
-def click_button(round_page: RoundPage, button_name: str) -> None:
-    """Click a named button."""
-    if button_name == "Save Progress":
-        round_page.click_save_progress()
-    elif button_name == "Finish Round":
-        round_page.click_finish_round()
-    else:
-        raise ValueError(f"Unknown button: {button_name}")
-
-
 @when(parsers.parse("I fill the remaining holes with {strokes:d} strokes each"))
 def fill_remaining_holes(round_page: RoundPage, strokes: int) -> None:
     """Fill all remaining unfilled holes with the given strokes."""

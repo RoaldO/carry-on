@@ -53,12 +53,6 @@ def fill_all_holes(round_page: RoundPage, count: int, strokes: int) -> None:
     round_page.fill_all_holes(count, strokes)
 
 
-@when("I click the submit round button")
-def click_submit_round(round_page: RoundPage) -> None:
-    """Click the submit round button."""
-    round_page.submit_round()
-
-
 @then("I should see a round success message")
 def see_success_message(round_page: RoundPage) -> None:
     """Verify a success message is shown."""
@@ -76,7 +70,7 @@ def user_has_completed_rounds(round_page: RoundPage, test_user: dict[str, Any]) 
     round_page.type_course_search(test_user["course_name"])
     round_page.select_course_suggestion(test_user["course_name"])
     round_page.fill_all_holes(9, 4)
-    round_page.submit_round()
+    round_page.click_finish_round()
     round_page.wait_for_message()
 
     # Wait a bit and record second round
@@ -84,7 +78,7 @@ def user_has_completed_rounds(round_page: RoundPage, test_user: dict[str, Any]) 
     round_page.type_course_search(test_user["course_name"])
     round_page.select_course_suggestion(test_user["course_name"])
     round_page.fill_all_holes(9, 5)
-    round_page.submit_round()
+    round_page.click_finish_round()
     round_page.wait_for_message()
 
 

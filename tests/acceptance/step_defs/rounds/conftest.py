@@ -151,6 +151,17 @@ def click_in_progress_round(round_page: RoundPage, test_user: dict[str, Any]) ->
     round_page.click_round_by_course_name(test_user["course_name"])
 
 
+@when(parsers.parse('I click the "{button_name}" button'))
+def click_button(round_page: RoundPage, button_name: str) -> None:
+    """Click a named button."""
+    if button_name == "Save Progress":
+        round_page.click_save_progress()
+    elif button_name == "Finish Round":
+        round_page.click_finish_round()
+    else:
+        raise ValueError(f"Unknown button: {button_name}")
+
+
 @then("the round should still be in progress")
 def round_still_in_progress(
     test_database: Database[Any], test_user: dict[str, Any]
