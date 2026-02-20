@@ -1,6 +1,7 @@
 """MongoDB implementation of RoundRepository."""
 
 import datetime
+from decimal import Decimal
 from typing import NotRequired, TypedDict
 
 from bson.objectid import ObjectId
@@ -24,6 +25,7 @@ class RoundDoc(TypedDict):
     date: str
     holes: list[HoleResultDoc]
     status: NotRequired[str]  # For backward compatibility with old documents
+    player_handicap: NotRequired[str | None]
     created_at: str
     user_id: str
 
@@ -111,12 +113,18 @@ class MongoRoundRepository:
                 for h in round.holes
             ],
             "status": round.status.value,
+            "player_handicap": (
+                str(round.player_handicap)
+                if round.player_handicap is not None
+                else None
+            ),
             "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
             "user_id": user_id,
         }
 
     def _to_entity(self, doc: RoundDoc) -> Round:
         """Map MongoDB document to domain aggregate."""
+        raw_handicap = doc.get("player_handicap")
         round = Round.create(
             course_name=doc.get("course_name", "Unknown Course"),
             date=datetime.date.fromisoformat(doc["date"]),
@@ -124,6 +132,9 @@ class MongoRoundRepository:
             status=RoundStatus(
                 doc.get("status", "ip")
             ),  # Default to IN_PROGRESS for old docs
+            player_handicap=(
+                Decimal(raw_handicap) if raw_handicap is not None else None
+            ),
             created_at=(
                 datetime.datetime.fromisoformat(doc["created_at"])
                 if "created_at" in doc

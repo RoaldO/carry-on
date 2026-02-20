@@ -34,6 +34,7 @@ class FakeRoundRepository:
                 date=round.date,
                 id=round_id,
                 status=round.status,
+                player_handicap=round.player_handicap,
             )
             for hole in round.holes:
                 saved_round.record_hole(hole)
@@ -48,6 +49,7 @@ class FakeRoundRepository:
                         date=round.date,
                         id=round.id,
                         status=round.status,
+                        player_handicap=round.player_handicap,
                     )
                     for hole in round.holes:
                         saved_round.record_hole(hole)
@@ -59,6 +61,7 @@ class FakeRoundRepository:
                 date=round.date,
                 id=round.id,
                 status=round.status,
+                player_handicap=round.player_handicap,
             )
             for hole in round.holes:
                 saved_round.record_hole(hole)
