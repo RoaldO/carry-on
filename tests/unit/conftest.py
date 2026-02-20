@@ -12,10 +12,12 @@ from fastapi.testclient import TestClient
 
 from carry_on.infrastructure.security.argon2_password_hasher import Argon2PasswordHasher
 from carry_on.services.course_service import CourseService
+from carry_on.services.player_service import PlayerService
 from carry_on.services.round_service import RoundService
 from carry_on.services.stroke_service import StrokeService
 
 from tests.fakes.fake_course_repository import FakeCourseRepository
+from tests.fakes.fake_player_repository import FakePlayerRepository
 from tests.fakes.fake_round_repository import FakeRoundRepository
 from tests.fakes.fake_stroke_repository import FakeStrokeRepository
 
@@ -208,3 +210,33 @@ def mock_authenticated_user(
         "activated_at": "2026-01-25T10:00:00Z",
     }
     return mock_users_collection
+
+
+@pytest.fixture
+def fake_player_repository() -> FakePlayerRepository:
+    """Create a fresh fake player repository for each test."""
+    return FakePlayerRepository()
+
+
+@pytest.fixture
+def fake_player_service(
+    fake_player_repository: FakePlayerRepository,
+) -> PlayerService:
+    """Create a PlayerService with the fake repository."""
+    return PlayerService(fake_player_repository)
+
+
+@pytest.fixture
+def override_player_repo(
+    fake_player_service: PlayerService,
+    client: TestClient,
+) -> Generator[FakePlayerRepository, None, None]:
+    """Override player service with fake repository in DI container.
+
+    Activates the override so requests through ``client`` use the fake.
+    Yields the fake repository for test assertions.
+    """
+    from carry_on.api import container
+
+    with container.player_service.override(providers.Object(fake_player_service)):
+        yield fake_player_service._repository  # type: ignore[misc]

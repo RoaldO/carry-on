@@ -54,3 +54,12 @@ class IdeaDoc(TypedDict):
     description: str
     created_at: str
     user_id: str
+
+
+# Player models
+
+
+class UpdateHandicapRequest(BaseModel):
+    """Request model for updating a player's handicap."""
+
+    handicap: str | None = None
