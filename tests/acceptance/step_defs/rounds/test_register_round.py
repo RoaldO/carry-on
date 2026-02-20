@@ -19,12 +19,6 @@ def see_date_with_today(round_page: RoundPage) -> None:
     assert actual == today, f"Expected date '{today}', got '{actual}'"
 
 
-@when(parsers.parse('I type "{text}" in the course search'))
-def type_course_search(round_page: RoundPage, text: str) -> None:
-    """Type text in the course search field."""
-    round_page.type_course_search(text)
-
-
 @then(parsers.parse('I should see "{name}" in the course suggestions'))
 def see_course_suggestion(round_page: RoundPage, name: str) -> None:
     """Verify a course appears in the suggestions."""
@@ -32,12 +26,6 @@ def see_course_suggestion(round_page: RoundPage, name: str) -> None:
     assert any(name in s for s in suggestions), (
         f"Expected '{name}' in suggestions: {suggestions}"
     )
-
-
-@when(parsers.parse('I select "{name}" from the suggestions'))
-def select_suggestion(round_page: RoundPage, name: str) -> None:
-    """Select a course from the suggestions."""
-    round_page.select_course_suggestion(name)
 
 
 @then(parsers.parse("I should see the par for hole {number:d}"))
@@ -65,12 +53,6 @@ def fill_all_holes(round_page: RoundPage, count: int, strokes: int) -> None:
     round_page.fill_all_holes(count, strokes)
 
 
-@when("I click the submit round button")
-def click_submit_round(round_page: RoundPage) -> None:
-    """Click the submit round button."""
-    round_page.submit_round()
-
-
 @then("I should see a round success message")
 def see_success_message(round_page: RoundPage) -> None:
     """Verify a success message is shown."""
@@ -88,7 +70,7 @@ def user_has_completed_rounds(round_page: RoundPage, test_user: dict[str, Any]) 
     round_page.type_course_search(test_user["course_name"])
     round_page.select_course_suggestion(test_user["course_name"])
     round_page.fill_all_holes(9, 4)
-    round_page.submit_round()
+    round_page.click_finish_round()
     round_page.wait_for_message()
 
     # Wait a bit and record second round
@@ -96,7 +78,7 @@ def user_has_completed_rounds(round_page: RoundPage, test_user: dict[str, Any]) 
     round_page.type_course_search(test_user["course_name"])
     round_page.select_course_suggestion(test_user["course_name"])
     round_page.fill_all_holes(9, 5)
-    round_page.submit_round()
+    round_page.click_finish_round()
     round_page.wait_for_message()
 
 

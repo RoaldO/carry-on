@@ -1,5 +1,6 @@
 """Shared step definitions and fixtures for round tests."""
 
+import datetime
 from typing import Any
 
 import pytest
@@ -8,7 +9,7 @@ from pymongo.database import Database
 from pytest_bdd import given, parsers, then, when
 
 from tests.acceptance.conftest import hash_password
-from tests.acceptance.db_utils import insert_course, insert_user
+from tests.acceptance.db_utils import insert_course, insert_round, insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.round_page import RoundPage
 
@@ -100,3 +101,73 @@ def current_hole_is(round_page: RoundPage, number: int) -> None:
 def enter_strokes(round_page: RoundPage, strokes: str) -> None:
     """Enter strokes for the current hole."""
     round_page.enter_strokes(strokes)
+
+
+@when(parsers.parse('I type "{text}" in the course search'))
+def type_course_search(round_page: RoundPage, text: str) -> None:
+    """Type text in the course search field."""
+    round_page.type_course_search(text)
+
+
+@when(parsers.parse('I select "{name}" from the suggestions'))
+def select_suggestion(round_page: RoundPage, name: str) -> None:
+    """Select a course from the suggestions."""
+    round_page.select_course_suggestion(name)
+
+
+@pytest.fixture
+def in_progress_round_id(
+    test_database: Database[Any], test_user: dict[str, Any]
+) -> dict[str, str]:
+    """Create an in-progress round with 3 holes completed."""
+    round_id = insert_round(
+        test_database,
+        user_id=test_user["user_id"],
+        course_name=test_user["course_name"],
+        date=datetime.date.today().isoformat(),
+        holes=[
+            {"hole_number": 1, "strokes": 4},
+            {"hole_number": 2, "strokes": 3},
+            {"hole_number": 3, "strokes": 5},
+        ],
+        status="ip",
+    )
+    return {"round_id": round_id}
+
+
+@given("I have an in-progress round with 3 holes completed")
+def have_in_progress_round(
+    round_page: RoundPage, in_progress_round_id: dict[str, str]
+) -> None:
+    """Create an in-progress round (already done in fixture)."""
+    # Refresh the page to load recent rounds
+    round_page.goto_rounds_tab()
+
+
+@when("I click on the in-progress round")
+def click_in_progress_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
+    """Click on the in-progress round."""
+    round_page.wait_for_recent_rounds()
+    round_page.click_round_by_course_name(test_user["course_name"])
+
+
+@when(parsers.parse('I click the "{button_name}" button'))
+def click_button(round_page: RoundPage, button_name: str) -> None:
+    """Click a named button."""
+    if button_name == "Save Progress":
+        round_page.click_save_progress()
+    elif button_name == "Finish Round":
+        round_page.click_finish_round()
+    else:
+        raise ValueError(f"Unknown button: {button_name}")
+
+
+@then("the round should still be in progress")
+def round_still_in_progress(
+    test_database: Database[Any], test_user: dict[str, Any]
+) -> None:
+    """Verify the round status is still 'ip' (in-progress) in database."""
+    rounds = list(
+        test_database.rounds.find({"user_id": test_user["user_id"], "status": "ip"})
+    )
+    assert len(rounds) > 0, "Should have at least one in-progress round"

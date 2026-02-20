@@ -34,7 +34,7 @@ Feature: Register a Golf Round
     When I type "Pitch" in the course search
     And I select "Pitch & Putt" from the suggestions
     And I fill all 9 holes with 4 strokes each
-    And I click the submit round button
+    And I click the "Finish Round" button
     Then I should see a round success message
 
   Scenario: View recent rounds history

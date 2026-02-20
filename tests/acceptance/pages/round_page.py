@@ -20,6 +20,8 @@ class RoundPage:
         self.prev_hole_btn = page.locator("#prevHoleBtn")
         self.next_hole_btn = page.locator("#nextHoleBtn")
         self.submit_round_btn = page.locator("#submitRoundBtn")
+        self.save_progress_btn = page.locator("#saveProgressBtn")
+        self.finish_round_btn = page.locator("#finishRoundBtn")
         self.round_message = page.locator("#roundMessage")
 
         # Recent rounds elements
@@ -81,6 +83,26 @@ class RoundPage:
     def submit_round(self) -> None:
         """Click the submit round button."""
         self.submit_round_btn.click()
+
+    def click_save_progress(self) -> None:
+        """Click the Save Progress button."""
+        self.save_progress_btn.click()
+
+    def click_finish_round(self) -> None:
+        """Click the Finish Round button."""
+        self.finish_round_btn.click()
+
+    def is_save_progress_visible(self) -> bool:
+        """Check if the Save Progress button is visible."""
+        return self.save_progress_btn.is_visible()
+
+    def is_finish_round_visible(self) -> bool:
+        """Check if the Finish Round button is visible."""
+        return self.finish_round_btn.is_visible()
+
+    def is_finish_round_disabled(self) -> bool:
+        """Check if the Finish Round button is disabled."""
+        return self.finish_round_btn.is_disabled()
 
     def fill_all_holes(self, count: int, strokes: int = 4) -> None:
         """Fill strokes for all holes by navigating through them.

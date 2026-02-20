@@ -408,6 +408,17 @@
         .btn-secondary:active {
             background: #565e64;
         }
+        .round-action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .round-action-buttons button {
+            flex: 1;
+        }
+        .round-action-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         .course-form-error {
             color: #dc3545;
             text-align: center;
@@ -617,7 +628,10 @@
                 <input type="number" id="holeStrokes" min="1" max="20" placeholder="Enter strokes">
             </div>
 
-            <button type="button" id="submitRoundBtn">Submit Round</button>
+            <div class="round-action-buttons">
+                <button type="button" id="saveProgressBtn" class="btn-secondary">Save Progress</button>
+                <button type="button" id="finishRoundBtn" disabled>Finish Round</button>
+            </div>
         </div>
 
         <div id="roundMessage"></div>
@@ -1683,6 +1697,7 @@
             const strokesInput = document.getElementById('holeStrokes');
             strokesInput.value = holeStrokes[currentHoleIndex] || '';
             strokesInput.focus();
+            updateFinishButtonState();
         }
 
         // Auto-save hole to server
@@ -1813,15 +1828,6 @@
             }
         }
 
-        // Debounced save on input change
-        let saveTimeout = null;
-        function debouncedSave() {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveCurrentHoleToServer, 500);
-        }
-
-        document.getElementById('holeStrokes').addEventListener('input', debouncedSave);
-
         // Save current strokes before navigating
         function saveCurrentStrokes() {
             const val = document.getElementById('holeStrokes').value;
@@ -1829,6 +1835,45 @@
                 holeStrokes[currentHoleIndex] = parseInt(val);
             }
         }
+
+        function resetRoundForm() {
+            selectedCourse = null;
+            holeStrokes = [];
+            currentHoleIndex = 0;
+            currentRoundId = null;
+            courseSearchInput.value = '';
+            document.getElementById('holeNavigator').style.display = 'none';
+            document.getElementById('holeStrokes').value = '';
+            updateFinishButtonState();
+            loadRecentRounds();
+        }
+
+        function updateFinishButtonState() {
+            const btn = document.getElementById('finishRoundBtn');
+            if (!selectedCourse) {
+                btn.disabled = true;
+                return;
+            }
+            // Include the current input value in the check
+            const currentVal = parseInt(document.getElementById('holeStrokes').value);
+            const tempStrokes = [...holeStrokes];
+            if (currentVal && currentVal >= 1) {
+                tempStrokes[currentHoleIndex] = currentVal;
+            }
+            const allFilled = tempStrokes.length === selectedCourse.holes.length
+                && !tempStrokes.some(s => !s || s < 1);
+            btn.disabled = !allFilled;
+        }
+
+        // Debounced save on input change
+        let saveTimeout = null;
+        function debouncedSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveCurrentHoleToServer, 500);
+            updateFinishButtonState();
+        }
+
+        document.getElementById('holeStrokes').addEventListener('input', debouncedSave);
 
         document.getElementById('prevHoleBtn').addEventListener('click', async function() {
             await saveCurrentHoleToServer();
@@ -1848,60 +1893,37 @@
             }
         });
 
-        document.getElementById('submitRoundBtn').addEventListener('click', async function() {
-            // Save current hole before validation
+        document.getElementById('saveProgressBtn').addEventListener('click', async function() {
             await saveCurrentHoleToServer();
             saveCurrentStrokes();
-
             if (!selectedCourse) return;
 
             const roundMsg = document.getElementById('roundMessage');
-            const allHolesFilled = !holeStrokes.some(s => !s || s < 1);
+            roundMsg.textContent = 'Progress saved! You can continue this round later.';
+            roundMsg.className = 'message success';
+            resetRoundForm();
+        });
 
-            // If editing an existing round (in-progress)
-            if (currentRoundId) {
-                if (allHolesFilled) {
-                    // All holes filled - mark as finished
-                    try {
-                        await fetch(`/api/rounds/${currentRoundId}/status?action=finish`, {
-                            method: 'PATCH',
-                            headers: getAuthHeaders()
-                        });
-                        roundMsg.textContent = 'Round finished successfully!';
-                        roundMsg.className = 'message success';
-                    } catch (err) {
-                        console.error('Failed to finish round:', err);
-                        roundMsg.textContent = 'Failed to finish round';
-                        roundMsg.className = 'message error';
-                        return;
-                    }
-                } else {
-                    // Partial progress - already auto-saved
-                    roundMsg.textContent = 'Progress saved! You can continue this round later.';
-                    roundMsg.className = 'message success';
-                }
-            } else {
-                // Creating new round - require all holes
-                if (!allHolesFilled) {
-                    roundMsg.textContent = 'Please enter strokes for all holes';
-                    roundMsg.className = 'message error';
-                    return;
-                }
-                roundMsg.textContent = 'Round recorded successfully!';
+        document.getElementById('finishRoundBtn').addEventListener('click', async function() {
+            await saveCurrentHoleToServer();
+            saveCurrentStrokes();
+            if (!selectedCourse || !currentRoundId) return;
+
+            const roundMsg = document.getElementById('roundMessage');
+            try {
+                await fetch(`/api/rounds/${currentRoundId}/status?action=finish`, {
+                    method: 'PATCH',
+                    headers: getAuthHeaders()
+                });
+                roundMsg.textContent = 'Round finished successfully!';
                 roundMsg.className = 'message success';
+            } catch (err) {
+                console.error('Failed to finish round:', err);
+                roundMsg.textContent = 'Failed to finish round';
+                roundMsg.className = 'message error';
+                return;
             }
-
-            // Reset form
-            selectedCourse = null;
-            holeStrokes = [];
-            currentHoleIndex = 0;
-            currentRoundId = null;
-            courseSearchInput.value = '';
-            document.getElementById('holeNavigator').style.display = 'none';
-            document.getElementById('holeStrokes').value = '';
-
-            // Reload recent rounds
-            loadRecentRounds();
+            resetRoundForm();
         });
 
         // Initialize: check hash and auth

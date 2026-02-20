@@ -15,26 +15,6 @@ scenarios("../../features/rounds/edit_round.feature")
 
 
 @pytest.fixture
-def in_progress_round_id(
-    test_database: Database[Any], test_user: dict[str, Any]
-) -> dict[str, str]:
-    """Create an in-progress round with 3 holes completed."""
-    round_id = insert_round(
-        test_database,
-        user_id=test_user["user_id"],
-        course_name=test_user["course_name"],
-        date=datetime.date.today().isoformat(),
-        holes=[
-            {"hole_number": 1, "strokes": 4},
-            {"hole_number": 2, "strokes": 3},
-            {"hole_number": 3, "strokes": 5},
-        ],
-        status="ip",
-    )
-    return {"round_id": round_id}
-
-
-@pytest.fixture
 def finished_round_id(
     test_database: Database[Any], test_user: dict[str, Any]
 ) -> dict[str, str]:
@@ -48,15 +28,6 @@ def finished_round_id(
         status="f",
     )
     return {"round_id": round_id}
-
-
-@given("I have an in-progress round with 3 holes completed")
-def have_in_progress_round(
-    round_page: RoundPage, in_progress_round_id: dict[str, str]
-) -> None:
-    """Create an in-progress round (already done in fixture)."""
-    # Refresh the page to load recent rounds
-    round_page.goto_rounds_tab()
 
 
 @given("I have a finished round")
@@ -88,13 +59,6 @@ def finished_rounds_not_clickable(round_page: RoundPage) -> None:
     count = all_rounds.count()
     clickable_count = round_page.page.locator(".round-item.clickable").count()
     assert clickable_count < count, "Not all rounds should be clickable"
-
-
-@when("I click on the in-progress round")
-def click_in_progress_round(round_page: RoundPage, test_user: dict[str, Any]) -> None:
-    """Click on the in-progress round."""
-    round_page.wait_for_recent_rounds()
-    round_page.click_round_by_course_name(test_user["course_name"])
 
 
 @then("holes 1-3 should show the recorded strokes")
@@ -285,17 +249,6 @@ def navigate_away_from_rounds(round_page: RoundPage) -> None:
     # Switch to a different tab (e.g., Ideas)
     round_page.page.locator(".tab[data-tab='ideas']").click()
     round_page.page.wait_for_timeout(500)
-
-
-@then("the round should still be in progress")
-def round_still_in_progress(
-    test_database: Database[Any], test_user: dict[str, Any]
-) -> None:
-    """Verify the round status is still 'ip' (in-progress) in database."""
-    rounds = list(
-        test_database.rounds.find({"user_id": test_user["user_id"], "status": "ip"})
-    )
-    assert len(rounds) > 0, "Should have at least one in-progress round"
 
 
 @then(parsers.parse("the round should have {count:d} holes recorded"))
