@@ -30,3 +30,19 @@ Feature: Profile Display
     And I click the logout button
     And I reload the page
     Then I should see the login screen
+
+  Scenario: Profile tab shows player handicap
+    Given the player has handicap "14.3"
+    When I click the Profile tab
+    Then I should see the handicap "14.3"
+
+  Scenario: Profile tab shows Not set when no handicap
+    When I click the Profile tab
+    Then I should see the handicap "Not set"
+
+  Scenario: User can edit handicap from profile tab
+    When I click the Profile tab
+    And I click the edit handicap button
+    And I enter handicap "18.5"
+    And I click the save handicap button
+    Then I should see the handicap "18.5"

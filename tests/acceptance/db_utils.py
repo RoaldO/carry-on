@@ -56,6 +56,7 @@ def clear_collections(db: Database[Any]) -> None:
     db.ideas.delete_many({})
     db.courses.delete_many({})
     db.rounds.delete_many({})
+    db.players.delete_many({})
 
 
 def insert_user(
@@ -178,4 +179,27 @@ def insert_round(
         "user_id": user_id,
     }
     result = db.rounds.insert_one(doc)
+    return str(result.inserted_id)
+
+
+def insert_player(
+    db: Database[Any],
+    user_id: str,
+    handicap: str | None = None,
+) -> str:
+    """Insert a player document into the database.
+
+    Args:
+        db: The MongoDB database instance.
+        user_id: The ID of the user who owns the player profile.
+        handicap: The handicap value as string, or None.
+
+    Returns:
+        The string representation of the inserted player's _id.
+    """
+    doc = {
+        "user_id": user_id,
+        "handicap": handicap,
+    }
+    result = db.players.insert_one(doc)
     return str(result.inserted_id)
