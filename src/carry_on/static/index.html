@@ -654,6 +654,21 @@
                     <label>Email</label>
                     <div id="profileEmail">Loading...</div>
                 </div>
+                <div class="profile-field">
+                    <label>Handicap</label>
+                    <div id="handicapDisplay">
+                        <span id="handicapValue">Loading...</span>
+                        <button type="button" id="editHandicapBtn" style="width: auto; padding: 4px 12px; font-size: 14px; margin: 0 0 0 8px; display: inline-block;">Edit</button>
+                    </div>
+                    <div id="handicapEdit" style="display: none;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="handicapInput" step="0.1" min="-10" max="54" placeholder="e.g. 14.3" style="flex: 1;">
+                            <button type="button" id="saveHandicapBtn" style="width: auto; padding: 8px 16px; font-size: 14px; margin: 0;">Save</button>
+                            <button type="button" id="cancelHandicapBtn" style="width: auto; padding: 8px 16px; font-size: 14px; margin: 0; background: #6c757d;">Cancel</button>
+                        </div>
+                        <div id="handicapMessage" style="margin-top: 8px;"></div>
+                    </div>
+                </div>
             </div>
             <div class="profile-menu">
                 <a id="myCoursesLink" class="profile-menu-item" href="#courses">
@@ -1329,25 +1344,87 @@
             submitBtn.disabled = false;
         });
 
-        // Profile loading
+        // Profile loading (fetches user and player data in parallel)
         async function loadProfile() {
+            const headers = getAuthHeaders();
             try {
-                const response = await fetch('/api/me', {
-                    headers: getAuthHeaders()
-                });
-                if (response.ok) {
-                    const data = await response.json();
+                const [meResponse, playerResponse] = await Promise.all([
+                    fetch('/api/me', { headers }),
+                    fetch('/api/player/me', { headers }),
+                ]);
+
+                if (meResponse.ok) {
+                    const data = await meResponse.json();
                     profileName.textContent = data.display_name || 'Not set';
                     profileEmail.textContent = data.email;
-                } else if (response.status === 401) {
+                } else if (meResponse.status === 401) {
                     clearAuth();
                     showLoginScreen();
+                    return;
+                }
+
+                if (playerResponse.ok) {
+                    const playerData = await playerResponse.json();
+                    const handicapValue = document.getElementById('handicapValue');
+                    handicapValue.textContent = playerData.handicap || 'Not set';
                 }
             } catch (err) {
                 profileName.textContent = 'Error loading';
                 profileEmail.textContent = 'Error loading';
             }
         }
+
+        // Handicap edit handlers
+        document.getElementById('editHandicapBtn').addEventListener('click', function() {
+            document.getElementById('handicapDisplay').style.display = 'none';
+            document.getElementById('handicapEdit').style.display = 'block';
+            const currentValue = document.getElementById('handicapValue').textContent;
+            const input = document.getElementById('handicapInput');
+            input.value = currentValue !== 'Not set' ? currentValue : '';
+            input.focus();
+        });
+
+        document.getElementById('cancelHandicapBtn').addEventListener('click', function() {
+            document.getElementById('handicapEdit').style.display = 'none';
+            document.getElementById('handicapDisplay').style.display = 'block';
+            document.getElementById('handicapMessage').textContent = '';
+        });
+
+        document.getElementById('saveHandicapBtn').addEventListener('click', async function() {
+            const input = document.getElementById('handicapInput');
+            const handicapMsg = document.getElementById('handicapMessage');
+            const value = input.value.trim();
+
+            const body = { handicap: value || null };
+
+            try {
+                const response = await fetch('/api/player/handicap', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    document.getElementById('handicapValue').textContent = value || 'Not set';
+                    document.getElementById('handicapEdit').style.display = 'none';
+                    document.getElementById('handicapDisplay').style.display = 'block';
+                    handicapMsg.textContent = '';
+                } else if (response.status === 401) {
+                    clearAuth();
+                    showLoginScreen();
+                } else {
+                    const data = await response.json();
+                    handicapMsg.textContent = data.detail || 'Error saving handicap';
+                    handicapMsg.className = 'message error';
+                }
+            } catch (err) {
+                handicapMsg.textContent = 'Network error';
+                handicapMsg.className = 'message error';
+            }
+        });
 
         // Logout handler
         logoutBtn.addEventListener('click', function() {
