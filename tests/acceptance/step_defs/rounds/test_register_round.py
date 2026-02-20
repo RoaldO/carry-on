@@ -19,12 +19,6 @@ def see_date_with_today(round_page: RoundPage) -> None:
     assert actual == today, f"Expected date '{today}', got '{actual}'"
 
 
-@when(parsers.parse('I type "{text}" in the course search'))
-def type_course_search(round_page: RoundPage, text: str) -> None:
-    """Type text in the course search field."""
-    round_page.type_course_search(text)
-
-
 @then(parsers.parse('I should see "{name}" in the course suggestions'))
 def see_course_suggestion(round_page: RoundPage, name: str) -> None:
     """Verify a course appears in the suggestions."""
@@ -32,12 +26,6 @@ def see_course_suggestion(round_page: RoundPage, name: str) -> None:
     assert any(name in s for s in suggestions), (
         f"Expected '{name}' in suggestions: {suggestions}"
     )
-
-
-@when(parsers.parse('I select "{name}" from the suggestions'))
-def select_suggestion(round_page: RoundPage, name: str) -> None:
-    """Select a course from the suggestions."""
-    round_page.select_course_suggestion(name)
 
 
 @then(parsers.parse("I should see the par for hole {number:d}"))
