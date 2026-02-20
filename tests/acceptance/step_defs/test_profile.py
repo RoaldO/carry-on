@@ -8,7 +8,7 @@ from pymongo.database import Database
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from tests.acceptance.conftest import hash_password
-from tests.acceptance.db_utils import insert_user
+from tests.acceptance.db_utils import insert_player, insert_user
 from tests.acceptance.pages.login_page import LoginPage
 from tests.acceptance.pages.navigation_page import NavigationPage
 
@@ -115,3 +115,36 @@ def tab_bar_not_visible(nav_page: NavigationPage) -> None:
     """Verify the tab bar is not visible."""
     nav_page.page.wait_for_timeout(500)
     assert not nav_page.is_tab_bar_visible(), "Tab bar should not be visible"
+
+
+@given(parsers.parse('the player has handicap "{handicap}"'))
+def player_with_handicap(
+    test_database: Database[Any], test_user: dict[str, Any], handicap: str
+) -> None:
+    """Create a player with the given handicap in the database."""
+    insert_player(test_database, user_id=test_user["_id"], handicap=handicap)
+
+
+@when("I click the edit handicap button")
+def click_edit_handicap(nav_page: NavigationPage) -> None:
+    """Click the edit handicap button."""
+    nav_page.click_edit_handicap()
+
+
+@when(parsers.parse('I enter handicap "{value}"'))
+def enter_handicap(nav_page: NavigationPage, value: str) -> None:
+    """Enter a handicap value."""
+    nav_page.enter_handicap(value)
+
+
+@when("I click the save handicap button")
+def click_save_handicap(nav_page: NavigationPage) -> None:
+    """Click the save handicap button."""
+    nav_page.click_save_handicap()
+
+
+@then(parsers.parse('I should see the handicap "{handicap}"'))
+def see_handicap(nav_page: NavigationPage, handicap: str) -> None:
+    """Verify the handicap value is displayed."""
+    actual = nav_page.get_handicap_display()
+    assert handicap in actual, f"Expected '{handicap}' in '{actual}'"

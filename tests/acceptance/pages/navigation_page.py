@@ -28,6 +28,12 @@ class NavigationPage:
         self.profile_email = page.locator("#profileEmail")
         self.logout_button = page.locator("#logoutBtn")
 
+        # Handicap elements
+        self.handicap_display = page.locator("#handicapValue")
+        self.edit_handicap_button = page.locator("#editHandicapBtn")
+        self.handicap_input = page.locator("#handicapInput")
+        self.save_handicap_button = page.locator("#saveHandicapBtn")
+
         # Courses elements
         self.my_courses_link = page.locator("#myCoursesLink")
         self.courses_content = page.locator("#coursesContent")
@@ -177,6 +183,25 @@ class NavigationPage:
     def click_courses_back_link(self) -> None:
         """Click the back link on the courses page."""
         self.courses_back_link.click()
+
+    def get_handicap_display(self) -> str:
+        """Get the displayed handicap value."""
+        self.page.wait_for_timeout(500)  # Wait for API call
+        return self.handicap_display.text_content() or ""
+
+    def click_edit_handicap(self) -> None:
+        """Click the edit handicap button."""
+        self.edit_handicap_button.click()
+
+    def enter_handicap(self, value: str) -> None:
+        """Enter a handicap value in the input field."""
+        self.handicap_input.fill(value)
+
+    def click_save_handicap(self) -> None:
+        """Click the save handicap button."""
+        self.save_handicap_button.click()
+        # Wait for the save to complete and display to update
+        self.page.wait_for_timeout(500)
 
     def reload(self) -> None:
         """Reload the page."""
