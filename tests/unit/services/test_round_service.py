@@ -1,6 +1,7 @@
 """Tests for RoundService."""
 
 import datetime
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import allure
@@ -10,6 +11,9 @@ from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.player.entities.player import Player, PlayerId
+from carry_on.domain.player.repositories.player_repository import PlayerRepository
+from carry_on.domain.player.value_objects.handicap import Handicap
 from carry_on.services.round_service import RoundService
 
 
@@ -37,7 +41,8 @@ class TestRoundServiceCreateRound:
         repository = MagicMock(spec=RoundRepository)
         expected_id = RoundId(value="round-123")
         repository.save.return_value = expected_id
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         result = service.create_round(
             user_id="user123",
@@ -52,7 +57,8 @@ class TestRoundServiceCreateRound:
         """Should create and save a Round with correct attributes."""
         repository = MagicMock(spec=RoundRepository)
         repository.save.return_value = RoundId(value="round-123")
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         service.create_round(
             user_id="user123",
@@ -73,7 +79,8 @@ class TestRoundServiceCreateRound:
         """Should record all hole results on the round."""
         repository = MagicMock(spec=RoundRepository)
         repository.save.return_value = RoundId(value="round-123")
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         service.create_round(
             user_id="user123",
@@ -91,7 +98,8 @@ class TestRoundServiceCreateRound:
     def test_create_round_with_empty_course_raises(self) -> None:
         """Should raise ValueError for empty course name."""
         repository = MagicMock(spec=RoundRepository)
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         with pytest.raises(ValueError, match="Course name required"):
             service.create_round(
@@ -120,7 +128,8 @@ class TestRoundServiceGetUserRounds:
             ),
         ]
         repository.find_by_user.return_value = expected_rounds
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         result = service.get_user_rounds("user123")
 
@@ -132,7 +141,8 @@ class TestRoundServiceGetUserRounds:
         """Should return empty list when user has no rounds."""
         repository = MagicMock(spec=RoundRepository)
         repository.find_by_user.return_value = []
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         result = service.get_user_rounds("user123")
 
@@ -149,7 +159,8 @@ class TestRoundServiceCreateRoundPartial:
         repository = MagicMock(spec=RoundRepository)
         expected_id = RoundId(value="round-123")
         repository.save.return_value = expected_id
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         result = service.create_round(
             user_id="user123",
@@ -187,7 +198,8 @@ class TestRoundServiceUpdateHole:
         repository.find_by_id.return_value = existing_round
         repository.save.return_value = round_id
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         service.update_hole(
             user_id="user123",
@@ -216,7 +228,8 @@ class TestRoundServiceUpdateHole:
         repository.find_by_id.return_value = existing_round
         repository.save.return_value = round_id
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         service.update_hole(
             user_id="user123",
@@ -235,7 +248,8 @@ class TestRoundServiceUpdateHole:
         round_id = RoundId(value="nonexistent")
         repository.find_by_id.return_value = None
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         with pytest.raises(ValueError, match="Round nonexistent not found"):
             service.update_hole(
@@ -263,7 +277,8 @@ class TestRoundServiceGetRound:
         )
         repository.find_by_id.return_value = expected_round
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
         result = service.get_round(user_id="user123", round_id=round_id)
 
         assert result == expected_round
@@ -275,7 +290,8 @@ class TestRoundServiceGetRound:
         round_id = RoundId(value="nonexistent")
         repository.find_by_id.return_value = None
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
         result = service.get_round(user_id="user123", round_id=round_id)
 
         assert result is None
@@ -305,7 +321,8 @@ class TestRoundServiceUpdateStatus:
         repository.find_by_id.return_value = existing_round
         repository.save.return_value = round_id
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
         service.update_round_status(
             user_id="user123",
             round_id=round_id,
@@ -333,7 +350,8 @@ class TestRoundServiceUpdateStatus:
         repository.find_by_id.return_value = existing_round
         repository.save.return_value = round_id
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
         service.update_round_status(
             user_id="user123",
             round_id=round_id,
@@ -359,7 +377,8 @@ class TestRoundServiceUpdateStatus:
         repository.find_by_id.return_value = existing_round
         repository.save.return_value = round_id
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
         service.update_round_status(
             user_id="user123",
             round_id=round_id,
@@ -382,7 +401,8 @@ class TestRoundServiceUpdateStatus:
         )
         repository.find_by_id.return_value = existing_round
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         with pytest.raises(ValueError, match="Invalid action: invalid"):
             service.update_round_status(
@@ -399,7 +419,8 @@ class TestRoundServiceUpdateStatus:
         round_id = RoundId(value="nonexistent")
         repository.find_by_id.return_value = None
 
-        service = RoundService(repository)
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
 
         with pytest.raises(ValueError, match="Round nonexistent not found"):
             service.update_round_status(
@@ -409,3 +430,71 @@ class TestRoundServiceUpdateStatus:
             )
 
         repository.save.assert_not_called()
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service - Handicap Snapshot")
+class TestRoundServiceHandicapSnapshot:
+    """Tests for snapshotting player handicap on round creation."""
+
+    def test_create_round_stores_player_handicap(self) -> None:
+        """Should snapshot the player's current handicap onto the round."""
+        repository = MagicMock(spec=RoundRepository)
+        repository.save.return_value = RoundId(value="round-123")
+
+        player_repository = MagicMock(spec=PlayerRepository)
+        player_repository.find_by_user_id.return_value = Player(
+            id=PlayerId(value="player-1"),
+            user_id="user123",
+            handicap=Handicap(value=Decimal("18.4")),
+        )
+
+        service = RoundService(repository, player_repository)
+        service.create_round(
+            user_id="user123",
+            course_name="Pitch & Putt",
+            date="2026-02-01",
+        )
+
+        round, _ = repository.save.call_args[0]
+        assert round.player_handicap == Decimal("18.4")
+
+    def test_create_round_stores_none_when_player_has_no_handicap(self) -> None:
+        """Should store None when the player exists but has no handicap."""
+        repository = MagicMock(spec=RoundRepository)
+        repository.save.return_value = RoundId(value="round-123")
+
+        player_repository = MagicMock(spec=PlayerRepository)
+        player_repository.find_by_user_id.return_value = Player(
+            id=PlayerId(value="player-1"),
+            user_id="user123",
+            handicap=None,
+        )
+
+        service = RoundService(repository, player_repository)
+        service.create_round(
+            user_id="user123",
+            course_name="Pitch & Putt",
+            date="2026-02-01",
+        )
+
+        round, _ = repository.save.call_args[0]
+        assert round.player_handicap is None
+
+    def test_create_round_stores_none_when_player_not_found(self) -> None:
+        """Should store None when no player record exists for the user."""
+        repository = MagicMock(spec=RoundRepository)
+        repository.save.return_value = RoundId(value="round-123")
+
+        player_repository = MagicMock(spec=PlayerRepository)
+        player_repository.find_by_user_id.return_value = None
+
+        service = RoundService(repository, player_repository)
+        service.create_round(
+            user_id="user123",
+            course_name="Pitch & Putt",
+            date="2026-02-01",
+        )
+
+        round, _ = repository.save.call_args[0]
+        assert round.player_handicap is None

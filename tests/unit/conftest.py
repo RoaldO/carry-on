@@ -145,9 +145,12 @@ def fake_round_repository() -> FakeRoundRepository:
 
 
 @pytest.fixture
-def fake_round_service(fake_round_repository: FakeRoundRepository) -> RoundService:
-    """Create a RoundService with the fake repository."""
-    return RoundService(fake_round_repository)
+def fake_round_service(
+    fake_round_repository: FakeRoundRepository,
+    fake_player_repository: FakePlayerRepository,
+) -> RoundService:
+    """Create a RoundService with the fake repositories."""
+    return RoundService(fake_round_repository, fake_player_repository)
 
 
 @pytest.fixture

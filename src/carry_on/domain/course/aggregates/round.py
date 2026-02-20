@@ -1,6 +1,7 @@
 import datetime
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Self
 
 from carry_on.domain.core.value_objects.identifier import Identifier
@@ -20,6 +21,7 @@ class Round:
     date: datetime.date
     holes: list[HoleResult] = field(default_factory=list)
     status: RoundStatus = RoundStatus.IN_PROGRESS
+    player_handicap: Decimal | None = None
     created_at: datetime.datetime | None = None
 
     @classmethod
@@ -29,6 +31,7 @@ class Round:
         date: datetime.date,
         id: RoundId | None = None,
         status: RoundStatus = RoundStatus.IN_PROGRESS,
+        player_handicap: Decimal | None = None,
         created_at: datetime.datetime | None = None,
     ) -> Self:
         return cls(
@@ -36,6 +39,7 @@ class Round:
             course_name=course_name,
             date=date,
             status=status,
+            player_handicap=player_handicap,
             created_at=created_at,
         )
 

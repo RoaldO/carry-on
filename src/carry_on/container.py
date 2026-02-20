@@ -64,5 +64,5 @@ class Container(containers.DeclarativeContainer):
     stroke_service = providers.Factory(StrokeService, stroke_repository)
     idea_service = providers.Factory(IdeaService, idea_repository)
     course_service = providers.Factory(CourseService, course_repository)
-    round_service = providers.Factory(RoundService, round_repository)
+    round_service = providers.Factory(RoundService, round_repository, player_repository)
     player_service = providers.Factory(PlayerService, player_repository)
