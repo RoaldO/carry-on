@@ -5,6 +5,7 @@ import datetime
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
 from carry_on.domain.course.value_objects.hole_result import HoleResult
+from carry_on.domain.player.repositories.player_repository import PlayerRepository
 
 
 class RoundService:
@@ -14,13 +15,19 @@ class RoundService:
     persistence to the repository.
     """
 
-    def __init__(self, repository: RoundRepository) -> None:
-        """Initialize the service with a repository.
+    def __init__(
+        self,
+        repository: RoundRepository,
+        player_repository: PlayerRepository,
+    ) -> None:
+        """Initialize the service with repositories.
 
         Args:
             repository: The round repository for persistence operations.
+            player_repository: The player repository to look up handicaps.
         """
         self._repository = repository
+        self._player_repository = player_repository
 
     def create_round(
         self,
@@ -44,9 +51,17 @@ class RoundService:
         Raises:
             ValueError: If round data is invalid.
         """
+        player = self._player_repository.find_by_user_id(user_id)
+        player_handicap = (
+            player.handicap.value
+            if player is not None and player.handicap is not None
+            else None
+        )
+
         round = Round.create(
             course_name=course_name,
             date=datetime.date.fromisoformat(date),
+            player_handicap=player_handicap,
         )
 
         if holes:
