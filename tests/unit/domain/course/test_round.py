@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 import allure
 import pytest
@@ -39,6 +40,38 @@ class TestRoundCreation:
                 course_name="",
                 date=date(2024, 1, 15),
             )
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Player Handicap")
+class TestRoundPlayerHandicap:
+    """Tests for player handicap snapshot on Round."""
+
+    def test_round_defaults_player_handicap_to_none(self) -> None:
+        """Round created without handicap should default to None."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+        )
+        assert round_.player_handicap is None
+
+    def test_create_round_with_player_handicap(self) -> None:
+        """Round created with a handicap should store it."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+        )
+        assert round_.player_handicap == Decimal("18.4")
+
+    def test_create_round_with_explicit_none_handicap(self) -> None:
+        """Explicit None handicap should be accepted."""
+        round_ = Round.create(
+            course_name="Old Course, St Andrews Links, Scotland",
+            date=date(2024, 1, 15),
+            player_handicap=None,
+        )
+        assert round_.player_handicap is None
 
 
 @allure.feature("Domain Model")
