@@ -1,6 +1,7 @@
 """Tests for MongoRoundRepository."""
 
 import datetime
+from decimal import Decimal
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
@@ -492,3 +493,95 @@ class TestMongoRoundRepositoryStatus:
         assert results[0].status == RoundStatus.IN_PROGRESS
         assert results[1].status == RoundStatus.FINISHED
         assert results[2].status == RoundStatus.ABORTED
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Player Handicap")
+class TestMongoRoundRepositoryPlayerHandicap:
+    """Tests for player_handicap field persistence."""
+
+    def test_save_serializes_player_handicap(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize Decimal handicap as string."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            player_handicap=Decimal("18.4"),
+        )
+
+        repo.save(round, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["player_handicap"] == "18.4"
+
+    def test_save_serializes_none_handicap(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize None handicap as None."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            player_handicap=None,
+        )
+
+        repo.save(round, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["player_handicap"] is None
+
+    def test_find_deserializes_player_handicap(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize string handicap back to Decimal."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "player_handicap": "18.4",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.player_handicap == Decimal("18.4")
+
+    def test_find_defaults_to_none_when_handicap_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should default to None for old documents without player_handicap."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+            # No player_handicap field - simulates old document
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.player_handicap is None
