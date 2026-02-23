@@ -112,6 +112,8 @@ class Round:
             holes=self.holes,
             player_handicap=handicap,
             num_holes=num_holes,
+            slope_rating=self.slope_rating,
+            course_rating=self.course_rating,
         )
         self.status = RoundStatus.FINISHED
 
