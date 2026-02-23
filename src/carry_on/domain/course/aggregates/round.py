@@ -26,6 +26,8 @@ class Round:
     player_handicap: Decimal | None = None
     stableford_score: StablefordScore | None = None
     created_at: datetime.datetime | None = None
+    slope_rating: Decimal | None = None
+    course_rating: Decimal | None = None
 
     @classmethod
     def create(
@@ -37,6 +39,8 @@ class Round:
         player_handicap: Decimal | None = None,
         stableford_score: StablefordScore | None = None,
         created_at: datetime.datetime | None = None,
+        slope_rating: Decimal | None = None,
+        course_rating: Decimal | None = None,
     ) -> Self:
         return cls(
             id=id,
@@ -46,6 +50,8 @@ class Round:
             player_handicap=player_handicap,
             stableford_score=stableford_score,
             created_at=created_at,
+            slope_rating=slope_rating,
+            course_rating=course_rating,
         )
 
     def __post_init__(self) -> None:
