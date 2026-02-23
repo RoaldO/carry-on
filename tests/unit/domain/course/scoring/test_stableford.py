@@ -3,6 +3,7 @@ from decimal import Decimal
 import allure
 
 from carry_on.domain.course.scoring.stableford import (
+    calculate_course_handicap,
     calculate_stableford,
     handicap_strokes_for_hole,
     stableford_points,
@@ -234,3 +235,147 @@ class TestCalculateStableford:
         )
         # Sum: 2+3+2+2+2+3+2+1+3+2+1+1+1+2+2+1+1+1 = 32
         assert result == StablefordScore(points=32)
+
+
+@allure.feature("Domain Model")
+@allure.story("Stableford Calculation - Course Handicap")
+class TestCalculateCourseHandicap:
+    """WHS Course Handicap formula.
+
+    Course Handicap = round(HI × (Slope / 113) + (CR - Par))
+    """
+
+    def test_standard_calculation(self) -> None:
+        """HI 18.4, Slope 125, CR 72.3, Par 72 → 21."""
+        result = calculate_course_handicap(
+            handicap_index=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+            par=72,
+        )
+        # 18.4 × (125/113) + (72.3 - 72) = 20.354 + 0.3 = 20.654 → 21
+        assert result == 21
+
+    def test_neutral_slope_and_cr_equals_par(self) -> None:
+        """Slope 113, CR = Par → Course Handicap ≈ Handicap Index."""
+        result = calculate_course_handicap(
+            handicap_index=Decimal("18.4"),
+            slope_rating=Decimal("113"),
+            course_rating=Decimal("72"),
+            par=72,
+        )
+        # 18.4 × (113/113) + (72 - 72) = 18.4 → 18
+        assert result == 18
+
+    def test_easy_course_fewer_strokes(self) -> None:
+        """Low slope and CR < Par → fewer strokes than handicap index."""
+        result = calculate_course_handicap(
+            handicap_index=Decimal("18.4"),
+            slope_rating=Decimal("90"),
+            course_rating=Decimal("68.5"),
+            par=72,
+        )
+        # 18.4 × (90/113) + (68.5 - 72) = 14.655 + (-3.5) = 11.155 → 11
+        assert result == 11
+
+    def test_scratch_golfer(self) -> None:
+        """Handicap 0 with CR > Par still gets positive course handicap."""
+        result = calculate_course_handicap(
+            handicap_index=Decimal("0"),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("73.2"),
+            par=72,
+        )
+        # 0 × (125/113) + (73.2 - 72) = 0 + 1.2 = 1.2 → 1
+        assert result == 1
+
+    def test_half_rounds_up(self) -> None:
+        """WHS rounds .5 up (ROUND_HALF_UP)."""
+        result = calculate_course_handicap(
+            handicap_index=Decimal("15"),
+            slope_rating=Decimal("113"),
+            course_rating=Decimal("72.5"),
+            par=72,
+        )
+        # 15 × 1.0 + 0.5 = 15.5 → 16 (rounds up)
+        assert result == 16
+
+
+@allure.feature("Domain Model")
+@allure.story("Stableford Calculation - With Course Handicap")
+class TestCalculateStablefordWithRatings:
+    """calculate_stableford() with slope/course rating uses Course Handicap."""
+
+    def test_with_ratings_uses_course_handicap(self) -> None:
+        """Slope 125, CR 72.3, Par 72: HI 18.4 → CH 21 instead of 18."""
+        holes = [
+            HoleResult(hole_number=i + 1, strokes=4, par=4, stroke_index=i + 1)
+            for i in range(18)
+        ]
+        # With CH 21: base=1, remainder=3 → SI 1-3 get 2 strokes, SI 4-18 get 1
+        # SI 1-3: net = 4-2 = 2 (eagle on par 4) → 4 pts each = 12
+        # SI 4-18: net = 4-1 = 3 (birdie on par 4) → 3 pts each = 45
+        # Total = 12 + 45 = 57
+        result = calculate_stableford(
+            holes=holes,
+            player_handicap=Decimal("18.4"),
+            num_holes=18,
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        assert result == StablefordScore(points=57)
+
+    def test_fallback_when_no_ratings(self) -> None:
+        """None ratings → uses handicap index directly (current behavior)."""
+        holes = [
+            HoleResult(hole_number=i + 1, strokes=4, par=4, stroke_index=i + 1)
+            for i in range(18)
+        ]
+        # Without ratings: HI 18.4 → rounds to 18 → 1 stroke per hole
+        # Net score: 4-1=3 (birdie) → 3 pts × 18 = 54
+        result = calculate_stableford(
+            holes=holes,
+            player_handicap=Decimal("18.4"),
+            num_holes=18,
+            slope_rating=None,
+            course_rating=None,
+        )
+        assert result == StablefordScore(points=54)
+
+    def test_partial_ratings_fall_back(self) -> None:
+        """Only slope but no course rating → fallback to direct handicap."""
+        holes = [
+            HoleResult(hole_number=i + 1, strokes=4, par=4, stroke_index=i + 1)
+            for i in range(18)
+        ]
+        result = calculate_stableford(
+            holes=holes,
+            player_handicap=Decimal("18.4"),
+            num_holes=18,
+            slope_rating=Decimal("125"),
+            course_rating=None,
+        )
+        # Partial ratings → fallback → same as no ratings
+        assert result == StablefordScore(points=54)
+
+    def test_neutral_ratings_match_no_ratings(self) -> None:
+        """Slope 113, CR = Par → same result as no ratings."""
+        holes = [
+            HoleResult(hole_number=i + 1, strokes=4, par=4, stroke_index=i + 1)
+            for i in range(18)
+        ]
+        result_with_neutral = calculate_stableford(
+            holes=holes,
+            player_handicap=Decimal("18.4"),
+            num_holes=18,
+            slope_rating=Decimal("113"),
+            course_rating=Decimal("72"),
+        )
+        result_without = calculate_stableford(
+            holes=holes,
+            player_handicap=Decimal("18.4"),
+            num_holes=18,
+            slope_rating=None,
+            course_rating=None,
+        )
+        assert result_with_neutral == result_without
