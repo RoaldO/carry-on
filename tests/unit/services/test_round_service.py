@@ -537,3 +537,47 @@ class TestRoundServiceStablefordScoring:
         assert isinstance(saved_round.stableford_score, StablefordScore)
         # Handicap 18 on 9 holes: 2 strokes each → net eagle → 4 pts × 9
         assert saved_round.stableford_score == StablefordScore(points=36)
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service - Slope & Course Rating")
+class TestRoundServiceRatings:
+    """Tests for slope/course rating pass-through in RoundService."""
+
+    def test_create_round_with_ratings(self) -> None:
+        """Should pass slope_rating and course_rating to Round."""
+        repository = MagicMock(spec=RoundRepository)
+        repository.save.return_value = RoundId(value="round-123")
+        player_repository = MagicMock(spec=PlayerRepository)
+        player_repository.find_by_user_id.return_value = None
+        service = RoundService(repository, player_repository)
+
+        service.create_round(
+            user_id="user123",
+            course_name="Hilly Links",
+            date="2026-02-01",
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+
+        round, _ = repository.save.call_args[0]
+        assert round.slope_rating == Decimal("125")
+        assert round.course_rating == Decimal("72.3")
+
+    def test_create_round_without_ratings_defaults_to_none(self) -> None:
+        """Should default to None when ratings not provided."""
+        repository = MagicMock(spec=RoundRepository)
+        repository.save.return_value = RoundId(value="round-123")
+        player_repository = MagicMock(spec=PlayerRepository)
+        player_repository.find_by_user_id.return_value = None
+        service = RoundService(repository, player_repository)
+
+        service.create_round(
+            user_id="user123",
+            course_name="Old Course",
+            date="2026-02-01",
+        )
+
+        round, _ = repository.save.call_args[0]
+        assert round.slope_rating is None
+        assert round.course_rating is None
