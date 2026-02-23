@@ -702,3 +702,97 @@ class TestMongoRoundRepositoryStablefordScore:
 
         assert result is not None
         assert result.stableford_score is None
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Slope & Course Rating")
+class TestMongoRoundRepositoryRatings:
+    """Tests for slope_rating and course_rating field persistence."""
+
+    def test_save_serializes_ratings_as_strings(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize Decimal ratings as strings."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=datetime.date(2026, 2, 1),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["slope_rating"] == "125"
+        assert doc["course_rating"] == "72.3"
+
+    def test_save_serializes_none_ratings(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize None ratings as None."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Old Course",
+            date=datetime.date(2026, 2, 1),
+        )
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["slope_rating"] is None
+        assert doc["course_rating"] is None
+
+    def test_find_deserializes_ratings_to_decimal(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize string ratings back to Decimal."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Hilly Links",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "slope_rating": "125",
+            "course_rating": "72.3",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.slope_rating == Decimal("125")
+        assert result.course_rating == Decimal("72.3")
+
+    def test_find_defaults_to_none_when_ratings_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Old documents without ratings should default to None."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Legacy Course",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "created_at": "2025-06-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.slope_rating is None
+        assert result.course_rating is None
