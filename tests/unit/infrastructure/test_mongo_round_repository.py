@@ -13,6 +13,7 @@ from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.course.value_objects.stableford_score import StablefordScore
 from carry_on.infrastructure.repositories.course.mongo_round_repository import (
     MongoRoundRepository,
 )
@@ -585,3 +586,119 @@ class TestMongoRoundRepositoryPlayerHandicap:
 
         assert result is not None
         assert result.player_handicap is None
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Stableford Score")
+class TestMongoRoundRepositoryStablefordScore:
+    """Tests for stableford_score field persistence."""
+
+    def test_save_serializes_stableford_score(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize StablefordScore as integer."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+        )
+        round_.stableford_score = StablefordScore(points=36)
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["stableford_score"] == 36
+
+    def test_save_serializes_none_stableford_score(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize None score as None."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+        )
+        # stableford_score defaults to None
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["stableford_score"] is None
+
+    def test_find_deserializes_stableford_score(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize integer back to StablefordScore."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "stableford_score": 36,
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.stableford_score == StablefordScore(points=36)
+
+    def test_find_deserializes_none_stableford_score(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize None score."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "stableford_score": None,
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.stableford_score is None
+
+    def test_find_defaults_to_none_when_stableford_score_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should default to None for old docs without stableford_score."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+            # No stableford_score field - old document
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.stableford_score is None

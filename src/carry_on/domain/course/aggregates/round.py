@@ -35,6 +35,7 @@ class Round:
         id: RoundId | None = None,
         status: RoundStatus = RoundStatus.IN_PROGRESS,
         player_handicap: Decimal | None = None,
+        stableford_score: StablefordScore | None = None,
         created_at: datetime.datetime | None = None,
     ) -> Self:
         return cls(
@@ -43,6 +44,7 @@ class Round:
             date=date,
             status=status,
             player_handicap=player_handicap,
+            stableford_score=stableford_score,
             created_at=created_at,
         )
 
