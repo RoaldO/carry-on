@@ -1,5 +1,6 @@
 """Tests for MongoCourseRepository."""
 
+from decimal import Decimal
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
@@ -298,3 +299,121 @@ class TestMongoCourseRepositoryMapping:
         assert retrieved.total_par == original.total_par
         for orig_hole, ret_hole in zip(original.holes, retrieved.holes):
             assert orig_hole == ret_hole
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Course Repository - Slope & Course Rating")
+class TestMongoCourseRepositoryRatings:
+    """Tests for slope_rating and course_rating serialization."""
+
+    def test_save_serializes_ratings_as_strings(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Ratings should be stored as strings in MongoDB."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        course = Course.create(
+            name="Hilly Links",
+            holes=_make_holes(18),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        repo.save(course, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["slope_rating"] == "125"
+        assert doc["course_rating"] == "72.3"
+
+    def test_save_serializes_none_ratings(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """None ratings should be stored as None."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        course = Course.create(name="Old Course", holes=_make_holes(9))
+        repo.save(course, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["slope_rating"] is None
+        assert doc["course_rating"] is None
+
+    def test_find_deserializes_ratings_to_decimal(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Stored string ratings should be deserialized to Decimal."""
+        doc_id = ObjectId()
+        collection.find_one.return_value = {
+            "_id": doc_id,
+            "name": "Hilly Links",
+            "holes": [
+                {"hole_number": i + 1, "par": 4, "stroke_index": i + 1}
+                for i in range(18)
+            ],
+            "slope_rating": "125",
+            "course_rating": "72.3",
+            "created_at": "2026-01-15T10:00:00",
+            "user_id": "user123",
+        }
+
+        course = repo.find_by_id(CourseId(value=str(doc_id)), user_id="user123")
+
+        assert course is not None
+        assert course.slope_rating == Decimal("125")
+        assert course.course_rating == Decimal("72.3")
+
+    def test_old_documents_without_ratings_default_to_none(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Documents created before ratings were added default to None."""
+        doc_id = ObjectId()
+        collection.find_one.return_value = {
+            "_id": doc_id,
+            "name": "Legacy Course",
+            "holes": [
+                {"hole_number": i + 1, "par": 4, "stroke_index": i + 1}
+                for i in range(9)
+            ],
+            "created_at": "2025-06-01T10:00:00",
+            "user_id": "user123",
+        }
+
+        course = repo.find_by_id(CourseId(value=str(doc_id)), user_id="user123")
+
+        assert course is not None
+        assert course.slope_rating is None
+        assert course.course_rating is None
+
+    def test_roundtrip_preserves_ratings(
+        self,
+        collection: Collection[Any],
+        repo: MongoCourseRepository,
+    ) -> None:
+        """Ratings should survive a save/load roundtrip."""
+        inserted_id = ObjectId()
+        collection.insert_one.return_value = Mock(inserted_id=inserted_id)
+
+        original = Course.create(
+            name="Rated Course",
+            holes=_make_holes(18),
+            slope_rating=Decimal("131"),
+            course_rating=Decimal("74.1"),
+        )
+        repo.save(original, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        doc["_id"] = inserted_id
+
+        collection.find_one.return_value = doc
+        retrieved = repo.find_by_id(CourseId(value=str(inserted_id)), user_id="user123")
+
+        assert retrieved is not None
+        assert retrieved.slope_rating == Decimal("131")
+        assert retrieved.course_rating == Decimal("74.1")
