@@ -11,6 +11,7 @@ from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.course.value_objects.stableford_score import StablefordScore
 from carry_on.domain.player.entities.player import Player, PlayerId
 from carry_on.domain.player.repositories.player_repository import PlayerRepository
 from carry_on.domain.player.value_objects.handicap import Handicap
@@ -498,3 +499,41 @@ class TestRoundServiceHandicapSnapshot:
 
         round, _ = repository.save.call_args[0]
         assert round.player_handicap is None
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service - Stableford Scoring")
+class TestRoundServiceStablefordScoring:
+    """Tests for Stableford score calculation through service layer."""
+
+    def test_finish_round_stores_stableford_score(self) -> None:
+        """Finishing a round via the service should calculate and save the score."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+            player_handicap=Decimal("18"),
+        )
+        for i in range(1, 10):
+            existing_round.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
+        service.update_round_status(
+            user_id="user123",
+            round_id=round_id,
+            action="finish",
+        )
+
+        saved_round, _ = repository.save.call_args[0]
+        assert saved_round.stableford_score is not None
+        assert isinstance(saved_round.stableford_score, StablefordScore)
+        # Handicap 18 on 9 holes: 2 strokes each → net eagle → 4 pts × 9
+        assert saved_round.stableford_score == StablefordScore(points=36)
