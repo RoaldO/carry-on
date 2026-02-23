@@ -1,5 +1,7 @@
 """API endpoints for round management."""
 
+from decimal import Decimal
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -28,6 +30,8 @@ class RoundCreateRequest(BaseModel):
     course_name: str
     date: str
     holes: list[HoleResultRequest] = []
+    slope_rating: str | None = None
+    course_rating: str | None = None
 
 
 @app.post("/api/rounds")
@@ -44,6 +48,16 @@ async def create_round(
             course_name=round_data.course_name,
             date=round_data.date,
             holes=[h.model_dump() for h in round_data.holes],
+            slope_rating=(
+                Decimal(round_data.slope_rating)
+                if round_data.slope_rating is not None
+                else None
+            ),
+            course_rating=(
+                Decimal(round_data.course_rating)
+                if round_data.course_rating is not None
+                else None
+            ),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

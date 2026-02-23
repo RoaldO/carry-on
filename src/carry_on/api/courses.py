@@ -1,5 +1,7 @@
 """API endpoints for course management."""
 
+from decimal import Decimal
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -19,6 +21,8 @@ class HoleRequest(BaseModel):
 class CourseCreateRequest(BaseModel):
     name: str
     holes: list[HoleRequest]
+    slope_rating: str | None = None
+    course_rating: str | None = None
 
 
 @app.post("/api/courses")
@@ -34,6 +38,16 @@ async def create_course(
             user_id=user.id,
             name=course.name,
             holes=[h.model_dump() for h in course.holes],
+            slope_rating=(
+                Decimal(course.slope_rating)
+                if course.slope_rating is not None
+                else None
+            ),
+            course_rating=(
+                Decimal(course.course_rating)
+                if course.course_rating is not None
+                else None
+            ),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -61,6 +75,12 @@ async def get_course_detail(
         "name": course.name,
         "number_of_holes": course.number_of_holes,
         "total_par": course.total_par,
+        "slope_rating": (
+            str(course.slope_rating) if course.slope_rating is not None else None
+        ),
+        "course_rating": (
+            str(course.course_rating) if course.course_rating is not None else None
+        ),
         "holes": [
             {
                 "hole_number": h.hole_number,

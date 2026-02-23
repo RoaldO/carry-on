@@ -35,6 +35,9 @@ class FakeRoundRepository:
                 id=round_id,
                 status=round.status,
                 player_handicap=round.player_handicap,
+                stableford_score=round.stableford_score,
+                slope_rating=round.slope_rating,
+                course_rating=round.course_rating,
             )
             for hole in round.holes:
                 saved_round.record_hole(hole)
@@ -50,6 +53,9 @@ class FakeRoundRepository:
                         id=round.id,
                         status=round.status,
                         player_handicap=round.player_handicap,
+                        stableford_score=round.stableford_score,
+                        slope_rating=round.slope_rating,
+                        course_rating=round.course_rating,
                     )
                     for hole in round.holes:
                         saved_round.record_hole(hole)
@@ -62,6 +68,9 @@ class FakeRoundRepository:
                 id=round.id,
                 status=round.status,
                 player_handicap=round.player_handicap,
+                stableford_score=round.stableford_score,
+                slope_rating=round.slope_rating,
+                course_rating=round.course_rating,
             )
             for hole in round.holes:
                 saved_round.record_hole(hole)

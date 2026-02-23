@@ -31,6 +31,8 @@ class FakeCourseRepository:
             name=course.name,
             holes=course.holes,
             id=course_id,
+            slope_rating=course.slope_rating,
+            course_rating=course.course_rating,
         )
         self._courses.append((saved_course, user_id))
         return course_id
