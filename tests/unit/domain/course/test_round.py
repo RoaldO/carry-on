@@ -536,3 +536,63 @@ class TestRoundSlopeAndCourseRating:
         )
         assert round_.slope_rating == Decimal("113")
         assert round_.course_rating is None
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Finish with Course Handicap")
+class TestRoundFinishWithRatings:
+    """finish() should use Course Handicap when ratings are available."""
+
+    def test_finish_with_ratings_uses_course_handicap(self) -> None:
+        """Slope 125, CR 72.3, Par 72: HI 18.4 → CH 21."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        # 18 par-4 holes, all 4 strokes (gross par)
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # CH 21: base=1, remainder=3 → SI 1-3 get 2, SI 4-18 get 1
+        # SI 1-3: net 4-2=2, eagle → 4 pts × 3 = 12
+        # SI 4-18: net 4-1=3, birdie → 3 pts × 15 = 45
+        # Total = 57
+        assert round_.stableford_score == StablefordScore(points=57)
+
+    def test_finish_without_ratings_uses_handicap_directly(self) -> None:
+        """No ratings → fall back to handicap index (same as before)."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # HI 18.4 rounds to 18: 1 stroke per hole
+        # Net 4-1=3, birdie → 3 pts × 18 = 54
+        assert round_.stableford_score == StablefordScore(points=54)
+
+    def test_finish_with_partial_ratings_falls_back(self) -> None:
+        """Only slope, no course rating → fallback to direct handicap."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=None,
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # Partial ratings → fallback → same as no ratings: 54 points
+        assert round_.stableford_score == StablefordScore(points=54)
