@@ -22,6 +22,8 @@ class CoursePage:
         # Course form
         self.course_form = page.locator("#courseForm")
         self.course_name_input = page.locator("#courseName")
+        self.slope_rating_input = page.locator("#slopeRating")
+        self.course_rating_input = page.locator("#courseRating")
         self.holes_9_button = page.locator("#holes9Btn")
         self.holes_18_button = page.locator("#holes18Btn")
         self.hole_details_table = page.locator("#holeDetailsTable")
@@ -47,6 +49,14 @@ class CoursePage:
     def enter_course_name(self, name: str) -> None:
         """Enter the course name."""
         self.course_name_input.fill(name)
+
+    def enter_slope_rating(self, value: str) -> None:
+        """Enter a slope rating value."""
+        self.slope_rating_input.fill(value)
+
+    def enter_course_rating(self, value: str) -> None:
+        """Enter a course rating value."""
+        self.course_rating_input.fill(value)
 
     def select_hole_count(self, count: int) -> None:
         """Select 9 or 18 holes."""
@@ -77,6 +87,22 @@ class CoursePage:
     def wait_for_course_in_list(self, name: str) -> None:
         """Wait for a course to appear in the list."""
         self.course_list.locator(f"text={name}").wait_for(state="visible")
+
+    def get_course_slope_rating(self, name: str) -> str | None:
+        """Get the slope rating displayed for a course."""
+        card = self.course_list.locator(f".course-card:has-text('{name}')")
+        slope_el = card.locator(".course-slope-rating")
+        if slope_el.is_visible():
+            return slope_el.text_content()
+        return None
+
+    def get_course_course_rating(self, name: str) -> str | None:
+        """Get the course rating displayed for a course."""
+        card = self.course_list.locator(f".course-card:has-text('{name}')")
+        cr_el = card.locator(".course-course-rating")
+        if cr_el.is_visible():
+            return cr_el.text_content()
+        return None
 
     def has_form_error(self) -> bool:
         """Check if a form error message is visible."""
