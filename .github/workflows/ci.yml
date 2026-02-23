@@ -105,7 +105,7 @@ jobs:
           path: allure-results/
 
       - name: Restore Allure history cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: allure-history
           key: allure-history-${{ github.ref_name }}
@@ -139,7 +139,7 @@ jobs:
           fi
 
       - name: Save Allure history cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:
           path: allure-history
