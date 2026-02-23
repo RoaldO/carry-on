@@ -7,6 +7,7 @@ import pytest
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.course.value_objects.stableford_score import StablefordScore
 
 
 @allure.feature("Domain Model")
@@ -418,3 +419,84 @@ class TestRoundStatus:
             )
         assert round5.status == RoundStatus.IN_PROGRESS
         assert len(round5.holes) == 5
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Stableford Scoring")
+class TestRoundStablefordScore:
+    """Tests for Stableford score calculation on round finalization."""
+
+    def test_round_defaults_stableford_score_to_none(self) -> None:
+        """A new round should not have a Stableford score yet."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+        )
+        assert round_.stableford_score is None
+
+    def test_finish_calculates_stableford_with_handicap(self) -> None:
+        """Finishing a round with a handicap should calculate the score."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+        )
+        # 9 holes, all par 4 with 4 strokes (gross par)
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # Handicap 18 on 9 holes: 18//9=2 base, 0 remainder → 2 strokes each
+        # Net: 4 - 2 = 2 on par 4 → net eagle → 4 pts × 9 = 36
+        assert round_.stableford_score == StablefordScore(points=36)
+
+    def test_finish_uses_default_54_when_no_handicap(self) -> None:
+        """No handicap stored → default to 54 (WHS maximum)."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=None,
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # Handicap 54 on 9 holes: 54//9=6 base, 0 remainder → 6 strokes each
+        # Net: 4 - 6 = -2 on par 4 → 2-(-2-4)= 2-(-6)=8? No...
+        # max(0, 2 - (net - par)) = max(0, 2 - (-2 - 4)) = max(0, 2-(-6)) = 8
+        # But that's wrong - let me recalculate.
+        # net = strokes - handicap_strokes = 4 - 6 = -2
+        # points = max(0, 2 - (net - par)) = max(0, 2 - (-2 - 4)) = max(0, 8) = 8
+        # 8 pts × 9 = 72
+        assert round_.stableford_score == StablefordScore(points=72)
+
+    def test_finish_18_holes_calculates_stableford(self) -> None:
+        """Full 18-hole round should calculate Stableford correctly."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("0"),
+        )
+        # All par 4, all 4 strokes → scratch par → 2 pts each
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.stableford_score == StablefordScore(points=36)
+
+    def test_stableford_score_not_set_before_finish(self) -> None:
+        """Score should remain None until finish() is called."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        # Not yet finished
+        assert round_.stableford_score is None

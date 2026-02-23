@@ -5,8 +5,10 @@ from decimal import Decimal
 from typing import Self
 
 from carry_on.domain.core.value_objects.identifier import Identifier
+from carry_on.domain.course.scoring.stableford import calculate_stableford
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.course.value_objects.stableford_score import StablefordScore
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,6 +24,7 @@ class Round:
     holes: list[HoleResult] = field(default_factory=list)
     status: RoundStatus = RoundStatus.IN_PROGRESS
     player_handicap: Decimal | None = None
+    stableford_score: StablefordScore | None = None
     created_at: datetime.datetime | None = None
 
     @classmethod
@@ -75,8 +78,13 @@ class Round:
         """True when all 18 holes are recorded."""
         return len(self.holes) == 18
 
+    _DEFAULT_HANDICAP: Decimal = Decimal("54")
+
     def finish(self) -> None:
-        """Mark the round as finished.
+        """Mark the round as finished and calculate Stableford score.
+
+        Uses the player's handicap to compute the Stableford score.
+        When no handicap is stored, defaults to 54 (WHS maximum).
 
         Raises:
             ValueError: If the round is already finished.
@@ -84,8 +92,19 @@ class Round:
         """
         if self.status == RoundStatus.FINISHED:
             raise ValueError("Round is already finished")
-        if len(self.holes) not in (9, 18):
+        num_holes = len(self.holes)
+        if num_holes not in (9, 18):
             raise ValueError("Round must have either 9 or 18 holes to finish")
+        handicap = (
+            self.player_handicap
+            if self.player_handicap is not None
+            else self._DEFAULT_HANDICAP
+        )
+        self.stableford_score = calculate_stableford(
+            holes=self.holes,
+            player_handicap=handicap,
+            num_holes=num_holes,
+        )
         self.status = RoundStatus.FINISHED
 
     def abort(self) -> None:
