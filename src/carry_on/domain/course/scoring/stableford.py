@@ -57,22 +57,67 @@ def stableford_points(strokes: int, par: int, handicap_strokes: int) -> int:
     return max(0, 2 - (net - par))
 
 
+def calculate_course_handicap(
+    handicap_index: Decimal,
+    slope_rating: Decimal,
+    course_rating: Decimal,
+    par: int,
+) -> int:
+    """Calculate Course Handicap using the WHS formula.
+
+    Course Handicap = round(HI × (Slope / 113) + (CR - Par))
+
+    Args:
+        handicap_index: The player's handicap index.
+        slope_rating: The course's slope rating (55-155).
+        course_rating: The course's rating for scratch golfer.
+        par: Total par of the course.
+
+    Returns:
+        The integer Course Handicap (rounded half-up).
+    """
+    neutral_slope = Decimal("113")
+    raw = handicap_index * (slope_rating / neutral_slope) + (
+        course_rating - Decimal(par)
+    )
+    return int(raw.to_integral_value(rounding=ROUND_HALF_UP))
+
+
 def calculate_stableford(
     holes: list[HoleResult],
     player_handicap: Decimal,
     num_holes: int,
+    slope_rating: Decimal | None = None,
+    course_rating: Decimal | None = None,
 ) -> StablefordScore:
     """Calculate the total Stableford score for a round.
 
+    When slope_rating and course_rating are both provided, the WHS
+    Course Handicap formula is used. Otherwise falls back to rounding
+    the handicap index directly (equivalent to Slope=113, CR=Par).
+
     Args:
         holes: List of hole results with strokes, par, and stroke_index.
-        player_handicap: The player's handicap index (Decimal, rounded to int).
+        player_handicap: The player's handicap index (Decimal).
         num_holes: Number of holes on the course (9 or 18).
+        slope_rating: Optional course slope rating.
+        course_rating: Optional course rating.
 
     Returns:
         A StablefordScore value object with the total points.
     """
-    playing_handicap = int(player_handicap.to_integral_value(rounding=ROUND_HALF_UP))
+    if slope_rating is not None and course_rating is not None:
+        par = sum(h.par for h in holes)
+        playing_handicap = calculate_course_handicap(
+            handicap_index=player_handicap,
+            slope_rating=slope_rating,
+            course_rating=course_rating,
+            par=par,
+        )
+    else:
+        playing_handicap = int(
+            player_handicap.to_integral_value(rounding=ROUND_HALF_UP)
+        )
 
     total = 0
     for hole in holes:
