@@ -73,40 +73,40 @@ class TestStablefordPoints:
 
     def test_net_par_scores_two_points(self) -> None:
         """Par 4, 4 strokes, 0 handicap strokes → net par → 2 pts."""
-        assert stableford_points(strokes=4, par=4, handicap_strokes=0) == 2
+        assert stableford_points(gross_strokes=4, par=4, handicap_strokes=0) == 2
 
     def test_net_bogey_scores_one_point(self) -> None:
         """Par 4, 5 strokes, 0 handicap strokes → net bogey → 1 pt."""
-        assert stableford_points(strokes=5, par=4, handicap_strokes=0) == 1
+        assert stableford_points(gross_strokes=5, par=4, handicap_strokes=0) == 1
 
     def test_net_birdie_scores_three_points(self) -> None:
         """Par 4, 3 strokes, 0 handicap strokes → net birdie → 3 pts."""
-        assert stableford_points(strokes=3, par=4, handicap_strokes=0) == 3
+        assert stableford_points(gross_strokes=3, par=4, handicap_strokes=0) == 3
 
     def test_net_eagle_scores_four_points(self) -> None:
         """Par 4, 2 strokes, 0 handicap strokes → net eagle → 4 pts."""
-        assert stableford_points(strokes=2, par=4, handicap_strokes=0) == 4
+        assert stableford_points(gross_strokes=2, par=4, handicap_strokes=0) == 4
 
     def test_net_double_bogey_or_worse_scores_zero(self) -> None:
         """Par 4, 6+ strokes, 0 handicap → net double bogey+ → 0 pts."""
-        assert stableford_points(strokes=6, par=4, handicap_strokes=0) == 0
-        assert stableford_points(strokes=10, par=4, handicap_strokes=0) == 0
+        assert stableford_points(gross_strokes=6, par=4, handicap_strokes=0) == 0
+        assert stableford_points(gross_strokes=10, par=4, handicap_strokes=0) == 0
 
     def test_handicap_strokes_improve_net_score(self) -> None:
         """Par 4, 5 gross strokes, 1 handicap stroke → net par → 2 pts."""
-        assert stableford_points(strokes=5, par=4, handicap_strokes=1) == 2
+        assert stableford_points(gross_strokes=5, par=4, handicap_strokes=1) == 2
 
     def test_two_handicap_strokes(self) -> None:
         """Par 4, 6 gross strokes, 2 handicap strokes → net par → 2 pts."""
-        assert stableford_points(strokes=6, par=4, handicap_strokes=2) == 2
+        assert stableford_points(gross_strokes=6, par=4, handicap_strokes=2) == 2
 
     def test_par_3_with_handicap(self) -> None:
         """Par 3, 4 gross strokes, 1 handicap stroke → net par → 2 pts."""
-        assert stableford_points(strokes=4, par=3, handicap_strokes=1) == 2
+        assert stableford_points(gross_strokes=4, par=3, handicap_strokes=1) == 2
 
     def test_par_5_net_birdie(self) -> None:
         """Par 5, 5 gross strokes, 1 handicap stroke → net birdie → 3 pts."""
-        assert stableford_points(strokes=5, par=5, handicap_strokes=1) == 3
+        assert stableford_points(gross_strokes=5, par=5, handicap_strokes=1) == 3
 
 
 @allure.feature("Domain Model")

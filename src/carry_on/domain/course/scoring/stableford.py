@@ -33,7 +33,7 @@ def handicap_strokes_for_hole(
     return base + (1 if stroke_index <= remainder else 0)
 
 
-def stableford_points(strokes: int, par: int, handicap_strokes: int) -> int:
+def stableford_points(gross_strokes: int, par: int, handicap_strokes: int) -> int:
     """Calculate Stableford points for a single hole.
 
     Points are based on the net score (gross strokes minus handicap strokes)
@@ -46,14 +46,14 @@ def stableford_points(strokes: int, par: int, handicap_strokes: int) -> int:
         Net albatross → 5
 
     Args:
-        strokes: Gross strokes taken on the hole.
+        gross_strokes: Gross strokes taken on the hole.
         par: The hole's par.
         handicap_strokes: Handicap strokes the player receives on this hole.
 
     Returns:
         Stableford points (0 or more).
     """
-    net = strokes - handicap_strokes
+    net = gross_strokes - handicap_strokes
     return max(0, 2 - (net - par))
 
 
@@ -127,7 +127,7 @@ def calculate_stableford(
             num_holes=num_holes,
         )
         total += stableford_points(
-            strokes=hole.strokes,
+            gross_strokes=hole.strokes,
             par=hole.par,
             handicap_strokes=strokes_for_hole,
         )
