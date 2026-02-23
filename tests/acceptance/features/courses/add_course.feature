@@ -29,3 +29,15 @@ Feature: Add a Golf Course
     And I submit the course form
     And I reload the courses page
     Then I should see "Reload Course" in the course list
+
+  Scenario: Add a course with slope and course rating
+    When I click the add course button
+    And I enter course name "Hilly Links"
+    And I enter slope rating "125"
+    And I enter course rating "72.3"
+    And I select 9 holes
+    And I fill in the hole details for 9 holes
+    And I submit the course form
+    Then I should see "Hilly Links" in the course list
+    And "Hilly Links" should show slope rating "125"
+    And "Hilly Links" should show course rating "72.3"

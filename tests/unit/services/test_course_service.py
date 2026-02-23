@@ -1,5 +1,6 @@
 """Tests for CourseService."""
 
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import allure
@@ -220,3 +221,43 @@ class TestCourseServiceGetUserCourses:
         result = service.get_user_courses("user123")
 
         assert result == []
+
+
+@allure.feature("Application Services")
+@allure.story("Course Service - Slope & Course Rating")
+class TestCourseServiceRatings:
+    """Tests for slope/course rating pass-through in CourseService."""
+
+    def test_add_course_with_ratings(self) -> None:
+        """Should pass slope_rating and course_rating to Course."""
+        repository = MagicMock(spec=CourseRepository)
+        repository.save.return_value = CourseId(value="course-123")
+        service = CourseService(repository)
+
+        service.add_course(
+            user_id="user123",
+            name="Hilly Links",
+            holes=_sample_holes_dicts(18),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+
+        course, _ = repository.save.call_args[0]
+        assert course.slope_rating == Decimal("125")
+        assert course.course_rating == Decimal("72.3")
+
+    def test_add_course_without_ratings_defaults_to_none(self) -> None:
+        """Should default to None when ratings are not provided."""
+        repository = MagicMock(spec=CourseRepository)
+        repository.save.return_value = CourseId(value="course-123")
+        service = CourseService(repository)
+
+        service.add_course(
+            user_id="user123",
+            name="Old Course",
+            holes=_sample_holes_dicts(9),
+        )
+
+        course, _ = repository.save.call_args[0]
+        assert course.slope_rating is None
+        assert course.course_rating is None

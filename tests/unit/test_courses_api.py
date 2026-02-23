@@ -1,5 +1,6 @@
 """Tests for courses API using dependency injection."""
 
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import allure
@@ -270,3 +271,101 @@ class TestCoursesWithDependencyInjection:
         response = client.get("/api/courses/some-id")
 
         assert response.status_code == 401
+
+
+@allure.feature("REST API")
+@allure.story("Courses API - Slope & Course Rating")
+class TestCoursesAPIRatings:
+    """Tests for slope/course rating in courses API."""
+
+    def test_post_course_with_ratings(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/courses with ratings should store them."""
+        response = client.post(
+            "/api/courses",
+            json={
+                "name": "Hilly Links",
+                "holes": _sample_holes(18),
+                "slope_rating": "125",
+                "course_rating": "72.3",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        saved_course, _ = override_course_repo.courses[0]
+        assert saved_course.slope_rating == Decimal("125")
+        assert saved_course.course_rating == Decimal("72.3")
+
+    def test_post_course_without_ratings_defaults_to_none(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/courses without ratings should default to None."""
+        response = client.post(
+            "/api/courses",
+            json={"name": "Old Course", "holes": _sample_holes(9)},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        saved_course, _ = override_course_repo.courses[0]
+        assert saved_course.slope_rating is None
+        assert saved_course.course_rating is None
+
+    def test_get_course_detail_includes_ratings(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/courses/{id} should include ratings in response."""
+        create_resp = client.post(
+            "/api/courses",
+            json={
+                "name": "Hilly Links",
+                "holes": _sample_holes(18),
+                "slope_rating": "125",
+                "course_rating": "72.3",
+            },
+            headers=auth_headers,
+        )
+        course_id = create_resp.json()["id"]
+
+        response = client.get(f"/api/courses/{course_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["slope_rating"] == "125"
+        assert data["course_rating"] == "72.3"
+
+    def test_get_course_detail_returns_null_ratings(
+        self,
+        client: TestClient,
+        override_course_repo: FakeCourseRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/courses/{id} without ratings returns null."""
+        create_resp = client.post(
+            "/api/courses",
+            json={"name": "Old Course", "holes": _sample_holes(9)},
+            headers=auth_headers,
+        )
+        course_id = create_resp.json()["id"]
+
+        response = client.get(f"/api/courses/{course_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["slope_rating"] is None
+        assert data["course_rating"] is None

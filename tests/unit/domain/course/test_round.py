@@ -7,6 +7,7 @@ import pytest
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.course.value_objects.stableford_score import StablefordScore
 
 
 @allure.feature("Domain Model")
@@ -418,3 +419,180 @@ class TestRoundStatus:
             )
         assert round5.status == RoundStatus.IN_PROGRESS
         assert len(round5.holes) == 5
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Stableford Scoring")
+class TestRoundStablefordScore:
+    """Tests for Stableford score calculation on round finalization."""
+
+    def test_round_defaults_stableford_score_to_none(self) -> None:
+        """A new round should not have a Stableford score yet."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+        )
+        assert round_.stableford_score is None
+
+    def test_finish_calculates_stableford_with_handicap(self) -> None:
+        """Finishing a round with a handicap should calculate the score."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+        )
+        # 9 holes, all par 4 with 4 strokes (gross par)
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # Handicap 18 on 9 holes: 18//9=2 base, 0 remainder → 2 strokes each
+        # Net: 4 - 2 = 2 on par 4 → net eagle → 4 pts × 9 = 36
+        assert round_.stableford_score == StablefordScore(points=36)
+
+    def test_finish_uses_default_54_when_no_handicap(self) -> None:
+        """No handicap stored → default to 54 (WHS maximum)."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=None,
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # Handicap 54 on 9 holes: 54//9=6 base, 0 remainder → 6 strokes each
+        # Net: 4 - 6 = -2 on par 4 → 2-(-2-4)= 2-(-6)=8? No...
+        # max(0, 2 - (net - par)) = max(0, 2 - (-2 - 4)) = max(0, 2-(-6)) = 8
+        # But that's wrong - let me recalculate.
+        # net = strokes - handicap_strokes = 4 - 6 = -2
+        # points = max(0, 2 - (net - par)) = max(0, 2 - (-2 - 4)) = max(0, 8) = 8
+        # 8 pts × 9 = 72
+        assert round_.stableford_score == StablefordScore(points=72)
+
+    def test_finish_18_holes_calculates_stableford(self) -> None:
+        """Full 18-hole round should calculate Stableford correctly."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("0"),
+        )
+        # All par 4, all 4 strokes → scratch par → 2 pts each
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.stableford_score == StablefordScore(points=36)
+
+    def test_stableford_score_not_set_before_finish(self) -> None:
+        """Score should remain None until finish() is called."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        # Not yet finished
+        assert round_.stableford_score is None
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Slope & Course Rating")
+class TestRoundSlopeAndCourseRating:
+    """Tests for slope/course rating snapshots on Round."""
+
+    def test_round_defaults_ratings_to_none(self) -> None:
+        """Ratings default to None when not provided."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+        )
+        assert round_.slope_rating is None
+        assert round_.course_rating is None
+
+    def test_create_round_with_ratings(self) -> None:
+        """Round created with ratings should store them."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        assert round_.slope_rating == Decimal("125")
+        assert round_.course_rating == Decimal("72.3")
+
+    def test_create_round_with_only_slope_rating(self) -> None:
+        """Providing only slope_rating is valid."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            slope_rating=Decimal("113"),
+        )
+        assert round_.slope_rating == Decimal("113")
+        assert round_.course_rating is None
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Finish with Course Handicap")
+class TestRoundFinishWithRatings:
+    """finish() should use Course Handicap when ratings are available."""
+
+    def test_finish_with_ratings_uses_course_handicap(self) -> None:
+        """Slope 125, CR 72.3, Par 72: HI 18.4 → CH 21."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        # 18 par-4 holes, all 4 strokes (gross par)
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # CH 21: base=1, remainder=3 → SI 1-3 get 2, SI 4-18 get 1
+        # SI 1-3: net 4-2=2, eagle → 4 pts × 3 = 12
+        # SI 4-18: net 4-1=3, birdie → 3 pts × 15 = 45
+        # Total = 57
+        assert round_.stableford_score == StablefordScore(points=57)
+
+    def test_finish_without_ratings_uses_handicap_directly(self) -> None:
+        """No ratings → fall back to handicap index (same as before)."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # HI 18.4 rounds to 18: 1 stroke per hole
+        # Net 4-1=3, birdie → 3 pts × 18 = 54
+        assert round_.stableford_score == StablefordScore(points=54)
+
+    def test_finish_with_partial_ratings_falls_back(self) -> None:
+        """Only slope, no course rating → fallback to direct handicap."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=None,
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # Partial ratings → fallback → same as no ratings: 54 points
+        assert round_.stableford_score == StablefordScore(points=54)

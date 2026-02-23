@@ -10,6 +10,7 @@ from pymongo.collection import Collection
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
+from carry_on.domain.course.value_objects.stableford_score import StablefordScore
 
 
 class HoleResultDoc(TypedDict):
@@ -26,6 +27,9 @@ class RoundDoc(TypedDict):
     holes: list[HoleResultDoc]
     status: NotRequired[str]  # For backward compatibility with old documents
     player_handicap: NotRequired[str | None]
+    stableford_score: NotRequired[int | None]
+    slope_rating: NotRequired[str | None]
+    course_rating: NotRequired[str | None]
     created_at: str
     user_id: str
 
@@ -118,6 +122,17 @@ class MongoRoundRepository:
                 if round.player_handicap is not None
                 else None
             ),
+            "stableford_score": (
+                round.stableford_score.points
+                if round.stableford_score is not None
+                else None
+            ),
+            "slope_rating": (
+                str(round.slope_rating) if round.slope_rating is not None else None
+            ),
+            "course_rating": (
+                str(round.course_rating) if round.course_rating is not None else None
+            ),
             "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
             "user_id": user_id,
         }
@@ -125,6 +140,9 @@ class MongoRoundRepository:
     def _to_entity(self, doc: RoundDoc) -> Round:
         """Map MongoDB document to domain aggregate."""
         raw_handicap = doc.get("player_handicap")
+        raw_score = doc.get("stableford_score")
+        raw_slope = doc.get("slope_rating")
+        raw_cr = doc.get("course_rating")
         round = Round.create(
             course_name=doc.get("course_name", "Unknown Course"),
             date=datetime.date.fromisoformat(doc["date"]),
@@ -135,11 +153,16 @@ class MongoRoundRepository:
             player_handicap=(
                 Decimal(raw_handicap) if raw_handicap is not None else None
             ),
+            stableford_score=(
+                StablefordScore(points=raw_score) if raw_score is not None else None
+            ),
             created_at=(
                 datetime.datetime.fromisoformat(doc["created_at"])
                 if "created_at" in doc
                 else None
             ),
+            slope_rating=(Decimal(raw_slope) if raw_slope is not None else None),
+            course_rating=(Decimal(raw_cr) if raw_cr is not None else None),
         )
         for h in doc["holes"]:
             round.record_hole(

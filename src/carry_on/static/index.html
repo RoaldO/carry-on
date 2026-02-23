@@ -718,6 +718,16 @@
             </div>
 
             <div class="form-group">
+                <label for="slopeRating">Slope Rating</label>
+                <input type="number" id="slopeRating" placeholder="113" min="55" max="155" step="1">
+            </div>
+
+            <div class="form-group">
+                <label for="courseRating">Course Rating</label>
+                <input type="number" id="courseRating" placeholder="72.0" min="1" max="200" step="0.1">
+            </div>
+
+            <div class="form-group">
                 <label>Number of Holes</label>
                 <div class="hole-count-toggle">
                     <button type="button" id="holes9Btn" class="hole-count-btn active" onclick="setHoleCount(9)">9 Holes</button>
@@ -1454,6 +1464,8 @@
             document.getElementById('courseListView').style.display = 'none';
             document.getElementById('courseForm').style.display = 'block';
             document.getElementById('courseName').value = '';
+            document.getElementById('slopeRating').value = '';
+            document.getElementById('courseRating').value = '';
             document.getElementById('courseFormError').style.display = 'none';
             setHoleCount(9);
         }
@@ -1529,6 +1541,12 @@
                 });
             }
 
+            const slopeVal = document.getElementById('slopeRating').value;
+            const crVal = document.getElementById('courseRating').value;
+            const body = { name, holes };
+            if (slopeVal) body.slope_rating = slopeVal;
+            if (crVal) body.course_rating = crVal;
+
             const saveBtn = document.getElementById('saveCourseBtn');
             saveBtn.disabled = true;
 
@@ -1539,7 +1557,7 @@
                         'Content-Type': 'application/json',
                         ...getAuthHeaders()
                     },
-                    body: JSON.stringify({ name, holes })
+                    body: JSON.stringify(body)
                 });
 
                 if (response.ok) {
@@ -1574,14 +1592,23 @@
                     return;
                 }
 
-                courseList.innerHTML = data.courses.map(course => `
+                courseList.innerHTML = data.courses.map(course => {
+                    let info = `${course.number_of_holes} holes &middot; Par ${course.total_par}`;
+                    if (course.slope_rating) {
+                        info += ` &middot; Slope <span class="course-slope-rating">${course.slope_rating}</span>`;
+                    }
+                    if (course.course_rating) {
+                        info += ` &middot; CR <span class="course-course-rating">${course.course_rating}</span>`;
+                    }
+                    return `
                     <div class="course-card">
                         <div>
                             <div class="course-name">${course.name}</div>
-                            <div class="course-info">${course.number_of_holes} holes &middot; Par ${course.total_par}</div>
+                            <div class="course-info">${info}</div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (err) {
                 courseList.innerHTML = '<div class="empty-state">Could not load courses</div>';
             }
@@ -1664,7 +1691,9 @@
                     body: JSON.stringify({
                         course_name: selectedCourse.name,
                         date: roundDate,
-                        holes: []  // Empty holes for incremental workflow
+                        holes: [],  // Empty holes for incremental workflow
+                        slope_rating: selectedCourse.slope_rating || null,
+                        course_rating: selectedCourse.course_rating || null
                     })
                 });
 

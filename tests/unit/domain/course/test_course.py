@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import allure
 import pytest
 
@@ -126,3 +128,82 @@ class TestCourseProperties:
         holes = _make_holes(9)
         course = Course.create(name="Short Course", holes=holes)
         assert course.number_of_holes == 9
+
+
+@allure.feature("Domain Model")
+@allure.story("Course Aggregate - Slope & Course Rating")
+class TestCourseSlopeAndCourseRating:
+    def test_create_course_with_ratings(self) -> None:
+        """Should store slope and course rating on creation."""
+        holes = _make_holes(18)
+        course = Course.create(
+            name="Hilly Links",
+            holes=holes,
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        assert course.slope_rating == Decimal("125")
+        assert course.course_rating == Decimal("72.3")
+
+    def test_ratings_default_to_none(self) -> None:
+        """Ratings are optional and default to None."""
+        holes = _make_holes(18)
+        course = Course.create(name="Old Course", holes=holes)
+        assert course.slope_rating is None
+        assert course.course_rating is None
+
+    def test_rejects_slope_rating_below_55(self) -> None:
+        """WHS slope rating minimum is 55."""
+        holes = _make_holes(18)
+        with pytest.raises(ValueError, match="Slope rating must be between 55 and 155"):
+            Course.create(
+                name="Bad Course",
+                holes=holes,
+                slope_rating=Decimal("54"),
+            )
+
+    def test_rejects_slope_rating_above_155(self) -> None:
+        """WHS slope rating maximum is 155."""
+        holes = _make_holes(18)
+        with pytest.raises(ValueError, match="Slope rating must be between 55 and 155"):
+            Course.create(
+                name="Bad Course",
+                holes=holes,
+                slope_rating=Decimal("156"),
+            )
+
+    def test_accepts_slope_rating_at_boundaries(self) -> None:
+        """Slope rating 55 and 155 are both valid."""
+        holes = _make_holes(18)
+        course_low = Course.create(
+            name="Easy Course",
+            holes=holes,
+            slope_rating=Decimal("55"),
+        )
+        course_high = Course.create(
+            name="Hard Course",
+            holes=holes,
+            slope_rating=Decimal("155"),
+        )
+        assert course_low.slope_rating == Decimal("55")
+        assert course_high.slope_rating == Decimal("155")
+
+    def test_rejects_non_positive_course_rating(self) -> None:
+        """Course rating must be positive."""
+        holes = _make_holes(18)
+        with pytest.raises(ValueError, match="Course rating must be positive"):
+            Course.create(
+                name="Bad Course",
+                holes=holes,
+                course_rating=Decimal("0"),
+            )
+
+    def test_rejects_negative_course_rating(self) -> None:
+        """Negative course rating is rejected."""
+        holes = _make_holes(18)
+        with pytest.raises(ValueError, match="Course rating must be positive"):
+            Course.create(
+                name="Bad Course",
+                holes=holes,
+                course_rating=Decimal("-1.5"),
+            )

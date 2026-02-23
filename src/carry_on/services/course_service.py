@@ -1,5 +1,7 @@
 """CourseService application service for course operations."""
 
+from decimal import Decimal
+
 from carry_on.domain.course.aggregates.course import Course, CourseId
 from carry_on.domain.course.repositories.course_repository import CourseRepository
 from carry_on.domain.course.value_objects.hole import Hole
@@ -25,6 +27,8 @@ class CourseService:
         user_id: str,
         name: str,
         holes: list[dict],
+        slope_rating: Decimal | None = None,
+        course_rating: Decimal | None = None,
     ) -> CourseId:
         """Add a new golf course.
 
@@ -48,7 +52,12 @@ class CourseService:
             for h in holes
         )
 
-        course = Course.create(name=name, holes=hole_objects)
+        course = Course.create(
+            name=name,
+            holes=hole_objects,
+            slope_rating=slope_rating,
+            course_rating=course_rating,
+        )
         return self._repository.save(course, user_id)
 
     def get_course_detail(self, course_id: str, user_id: str) -> Course | None:

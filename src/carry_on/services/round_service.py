@@ -1,6 +1,7 @@
 """RoundService application service for round operations."""
 
 import datetime
+from decimal import Decimal
 
 from carry_on.domain.course.aggregates.round import Round, RoundId
 from carry_on.domain.course.repositories.round_repository import RoundRepository
@@ -35,6 +36,8 @@ class RoundService:
         course_name: str,
         date: str,
         holes: list[dict] | None = None,
+        slope_rating: Decimal | None = None,
+        course_rating: Decimal | None = None,
     ) -> RoundId:
         """Record a new golf round (partial or complete).
 
@@ -62,6 +65,8 @@ class RoundService:
             course_name=course_name,
             date=datetime.date.fromisoformat(date),
             player_handicap=player_handicap,
+            slope_rating=slope_rating,
+            course_rating=course_rating,
         )
 
         if holes:

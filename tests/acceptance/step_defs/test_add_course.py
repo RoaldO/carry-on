@@ -113,6 +113,36 @@ def should_see_course(course_page: CoursePage, name: str) -> None:
     assert course_page.is_course_in_list(name), f"Expected '{name}' in the course list"
 
 
+@when(parsers.parse('I enter slope rating "{value}"'))
+def enter_slope_rating(course_page: CoursePage, value: str) -> None:
+    """Enter a slope rating."""
+    course_page.enter_slope_rating(value)
+
+
+@when(parsers.parse('I enter course rating "{value}"'))
+def enter_course_rating(course_page: CoursePage, value: str) -> None:
+    """Enter a course rating."""
+    course_page.enter_course_rating(value)
+
+
+@then(parsers.parse('"{name}" should show slope rating "{value}"'))
+def should_show_slope_rating(course_page: CoursePage, name: str, value: str) -> None:
+    """Verify a course displays the expected slope rating."""
+    actual = course_page.get_course_slope_rating(name)
+    assert actual == value, (
+        f"Expected slope rating '{value}' for '{name}', got '{actual}'"
+    )
+
+
+@then(parsers.parse('"{name}" should show course rating "{value}"'))
+def should_show_course_rating(course_page: CoursePage, name: str, value: str) -> None:
+    """Verify a course displays the expected course rating."""
+    actual = course_page.get_course_course_rating(name)
+    assert actual == value, (
+        f"Expected course rating '{value}' for '{name}', got '{actual}'"
+    )
+
+
 @then("I should see a course form error")
 def should_see_form_error(course_page: CoursePage) -> None:
     """Verify a form error is shown."""

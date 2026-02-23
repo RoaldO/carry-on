@@ -1,5 +1,6 @@
 """Tests for rounds API using dependency injection."""
 
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import allure
@@ -479,3 +480,57 @@ class TestRoundsStatusAPI:
         )
 
         assert response.status_code == 404
+
+
+@allure.feature("REST API")
+@allure.story("Rounds API - Slope & Course Rating")
+class TestRoundsAPIRatings:
+    """Tests for slope/course rating in rounds API."""
+
+    def test_post_round_with_ratings(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/rounds with ratings should store them."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Hilly Links",
+                "date": "2026-02-01",
+                "holes": _sample_holes(9),
+                "slope_rating": "125",
+                "course_rating": "72.3",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        saved_round, _ = override_round_repo.rounds[0]
+        assert saved_round.slope_rating == Decimal("125")
+        assert saved_round.course_rating == Decimal("72.3")
+
+    def test_post_round_without_ratings_defaults_to_none(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """POST /api/rounds without ratings defaults to None."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Old Course",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        saved_round, _ = override_round_repo.rounds[0]
+        assert saved_round.slope_rating is None
+        assert saved_round.course_rating is None

@@ -1,6 +1,7 @@
 """MongoDB implementation of CourseRepository."""
 
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import NotRequired, TypedDict
 
 from bson.objectid import ObjectId
@@ -20,6 +21,8 @@ class CourseDoc(TypedDict):
     _id: NotRequired[ObjectId]
     name: str
     holes: list[HoleDoc]
+    slope_rating: NotRequired[str | None]
+    course_rating: NotRequired[str | None]
     created_at: str
     user_id: str
 
@@ -94,6 +97,12 @@ class MongoCourseRepository:
                 }
                 for h in course.holes
             ],
+            "slope_rating": (
+                str(course.slope_rating) if course.slope_rating is not None else None
+            ),
+            "course_rating": (
+                str(course.course_rating) if course.course_rating is not None else None
+            ),
             "created_at": datetime.now(UTC).isoformat(),
             "user_id": user_id,
         }
@@ -108,8 +117,12 @@ class MongoCourseRepository:
             )
             for h in doc["holes"]
         )
+        raw_slope = doc.get("slope_rating")
+        raw_cr = doc.get("course_rating")
         return Course.create(
             name=doc["name"],
             holes=holes,
             id=CourseId(value=str(doc["_id"])),
+            slope_rating=(Decimal(raw_slope) if raw_slope is not None else None),
+            course_rating=(Decimal(raw_cr) if raw_cr is not None else None),
         )
