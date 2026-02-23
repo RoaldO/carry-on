@@ -108,6 +108,16 @@ async def list_courses(
                 "name": course.name,
                 "number_of_holes": course.number_of_holes,
                 "total_par": course.total_par,
+                "slope_rating": (
+                    str(course.slope_rating)
+                    if course.slope_rating is not None
+                    else None
+                ),
+                "course_rating": (
+                    str(course.course_rating)
+                    if course.course_rating is not None
+                    else None
+                ),
             }
             for course in courses
         ],
