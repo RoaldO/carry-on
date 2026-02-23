@@ -500,3 +500,39 @@ class TestRoundStablefordScore:
             )
         # Not yet finished
         assert round_.stableford_score is None
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Slope & Course Rating")
+class TestRoundSlopeAndCourseRating:
+    """Tests for slope/course rating snapshots on Round."""
+
+    def test_round_defaults_ratings_to_none(self) -> None:
+        """Ratings default to None when not provided."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+        )
+        assert round_.slope_rating is None
+        assert round_.course_rating is None
+
+    def test_create_round_with_ratings(self) -> None:
+        """Round created with ratings should store them."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        assert round_.slope_rating == Decimal("125")
+        assert round_.course_rating == Decimal("72.3")
+
+    def test_create_round_with_only_slope_rating(self) -> None:
+        """Providing only slope_rating is valid."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            slope_rating=Decimal("113"),
+        )
+        assert round_.slope_rating == Decimal("113")
+        assert round_.course_rating is None
