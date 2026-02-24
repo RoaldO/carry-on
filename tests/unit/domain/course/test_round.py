@@ -633,6 +633,24 @@ class TestRoundCourseHandicap:
         )
         assert round_.course_handicap == 18
 
+    def test_create_defaults_to_54_when_no_player_handicap(self) -> None:
+        """No player handicap → default to WHS max 54. 18-hole → CH 54."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            num_holes=18,
+        )
+        assert round_.course_handicap == 54
+
+    def test_create_defaults_to_54_halved_for_9_holes(self) -> None:
+        """No player handicap, 9-hole → 54/2 = 27."""
+        round_ = Round.create(
+            course_name="Old Course (front 9)",
+            date=date(2024, 1, 15),
+            num_holes=9,
+        )
+        assert round_.course_handicap == 27
+
     def test_create_sets_course_handicap_9_hole_fallback(self) -> None:
         """9-hole fallback at creation: HI 18.4 halved → 9.2 → rounds to 9."""
         round_ = Round.create(
