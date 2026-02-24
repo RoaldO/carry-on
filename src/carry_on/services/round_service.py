@@ -38,6 +38,8 @@ class RoundService:
         holes: list[dict] | None = None,
         slope_rating: Decimal | None = None,
         course_rating: Decimal | None = None,
+        num_holes: int | None = None,
+        course_par: int | None = None,
     ) -> RoundId:
         """Record a new golf round (partial or complete).
 
@@ -67,6 +69,8 @@ class RoundService:
             player_handicap=player_handicap,
             slope_rating=slope_rating,
             course_rating=course_rating,
+            num_holes=num_holes,
+            course_par=course_par,
         )
 
         if holes:

@@ -38,6 +38,9 @@ class FakeRoundRepository:
                 stableford_score=round.stableford_score,
                 slope_rating=round.slope_rating,
                 course_rating=round.course_rating,
+                course_handicap=round.course_handicap,
+                num_holes=round.num_holes,
+                course_par=round.course_par,
             )
             for hole in round.holes:
                 saved_round.record_hole(hole)
@@ -56,6 +59,9 @@ class FakeRoundRepository:
                         stableford_score=round.stableford_score,
                         slope_rating=round.slope_rating,
                         course_rating=round.course_rating,
+                        course_handicap=round.course_handicap,
+                        num_holes=round.num_holes,
+                        course_par=round.course_par,
                     )
                     for hole in round.holes:
                         saved_round.record_hole(hole)
@@ -71,6 +77,9 @@ class FakeRoundRepository:
                 stableford_score=round.stableford_score,
                 slope_rating=round.slope_rating,
                 course_rating=round.course_rating,
+                course_handicap=round.course_handicap,
+                num_holes=round.num_holes,
+                course_par=round.course_par,
             )
             for hole in round.holes:
                 saved_round.record_hole(hole)
