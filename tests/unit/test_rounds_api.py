@@ -534,3 +534,69 @@ class TestRoundsAPIRatings:
         saved_round, _ = override_round_repo.rounds[0]
         assert saved_round.slope_rating is None
         assert saved_round.course_rating is None
+
+
+@allure.feature("REST API")
+@allure.story("Rounds API - Course Handicap")
+class TestRoundsAPICourseHandicap:
+    """Tests for course_handicap in API responses."""
+
+    def test_get_rounds_includes_course_handicap(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds should include course_handicap in each round."""
+        # Create and finish a round so course_handicap is computed
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": _sample_holes(9),
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+        client.patch(
+            f"/api/rounds/{round_id}/status?action=finish",
+            headers=auth_headers,
+        )
+
+        response = client.get("/api/rounds", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "course_handicap" in data["rounds"][0]
+
+    def test_get_round_by_id_includes_course_handicap(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds/{id} should include course_handicap."""
+        # Create and finish a round
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": _sample_holes(9),
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+        client.patch(
+            f"/api/rounds/{round_id}/status?action=finish",
+            headers=auth_headers,
+        )
+
+        response = client.get(f"/api/rounds/{round_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "course_handicap" in data

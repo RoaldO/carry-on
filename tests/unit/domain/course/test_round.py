@@ -558,6 +558,7 @@ class TestRoundFinishWithRatings:
         # SI 4-18: net 4-1=3, birdie → 3 pts × 15 = 45
         # Total = 57
         assert round_.stableford_score == StablefordScore(points=57)
+        assert round_.course_handicap == 21
 
     def test_finish_without_ratings_uses_handicap_directly(self) -> None:
         """No ratings → fall back to handicap index (same as before)."""
@@ -591,3 +592,80 @@ class TestRoundFinishWithRatings:
         round_.finish()
         # Partial ratings → fallback → same as no ratings: 54 points
         assert round_.stableford_score == StablefordScore(points=54)
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Course Handicap")
+class TestRoundCourseHandicap:
+    """Tests for persisting the computed Course Handicap on the Round."""
+
+    def test_round_defaults_course_handicap_to_none(self) -> None:
+        """A new round should not have a course handicap yet."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+        )
+        assert round_.course_handicap is None
+
+    def test_finish_with_ratings_sets_course_handicap(self) -> None:
+        """Slope 125, CR 72.3, Par 72, HI 18.4 → CH 21."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("72.3"),
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.course_handicap == 21
+
+    def test_finish_without_ratings_sets_course_handicap_fallback(self) -> None:
+        """No ratings → round HI directly. HI 18.4 → CH 18."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.course_handicap == 18
+
+    def test_finish_9_holes_with_ratings_halves_handicap_index(self) -> None:
+        """9-hole with ratings halves HI first. CH 9."""
+        round_ = Round.create(
+            course_name="Hilly Links (front 9)",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+            slope_rating=Decimal("125"),
+            course_rating=Decimal("35.3"),
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        # CH = round((18.4/2) × (125/113) + (35.3 - 36))
+        #    = round(9.2 × 1.10619… + (-0.7))
+        #    = round(10.177… - 0.7) = round(9.477…) = 9
+        assert round_.course_handicap == 9
+
+    def test_finish_9_holes_without_ratings_halves_and_rounds(self) -> None:
+        """9-hole fallback: HI 18.4 halved → 9.2 → rounds to 9."""
+        round_ = Round.create(
+            course_name="Old Course (front 9)",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18.4"),
+        )
+        for i in range(1, 10):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        round_.finish()
+        assert round_.course_handicap == 9

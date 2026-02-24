@@ -796,3 +796,95 @@ class TestMongoRoundRepositoryRatings:
         assert result is not None
         assert result.slope_rating is None
         assert result.course_rating is None
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Course Handicap")
+class TestMongoRoundRepositoryCourseHandicap:
+    """Tests for course_handicap field persistence."""
+
+    def test_save_serializes_course_handicap(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize integer course_handicap."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=datetime.date(2026, 2, 1),
+        )
+        round_.course_handicap = 21
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["course_handicap"] == 21
+
+    def test_save_serializes_none_course_handicap(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize None course_handicap as None."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+        )
+        # course_handicap defaults to None
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["course_handicap"] is None
+
+    def test_find_deserializes_course_handicap(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize integer course_handicap."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Hilly Links",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "f",
+            "course_handicap": 21,
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.course_handicap == 21
+
+    def test_find_defaults_to_none_when_course_handicap_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Old documents without course_handicap should default to None."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Legacy Course",
+            "date": "2026-02-01",
+            "holes": [],
+            "status": "ip",
+            "created_at": "2025-06-01T10:00:00+00:00",
+            "user_id": "user123",
+            # No course_handicap field - old document
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.course_handicap is None

@@ -581,3 +581,39 @@ class TestRoundServiceRatings:
         round, _ = repository.save.call_args[0]
         assert round.slope_rating is None
         assert round.course_rating is None
+
+
+@allure.feature("Application Services")
+@allure.story("Round Service - Course Handicap")
+class TestRoundServiceCourseHandicap:
+    """Tests for course_handicap being set when finishing a round via service."""
+
+    def test_finish_round_stores_course_handicap(self) -> None:
+        """Finishing a round via the service should set course_handicap."""
+        repository = MagicMock(spec=RoundRepository)
+        round_id = RoundId(value="round-123")
+
+        existing_round = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+            id=round_id,
+            player_handicap=Decimal("18"),
+        )
+        for i in range(1, 10):
+            existing_round.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        repository.find_by_id.return_value = existing_round
+        repository.save.return_value = round_id
+
+        player_repository = MagicMock(spec=PlayerRepository)
+        service = RoundService(repository, player_repository)
+        service.update_round_status(
+            user_id="user123",
+            round_id=round_id,
+            action="finish",
+        )
+
+        saved_round, _ = repository.save.call_args[0]
+        # HI 18 halved for 9 holes → 9
+        assert saved_round.course_handicap == 9
