@@ -65,12 +65,12 @@ class Round:
             num_holes=num_holes,
             course_par=course_par,
         )
-        if (
-            course_handicap is None
-            and num_holes is not None
-            and player_handicap is not None
-        ):
-            handicap = player_handicap
+        if course_handicap is None and num_holes is not None:
+            handicap = (
+                player_handicap
+                if player_handicap is not None
+                else cls._DEFAULT_HANDICAP
+            )
             instance.course_handicap = instance._compute_course_handicap(
                 handicap, num_holes
             )
