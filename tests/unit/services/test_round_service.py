@@ -535,8 +535,8 @@ class TestRoundServiceStablefordScoring:
         saved_round, _ = repository.save.call_args[0]
         assert saved_round.stableford_score is not None
         assert isinstance(saved_round.stableford_score, StablefordScore)
-        # Handicap 18 on 9 holes: 2 strokes each → net eagle → 4 pts × 9
-        assert saved_round.stableford_score == StablefordScore(points=36)
+        # HI 18 halved for 9 holes → 9, 1 stroke each → net birdie → 3 pts × 9
+        assert saved_round.stableford_score == StablefordScore(points=27)
 
 
 @allure.feature("Application Services")

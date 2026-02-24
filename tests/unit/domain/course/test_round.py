@@ -447,9 +447,9 @@ class TestRoundStablefordScore:
                 HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
             )
         round_.finish()
-        # Handicap 18 on 9 holes: 18//9=2 base, 0 remainder → 2 strokes each
-        # Net: 4 - 2 = 2 on par 4 → net eagle → 4 pts × 9 = 36
-        assert round_.stableford_score == StablefordScore(points=36)
+        # HI 18 halved for 9 holes → 9, 1 stroke per hole
+        # Net: 4 - 1 = 3 on par 4 → net birdie → 3 pts × 9 = 27
+        assert round_.stableford_score == StablefordScore(points=27)
 
     def test_finish_uses_default_54_when_no_handicap(self) -> None:
         """No handicap stored → default to 54 (WHS maximum)."""
@@ -463,14 +463,9 @@ class TestRoundStablefordScore:
                 HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
             )
         round_.finish()
-        # Handicap 54 on 9 holes: 54//9=6 base, 0 remainder → 6 strokes each
-        # Net: 4 - 6 = -2 on par 4 → 2-(-2-4)= 2-(-6)=8? No...
-        # max(0, 2 - (net - par)) = max(0, 2 - (-2 - 4)) = max(0, 2-(-6)) = 8
-        # But that's wrong - let me recalculate.
-        # net = strokes - handicap_strokes = 4 - 6 = -2
-        # points = max(0, 2 - (net - par)) = max(0, 2 - (-2 - 4)) = max(0, 8) = 8
-        # 8 pts × 9 = 72
-        assert round_.stableford_score == StablefordScore(points=72)
+        # HI 54 halved for 9 holes → 27, 3 strokes per hole (27//9=3)
+        # Net: 4 - 3 = 1 on par 4 → max(0, 2-(1-4)) = 5 pts × 9 = 45
+        assert round_.stableford_score == StablefordScore(points=45)
 
     def test_finish_18_holes_calculates_stableford(self) -> None:
         """Full 18-hole round should calculate Stableford correctly."""
