@@ -86,6 +86,7 @@ async def list_rounds(
                 "total_strokes": r.total_strokes,
                 "holes_played": len(r.holes),
                 "status": r.status.value,
+                "course_handicap": r.course_handicap,
             }
             for r in rounds
         ],
@@ -120,6 +121,7 @@ async def get_round(
         ],
         "is_complete": round.is_complete,
         "status": round.status.value,
+        "course_handicap": round.course_handicap,
     }
 
 
