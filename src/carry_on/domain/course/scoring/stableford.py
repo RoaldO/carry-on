@@ -62,24 +62,26 @@ def calculate_course_handicap(
     slope_rating: Decimal,
     course_rating: Decimal,
     par: int,
+    num_holes: int = 18,
 ) -> int:
     """Calculate Course Handicap using the WHS formula.
 
-    Course Handicap = round(HI × (Slope / 113) + (CR - Par))
+    18-hole: Course Handicap = round(HI × (Slope / 113) + (CR - Par))
+     9-hole: Course Handicap = round((HI / 2) × (Slope / 113) + (CR - Par))
 
     Args:
         handicap_index: The player's handicap index.
         slope_rating: The course's slope rating (55-155).
         course_rating: The course's rating for scratch golfer.
         par: Total par of the course.
+        num_holes: Number of holes on the course (9 or 18).
 
     Returns:
         The integer Course Handicap (rounded half-up).
     """
+    effective_hi = handicap_index / 2 if num_holes == 9 else handicap_index
     neutral_slope = Decimal("113")
-    raw = handicap_index * (slope_rating / neutral_slope) + (
-        course_rating - Decimal(par)
-    )
+    raw = effective_hi * (slope_rating / neutral_slope) + (course_rating - Decimal(par))
     return int(raw.to_integral_value(rounding=ROUND_HALF_UP))
 
 
@@ -113,10 +115,12 @@ def calculate_stableford(
             slope_rating=slope_rating,
             course_rating=course_rating,
             par=par,
+            num_holes=num_holes,
         )
     else:
+        effective_handicap = player_handicap / 2 if num_holes == 9 else player_handicap
         playing_handicap = int(
-            player_handicap.to_integral_value(rounding=ROUND_HALF_UP)
+            effective_handicap.to_integral_value(rounding=ROUND_HALF_UP)
         )
 
     total = 0
