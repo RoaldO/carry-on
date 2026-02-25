@@ -18,6 +18,7 @@ class HoleResultDoc(TypedDict):
     strokes: int
     par: int
     stroke_index: int
+    stableford_points: NotRequired[int | None]
 
 
 class RoundDoc(TypedDict):
@@ -116,6 +117,7 @@ class MongoRoundRepository:
                     "strokes": h.strokes,
                     "par": h.par,
                     "stroke_index": h.stroke_index,
+                    "stableford_points": h.stableford_points,
                 }
                 for h in round.holes
             ],
@@ -180,6 +182,7 @@ class MongoRoundRepository:
                     strokes=h["strokes"],
                     par=h["par"],
                     stroke_index=h["stroke_index"],
+                    stableford_points=h.get("stableford_points"),
                 )
             )
         return round

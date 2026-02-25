@@ -1,6 +1,6 @@
 import datetime
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Self
 
@@ -8,6 +8,7 @@ from carry_on.domain.core.value_objects.identifier import Identifier
 from carry_on.domain.course.scoring.stableford import (
     calculate_course_handicap,
     calculate_stableford,
+    compute_hole_stableford,
 )
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
@@ -84,17 +85,25 @@ class Round:
         if not self.course_name.strip():
             raise ValueError("Course name required")
 
+    def _with_stableford(self, hole: HoleResult) -> HoleResult:
+        """Attach per-hole Stableford points when CH and num_holes are known."""
+        if self.course_handicap is not None and self.num_holes is not None:
+            pts = compute_hole_stableford(hole, self.course_handicap, self.num_holes)
+            return replace(hole, stableford_points=pts)
+        return hole
+
     def record_hole(self, hole: HoleResult) -> None:
         """Record a hole result. Rejects duplicates."""
         if any(h.hole_number == hole.hole_number for h in self.holes):
             raise ValueError(f"Hole {hole.hole_number} already recorded")
-        self.holes.append(hole)
+        self.holes.append(self._with_stableford(hole))
 
     def update_hole(self, hole: HoleResult) -> None:
         """Update an existing hole result. Raises ValueError if hole not found."""
+        enriched = self._with_stableford(hole)
         for i, h in enumerate(self.holes):
             if h.hole_number == hole.hole_number:
-                self.holes[i] = hole
+                self.holes[i] = enriched
                 return
         raise ValueError(f"Hole {hole.hole_number} not yet recorded")
 
@@ -143,6 +152,7 @@ class Round:
             slope_rating=self.slope_rating,
             course_rating=self.course_rating,
         )
+        self.holes = [self._with_stableford(h) for h in self.holes]
         self.status = RoundStatus.FINISHED
 
     def _compute_course_handicap(self, handicap_index: Decimal, num_holes: int) -> int:
