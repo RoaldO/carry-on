@@ -5,6 +5,7 @@ import allure
 from carry_on.domain.course.scoring.stableford import (
     calculate_course_handicap,
     calculate_stableford,
+    compute_hole_stableford,
     handicap_strokes_for_hole,
     stableford_points,
 )
@@ -107,6 +108,32 @@ class TestStablefordPoints:
     def test_par_5_net_birdie(self) -> None:
         """Par 5, 5 gross strokes, 1 handicap stroke → net birdie → 3 pts."""
         assert stableford_points(gross_strokes=5, par=5, handicap_strokes=1) == 3
+
+
+@allure.feature("Domain Model")
+@allure.story("Stableford Calculation - Per-Hole Convenience")
+class TestComputeHoleStableford:
+    """compute_hole_stableford() combines handicap + points."""
+
+    def test_compute_hole_stableford_par_with_handicap(self) -> None:
+        """Par 4, 5 gross, SI 1, CH 18 on 18 holes → 1 hs → net 4 → 2 pts."""
+        hole = HoleResult(hole_number=1, strokes=5, par=4, stroke_index=1)
+        assert compute_hole_stableford(hole, course_handicap=18, num_holes=18) == 2
+
+    def test_compute_hole_stableford_scratch(self) -> None:
+        """Par 4, 4 gross, CH 0 → 0 hs → net 4 → 2 pts."""
+        hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1)
+        assert compute_hole_stableford(hole, course_handicap=0, num_holes=18) == 2
+
+    def test_compute_hole_stableford_double_bogey(self) -> None:
+        """Par 4, 7 gross, CH 0 → 0 hs → net 7 → 0 pts."""
+        hole = HoleResult(hole_number=1, strokes=7, par=4, stroke_index=1)
+        assert compute_hole_stableford(hole, course_handicap=0, num_holes=18) == 0
+
+    def test_compute_hole_stableford_high_handicap(self) -> None:
+        """Par 4, 6 gross, SI 1, CH 36 on 18 holes → 2 hs → net 4 → 2 pts."""
+        hole = HoleResult(hole_number=1, strokes=6, par=4, stroke_index=1)
+        assert compute_hole_stableford(hole, course_handicap=36, num_holes=18) == 2
 
 
 @allure.feature("Domain Model")

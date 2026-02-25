@@ -982,3 +982,112 @@ class TestMongoRoundRepositoryNumHolesCoursePar:
         assert result is not None
         assert result.num_holes is None
         assert result.course_par is None
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Per-Hole Stableford Points")
+class TestMongoRoundRepositoryHoleStablefordPoints:
+    """Tests for stableford_points per hole in MongoDB persistence."""
+
+    def test_save_serializes_hole_stableford_points(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize stableford_points on each hole document."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=datetime.date(2026, 2, 1),
+            player_handicap=Decimal("18"),
+            num_holes=18,
+        )
+        round_.record_hole(HoleResult(hole_number=1, strokes=5, par=4, stroke_index=1))
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert "stableford_points" in doc["holes"][0]
+        assert doc["holes"][0]["stableford_points"] == 2
+
+    def test_save_serializes_none_stableford_points(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize None stableford_points for holes without it."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Old Course",
+            date=datetime.date(2026, 2, 1),
+        )
+        round_.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1))
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["holes"][0]["stableford_points"] is None
+
+    def test_find_deserializes_hole_stableford_points(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize stableford_points from hole document."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Hilly Links",
+            "date": "2026-02-01",
+            "holes": [
+                {
+                    "hole_number": 1,
+                    "strokes": 5,
+                    "par": 4,
+                    "stroke_index": 1,
+                    "stableford_points": 2,
+                },
+            ],
+            "status": "ip",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.holes[0].stableford_points == 2
+
+    def test_find_defaults_to_none_when_stableford_points_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Old docs without stableford_points per hole should default to None."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Legacy Course",
+            "date": "2026-02-01",
+            "holes": [
+                {
+                    "hole_number": 1,
+                    "strokes": 4,
+                    "par": 4,
+                    "stroke_index": 1,
+                    # No stableford_points — old document
+                },
+            ],
+            "status": "ip",
+            "created_at": "2025-06-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.holes[0].stableford_points is None
