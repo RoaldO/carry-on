@@ -838,3 +838,74 @@ class TestRoundPerHoleStableford:
         # After finish, all holes should have stableford_points
         # CH=18 → 1 stroke per hole. Gross 4 on par 4: net 3 → 3 pts
         assert all(h.stableford_points == 3 for h in round_.holes)
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Per-Hole Handicap Strokes")
+class TestRoundPerHoleHandicapStrokes:
+    """Tests for auto-computing handicap_strokes on each HoleResult."""
+
+    def test_record_hole_computes_handicap_strokes(self) -> None:
+        """record_hole auto-fills handicap_strokes when CH and num_holes are set."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("20"),
+            num_holes=18,
+        )
+        # CH=20 → base=1, remainder=2 → SI 1-2 get 2, SI 3+ get 1
+        hole = HoleResult(hole_number=1, strokes=5, par=4, stroke_index=1)
+        round_.record_hole(hole)
+        assert round_.holes[0].handicap_strokes == 2
+
+        hole2 = HoleResult(hole_number=3, strokes=5, par=4, stroke_index=3)
+        round_.record_hole(hole2)
+        assert round_.holes[1].handicap_strokes == 1
+
+    def test_record_hole_no_handicap_strokes_without_course_handicap(self) -> None:
+        """handicap_strokes stays None when course_handicap is unavailable."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            # No num_holes → no course_handicap computed
+        )
+        hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1)
+        round_.record_hole(hole)
+        assert round_.holes[0].handicap_strokes is None
+
+    def test_update_hole_recomputes_handicap_strokes(self) -> None:
+        """update_hole preserves handicap_strokes after update."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("20"),
+            num_holes=18,
+        )
+        # Record hole: SI 1, CH 20 → hs=2
+        round_.record_hole(HoleResult(hole_number=1, strokes=5, par=4, stroke_index=1))
+        assert round_.holes[0].handicap_strokes == 2
+
+        # Update strokes (hs stays 2 since SI unchanged)
+        round_.update_hole(HoleResult(hole_number=1, strokes=7, par=4, stroke_index=1))
+        assert round_.holes[0].handicap_strokes == 2
+
+    def test_finish_backfills_per_hole_handicap_strokes(self) -> None:
+        """finish() fills handicap_strokes on old rounds that lack them."""
+        # Simulate an old round without num_holes (so record_hole won't compute)
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+        )
+        for i in range(1, 19):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        # Before finish, no per-hole handicap_strokes
+        assert all(h.handicap_strokes is None for h in round_.holes)
+
+        round_.finish()
+
+        # After finish, all holes should have handicap_strokes
+        # CH=18 → 1 stroke per hole (18//18=1, remainder=0)
+        assert all(h.handicap_strokes == 1 for h in round_.holes)
