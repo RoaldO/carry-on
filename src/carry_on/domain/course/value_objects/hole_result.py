@@ -13,6 +13,8 @@ class HoleResult:
     strokes: int
     par: int
     stroke_index: int
+    stableford_points: int | None = None
+    handicap_strokes: int | None = None
 
     def __post_init__(self) -> None:
         if not 1 <= self.hole_number <= 18:

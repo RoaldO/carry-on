@@ -686,3 +686,65 @@ class TestRoundsAPINumHolesCoursePar:
         data = response.json()
         assert data["rounds"][0]["num_holes"] == 9
         assert data["rounds"][0]["course_par"] == 36
+
+
+@allure.feature("REST API")
+@allure.story("Rounds API - Per-Hole Stableford Points")
+class TestRoundsAPIPerHoleStableford:
+    """Tests for stableford_points per hole in API responses."""
+
+    def test_get_round_by_id_includes_stableford_points_per_hole(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds/{id} should include stableford_points in each hole."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Hilly Links",
+                "date": "2026-02-01",
+                "holes": _sample_holes(2),
+                "number_of_holes": 18,
+                "course_par": 72,
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        response = client.get(f"/api/rounds/{round_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        for hole in data["holes"]:
+            assert "stableford_points" in hole
+
+    def test_get_round_by_id_includes_handicap_strokes_per_hole(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds/{id} should include handicap_strokes in each hole."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Hilly Links",
+                "date": "2026-02-01",
+                "holes": _sample_holes(2),
+                "number_of_holes": 18,
+                "course_par": 72,
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        response = client.get(f"/api/rounds/{round_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        for hole in data["holes"]:
+            assert "handicap_strokes" in hole

@@ -73,3 +73,21 @@ class TestHoleResultValidation:
         """Stroke index 19 is invalid."""
         with pytest.raises(ValueError, match="Stroke index must be between 1 and 18"):
             HoleResult(hole_number=1, strokes=4, par=4, stroke_index=19)
+
+
+@allure.feature("Domain Model")
+@allure.story("HoleResult Value Object - Stableford Points")
+class TestHoleResultStablefordPoints:
+    """Tests for the optional stableford_points field on HoleResult."""
+
+    def test_stableford_points_defaults_to_none(self) -> None:
+        """HoleResult without explicit points should default to None."""
+        hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7)
+        assert hole.stableford_points is None
+
+    def test_stableford_points_stored(self) -> None:
+        """HoleResult with explicit points should preserve the value."""
+        hole = HoleResult(
+            hole_number=1, strokes=4, par=4, stroke_index=7, stableford_points=2
+        )
+        assert hole.stableford_points == 2

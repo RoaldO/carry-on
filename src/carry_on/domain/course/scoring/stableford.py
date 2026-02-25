@@ -57,6 +57,36 @@ def stableford_points(gross_strokes: int, par: int, handicap_strokes: int) -> in
     return max(0, 2 - (net - par))
 
 
+def compute_hole_stableford(
+    hole: HoleResult,
+    course_handicap: int,
+    num_holes: int,
+) -> int:
+    """Compute Stableford points for a single hole.
+
+    Convenience function that combines handicap stroke distribution
+    and point calculation in one call.
+
+    Args:
+        hole: The hole result with gross strokes, par, and stroke index.
+        course_handicap: The player's course handicap (integer).
+        num_holes: Number of holes on the course (9 or 18).
+
+    Returns:
+        Stableford points for this hole (0 or more).
+    """
+    hs = handicap_strokes_for_hole(
+        handicap=course_handicap,
+        stroke_index=hole.stroke_index,
+        num_holes=num_holes,
+    )
+    return stableford_points(
+        gross_strokes=hole.strokes,
+        par=hole.par,
+        handicap_strokes=hs,
+    )
+
+
 def calculate_course_handicap(
     handicap_index: Decimal,
     slope_rating: Decimal,
