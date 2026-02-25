@@ -9,6 +9,7 @@ from carry_on.domain.course.scoring.stableford import (
     calculate_course_handicap,
     calculate_stableford,
     compute_hole_stableford,
+    handicap_strokes_for_hole,
 )
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
@@ -86,10 +87,13 @@ class Round:
             raise ValueError("Course name required")
 
     def _with_stableford(self, hole: HoleResult) -> HoleResult:
-        """Attach per-hole Stableford points when CH and num_holes are known."""
+        """Attach per-hole Stableford points and handicap strokes."""
         if self.course_handicap is not None and self.num_holes is not None:
             pts = compute_hole_stableford(hole, self.course_handicap, self.num_holes)
-            return replace(hole, stableford_points=pts)
+            hs = handicap_strokes_for_hole(
+                self.course_handicap, hole.stroke_index, self.num_holes
+            )
+            return replace(hole, stableford_points=pts, handicap_strokes=hs)
         return hole
 
     def record_hole(self, hole: HoleResult) -> None:

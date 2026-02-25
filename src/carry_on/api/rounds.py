@@ -123,6 +123,7 @@ async def get_round(
                 "par": h.par,
                 "stroke_index": h.stroke_index,
                 "stableford_points": h.stableford_points,
+                "handicap_strokes": h.handicap_strokes,
             }
             for h in round.holes
         ],
