@@ -30,6 +30,9 @@ class RoundDoc(TypedDict):
     stableford_score: NotRequired[int | None]
     slope_rating: NotRequired[str | None]
     course_rating: NotRequired[str | None]
+    course_handicap: NotRequired[int | None]
+    num_holes: NotRequired[int | None]
+    course_par: NotRequired[int | None]
     created_at: str
     user_id: str
 
@@ -133,6 +136,9 @@ class MongoRoundRepository:
             "course_rating": (
                 str(round.course_rating) if round.course_rating is not None else None
             ),
+            "course_handicap": round.course_handicap,
+            "num_holes": round.num_holes,
+            "course_par": round.course_par,
             "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
             "user_id": user_id,
         }
@@ -163,6 +169,9 @@ class MongoRoundRepository:
             ),
             slope_rating=(Decimal(raw_slope) if raw_slope is not None else None),
             course_rating=(Decimal(raw_cr) if raw_cr is not None else None),
+            course_handicap=doc.get("course_handicap"),
+            num_holes=doc.get("num_holes"),
+            course_par=doc.get("course_par"),
         )
         for h in doc["holes"]:
             round.record_hole(

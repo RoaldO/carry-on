@@ -32,6 +32,8 @@ class RoundCreateRequest(BaseModel):
     holes: list[HoleResultRequest] = []
     slope_rating: str | None = None
     course_rating: str | None = None
+    number_of_holes: int | None = None
+    course_par: int | None = None
 
 
 @app.post("/api/rounds")
@@ -58,6 +60,8 @@ async def create_round(
                 if round_data.course_rating is not None
                 else None
             ),
+            num_holes=round_data.number_of_holes,
+            course_par=round_data.course_par,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -86,6 +90,9 @@ async def list_rounds(
                 "total_strokes": r.total_strokes,
                 "holes_played": len(r.holes),
                 "status": r.status.value,
+                "course_handicap": r.course_handicap,
+                "num_holes": r.num_holes,
+                "course_par": r.course_par,
             }
             for r in rounds
         ],
@@ -120,6 +127,9 @@ async def get_round(
         ],
         "is_complete": round.is_complete,
         "status": round.status.value,
+        "course_handicap": round.course_handicap,
+        "num_holes": round.num_holes,
+        "course_par": round.course_par,
     }
 
 

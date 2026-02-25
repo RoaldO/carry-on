@@ -142,7 +142,7 @@ class TestCalculateStableford:
         assert result == StablefordScore(points=54)
 
     def test_nine_hole_round(self) -> None:
-        """9-hole round with handicap 9: each hole gets 1 stroke."""
+        """9-hole round with handicap 9: halved to 5, SI 1-5 get 1 stroke."""
         holes = [
             HoleResult(hole_number=i + 1, strokes=5, par=4, stroke_index=i + 1)
             for i in range(9)
@@ -152,8 +152,11 @@ class TestCalculateStableford:
             player_handicap=Decimal("9"),
             num_holes=9,
         )
-        # Gross bogey (5) - 1 handicap = net par (4) → 2 points × 9
-        assert result == StablefordScore(points=18)
+        # HI 9 halved → 4.5 → rounds to 5
+        # SI 1-5: gross 5 - 1 = net 4, par → 2 pts (5 holes)
+        # SI 6-9: gross 5 - 0 = net 5, bogey → 1 pt (4 holes)
+        # Total: 5×2 + 4×1 = 14
+        assert result == StablefordScore(points=14)
 
     def test_rounds_decimal_handicap(self) -> None:
         """Decimal handicap 18.4 rounds to 18 for stroke distribution."""
@@ -252,6 +255,7 @@ class TestCalculateCourseHandicap:
             slope_rating=Decimal("125"),
             course_rating=Decimal("72.3"),
             par=72,
+            num_holes=18,
         )
         # 18.4 × (125/113) + (72.3 - 72) = 20.354 + 0.3 = 20.654 → 21
         assert result == 21
@@ -263,6 +267,7 @@ class TestCalculateCourseHandicap:
             slope_rating=Decimal("113"),
             course_rating=Decimal("72"),
             par=72,
+            num_holes=18,
         )
         # 18.4 × (113/113) + (72 - 72) = 18.4 → 18
         assert result == 18
@@ -274,6 +279,7 @@ class TestCalculateCourseHandicap:
             slope_rating=Decimal("90"),
             course_rating=Decimal("68.5"),
             par=72,
+            num_holes=18,
         )
         # 18.4 × (90/113) + (68.5 - 72) = 14.655 + (-3.5) = 11.155 → 11
         assert result == 11
@@ -285,6 +291,7 @@ class TestCalculateCourseHandicap:
             slope_rating=Decimal("125"),
             course_rating=Decimal("73.2"),
             par=72,
+            num_holes=18,
         )
         # 0 × (125/113) + (73.2 - 72) = 0 + 1.2 = 1.2 → 1
         assert result == 1
@@ -296,9 +303,22 @@ class TestCalculateCourseHandicap:
             slope_rating=Decimal("113"),
             course_rating=Decimal("72.5"),
             par=72,
+            num_holes=18,
         )
         # 15 × 1.0 + 0.5 = 15.5 → 16 (rounds up)
         assert result == 16
+
+    def test_nine_hole_course_handicap(self) -> None:
+        """9-hole: HI 54, Slope 77, CR 26.0, Par 29 → CH 15."""
+        result = calculate_course_handicap(
+            handicap_index=Decimal("54"),
+            slope_rating=Decimal("77"),
+            course_rating=Decimal("26.0"),
+            par=29,
+            num_holes=9,
+        )
+        # (54/2) × (77/113) + (26.0 - 29) = 27 × 0.6814… + (-3) = 15.398… → 15
+        assert result == 15
 
 
 @allure.feature("Domain Model")
@@ -379,3 +399,32 @@ class TestCalculateStablefordWithRatings:
             course_rating=None,
         )
         assert result_with_neutral == result_without
+
+    def test_nine_hole_stableford_with_ratings(self) -> None:
+        """9-hole round with ratings: HI halved before Course Handicap calc."""
+        # SR 77, CR 26.0, HI 54 → CH 15 (halved HI 27)
+        # Holes: 2 par-4 + 7 par-3 = total par 29
+        pars = [4, 3, 3, 4, 3, 3, 3, 3, 3]
+        holes = [
+            HoleResult(hole_number=i + 1, strokes=4, par=pars[i], stroke_index=i + 1)
+            for i in range(9)
+        ]
+        result = calculate_stableford(
+            holes=holes,
+            player_handicap=Decimal("54"),
+            num_holes=9,
+            slope_rating=Decimal("77"),
+            course_rating=Decimal("26.0"),
+        )
+        # CH 15: base=1, remainder=6 → SI 1-6 get 2 strokes, SI 7-9 get 1
+        # H1 (par 4, SI 1, hs 2): net 2, eagle → 4 pts
+        # H2 (par 3, SI 2, hs 2): net 2, birdie → 3 pts
+        # H3 (par 3, SI 3, hs 2): net 2, birdie → 3 pts
+        # H4 (par 4, SI 4, hs 2): net 2, eagle → 4 pts
+        # H5 (par 3, SI 5, hs 2): net 2, birdie → 3 pts
+        # H6 (par 3, SI 6, hs 2): net 2, birdie → 3 pts
+        # H7 (par 3, SI 7, hs 1): net 3, par → 2 pts
+        # H8 (par 3, SI 8, hs 1): net 3, par → 2 pts
+        # H9 (par 3, SI 9, hs 1): net 3, par → 2 pts
+        # Total = 4+3+3+4+3+3+2+2+2 = 26
+        assert result == StablefordScore(points=26)

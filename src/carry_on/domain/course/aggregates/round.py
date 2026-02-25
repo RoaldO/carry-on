@@ -1,11 +1,14 @@
 import datetime
 
 from dataclasses import dataclass, field
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Self
 
 from carry_on.domain.core.value_objects.identifier import Identifier
-from carry_on.domain.course.scoring.stableford import calculate_stableford
+from carry_on.domain.course.scoring.stableford import (
+    calculate_course_handicap,
+    calculate_stableford,
+)
 from carry_on.domain.course.value_objects.hole_result import HoleResult
 from carry_on.domain.course.value_objects.round_status import RoundStatus
 from carry_on.domain.course.value_objects.stableford_score import StablefordScore
@@ -28,6 +31,9 @@ class Round:
     created_at: datetime.datetime | None = None
     slope_rating: Decimal | None = None
     course_rating: Decimal | None = None
+    course_handicap: int | None = None
+    num_holes: int | None = None
+    course_par: int | None = None
 
     @classmethod
     def create(
@@ -41,8 +47,11 @@ class Round:
         created_at: datetime.datetime | None = None,
         slope_rating: Decimal | None = None,
         course_rating: Decimal | None = None,
+        course_handicap: int | None = None,
+        num_holes: int | None = None,
+        course_par: int | None = None,
     ) -> Self:
-        return cls(
+        instance = cls(
             id=id,
             course_name=course_name,
             date=date,
@@ -52,7 +61,20 @@ class Round:
             created_at=created_at,
             slope_rating=slope_rating,
             course_rating=course_rating,
+            course_handicap=course_handicap,
+            num_holes=num_holes,
+            course_par=course_par,
         )
+        if course_handicap is None and num_holes is not None:
+            handicap = (
+                player_handicap
+                if player_handicap is not None
+                else cls._DEFAULT_HANDICAP
+            )
+            instance.course_handicap = instance._compute_course_handicap(
+                handicap, num_holes
+            )
+        return instance
 
     def __post_init__(self) -> None:
         """Validate and enforce business rules."""
@@ -100,22 +122,46 @@ class Round:
         """
         if self.status == RoundStatus.FINISHED:
             raise ValueError("Round is already finished")
-        num_holes = len(self.holes)
-        if num_holes not in (9, 18):
+        hole_count = len(self.holes)
+        if hole_count not in (9, 18):
             raise ValueError("Round must have either 9 or 18 holes to finish")
+        # Backfill num_holes/course_par from holes for old rounds
+        if self.num_holes is None:
+            self.num_holes = hole_count
+        if self.course_par is None:
+            self.course_par = sum(h.par for h in self.holes)
         handicap = (
             self.player_handicap
             if self.player_handicap is not None
             else self._DEFAULT_HANDICAP
         )
+        self.course_handicap = self._compute_course_handicap(handicap, hole_count)
         self.stableford_score = calculate_stableford(
             holes=self.holes,
             player_handicap=handicap,
-            num_holes=num_holes,
+            num_holes=hole_count,
             slope_rating=self.slope_rating,
             course_rating=self.course_rating,
         )
         self.status = RoundStatus.FINISHED
+
+    def _compute_course_handicap(self, handicap_index: Decimal, num_holes: int) -> int:
+        """Derive the integer Course Handicap for display/auditing."""
+        if self.slope_rating is not None and self.course_rating is not None:
+            total_par = (
+                self.course_par
+                if self.course_par is not None
+                else sum(h.par for h in self.holes)
+            )
+            return calculate_course_handicap(
+                handicap_index=handicap_index,
+                slope_rating=self.slope_rating,
+                course_rating=self.course_rating,
+                par=total_par,
+                num_holes=num_holes,
+            )
+        effective = handicap_index / 2 if num_holes == 9 else handicap_index
+        return int(effective.to_integral_value(rounding=ROUND_HALF_UP))
 
     def abort(self) -> None:
         """Mark the round as aborted/cancelled.
