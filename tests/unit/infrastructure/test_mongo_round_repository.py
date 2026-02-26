@@ -1201,3 +1201,117 @@ class TestMongoRoundRepositoryHoleHandicapStrokes:
 
         assert result is not None
         assert result.holes[0].handicap_strokes is None
+
+
+@allure.feature("Infrastructure")
+@allure.story("MongoDB Round Repository - Per-Hole Clubs Used")
+class TestMongoRoundRepositoryHoleClubsUsed:
+    """Tests for clubs_used per hole in MongoDB persistence."""
+
+    def test_save_serializes_clubs_used_as_list(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize clubs_used tuple as a JSON list."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Pitch & Putt",
+            date=datetime.date(2026, 2, 1),
+        )
+        round_.record_hole(
+            HoleResult(
+                hole_number=1,
+                strokes=3,
+                par=4,
+                stroke_index=1,
+                clubs_used=("d", "7i", "pw"),
+            )
+        )
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["holes"][0]["clubs_used"] == ["d", "7i", "pw"]
+
+    def test_save_serializes_none_clubs_used(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should serialize None clubs_used as None."""
+        collection.insert_one.return_value = Mock(inserted_id=ObjectId())
+
+        round_ = Round.create(
+            course_name="Old Course",
+            date=datetime.date(2026, 2, 1),
+        )
+        round_.record_hole(HoleResult(hole_number=1, strokes=4, par=4, stroke_index=1))
+
+        repo.save(round_, user_id="user123")
+
+        doc = collection.insert_one.call_args[0][0]
+        assert doc["holes"][0]["clubs_used"] is None
+
+    def test_find_deserializes_list_to_tuple(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Should deserialize clubs_used list back to tuple."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Pitch & Putt",
+            "date": "2026-02-01",
+            "holes": [
+                {
+                    "hole_number": 1,
+                    "strokes": 3,
+                    "par": 4,
+                    "stroke_index": 1,
+                    "clubs_used": ["d", "7i", "pw"],
+                },
+            ],
+            "status": "ip",
+            "created_at": "2026-02-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.holes[0].clubs_used == ("d", "7i", "pw")
+
+    def test_find_defaults_to_none_when_clubs_used_missing(
+        self,
+        collection: Collection[Any],
+        repo: MongoRoundRepository,
+    ) -> None:
+        """Old docs without clubs_used per hole should default to None."""
+        doc_id = ObjectId()
+        doc = {
+            "_id": doc_id,
+            "course_name": "Legacy Course",
+            "date": "2026-02-01",
+            "holes": [
+                {
+                    "hole_number": 1,
+                    "strokes": 4,
+                    "par": 4,
+                    "stroke_index": 1,
+                    # No clubs_used — old document
+                },
+            ],
+            "status": "ip",
+            "created_at": "2025-06-01T10:00:00+00:00",
+            "user_id": "user123",
+        }
+        collection.find_one.return_value = doc
+
+        result = repo.find_by_id(RoundId(value=str(doc_id)), user_id="user123")
+
+        assert result is not None
+        assert result.holes[0].clubs_used is None
