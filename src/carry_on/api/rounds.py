@@ -18,12 +18,14 @@ class HoleResultRequest(BaseModel):
     strokes: int
     par: int
     stroke_index: int
+    clubs_used: list[str] | None = None
 
 
 class HoleUpdateRequest(BaseModel):
     strokes: int
     par: int
     stroke_index: int
+    clubs_used: list[str] | None = None
 
 
 class RoundCreateRequest(BaseModel):
@@ -49,7 +51,15 @@ async def create_round(
             user_id=user.id,
             course_name=round_data.course_name,
             date=round_data.date,
-            holes=[h.model_dump() for h in round_data.holes],
+            holes=[
+                {
+                    **h.model_dump(exclude={"clubs_used"}),
+                    "clubs_used": (
+                        tuple(h.clubs_used) if h.clubs_used is not None else None
+                    ),
+                }
+                for h in round_data.holes
+            ],
             slope_rating=(
                 Decimal(round_data.slope_rating)
                 if round_data.slope_rating is not None
@@ -124,6 +134,9 @@ async def get_round(
                 "stroke_index": h.stroke_index,
                 "stableford_points": h.stableford_points,
                 "handicap_strokes": h.handicap_strokes,
+                "clubs_used": (
+                    list(h.clubs_used) if h.clubs_used is not None else None
+                ),
             }
             for h in round.holes
         ],
@@ -154,11 +167,19 @@ async def update_hole(
                 "strokes": hole_data.strokes,
                 "par": hole_data.par,
                 "stroke_index": hole_data.stroke_index,
+                "clubs_used": (
+                    tuple(hole_data.clubs_used)
+                    if hole_data.clubs_used is not None
+                    else None
+                ),
             },
         )
         return {"message": "Hole updated successfully"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=error_msg)
+        raise HTTPException(status_code=400, detail=error_msg)
 
 
 @app.patch("/api/rounds/{round_id}/status")

@@ -483,6 +483,82 @@
             font-size: 14px;
             color: #666;
         }
+        .input-mode-toggle {
+            display: flex;
+            gap: 0;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #ddd;
+        }
+        .input-mode-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            margin: 0;
+            border-radius: 0;
+        }
+        .input-mode-toggle button.active {
+            background: #2d5a27;
+            color: white;
+        }
+        .club-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .club-grid button {
+            padding: 10px 4px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            margin: 0;
+        }
+        .club-grid button:active {
+            background: #e8f5e6;
+            border-color: #2d5a27;
+        }
+        .clubs-display {
+            font-size: 14px;
+            color: #555;
+            min-height: 20px;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+        .clubs-display .club-tag {
+            display: inline;
+        }
+        .clubs-display .club-arrow {
+            color: #999;
+            margin: 0 2px;
+        }
+        .club-undo-btn {
+            background: #dc3545;
+            color: white;
+            font-size: 13px;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        .club-undo-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #clubSection {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -623,9 +699,39 @@
                 <button type="button" id="nextHoleBtn">&#8250;</button>
             </div>
 
-            <div class="form-group">
+            <div class="input-mode-toggle">
+                <button type="button" id="modeCounterBtn" class="active" onclick="setInputMode('counter')">Counter</button>
+                <button type="button" id="modeClubsBtn" onclick="setInputMode('clubs')">Clubs</button>
+            </div>
+
+            <div id="counterSection" class="form-group">
                 <label for="holeStrokes">Strokes</label>
-                <input type="number" id="holeStrokes" min="1" max="20" placeholder="Enter strokes">
+                <input type="number" id="holeStrokes" min="0" max="20" placeholder="Enter strokes">
+            </div>
+
+            <div id="clubSection">
+                <div class="form-group">
+                    <label>Strokes: <span id="clubStrokeCount">0</span></label>
+                </div>
+                <div class="club-grid">
+                    <button type="button" onclick="addClub('D')">D</button>
+                    <button type="button" onclick="addClub('3W')">3W</button>
+                    <button type="button" onclick="addClub('5W')">5W</button>
+                    <button type="button" onclick="addClub('4H')">4H</button>
+                    <button type="button" onclick="addClub('5H')">5H</button>
+                    <button type="button" onclick="addClub('5i')">5i</button>
+                    <button type="button" onclick="addClub('6i')">6i</button>
+                    <button type="button" onclick="addClub('7i')">7i</button>
+                    <button type="button" onclick="addClub('8i')">8i</button>
+                    <button type="button" onclick="addClub('9i')">9i</button>
+                    <button type="button" onclick="addClub('PW')">PW</button>
+                    <button type="button" onclick="addClub('GW')">GW</button>
+                    <button type="button" onclick="addClub('SW')">SW</button>
+                    <button type="button" onclick="addClub('LW')">LW</button>
+                    <button type="button" onclick="addClub('P')">P</button>
+                </div>
+                <div class="clubs-display" id="clubsDisplay"></div>
+                <button type="button" class="club-undo-btn" id="clubUndoBtn" disabled onclick="undoClub()">Undo</button>
             </div>
 
             <div class="round-action-buttons">
@@ -1620,7 +1726,64 @@
         let selectedCourse = null;
         let currentHoleIndex = 0;
         let holeStrokes = [];
+        let holeClubsUsed = [];  // Per-hole clubs_used arrays (array of arrays or nulls)
         let currentRoundId = null;  // Track the round ID for incremental saving
+        let inputMode = 'counter';  // 'counter' or 'clubs'
+
+        function setInputMode(mode) {
+            inputMode = mode;
+            document.getElementById('modeCounterBtn').classList.toggle('active', mode === 'counter');
+            document.getElementById('modeClubsBtn').classList.toggle('active', mode === 'clubs');
+            document.getElementById('counterSection').style.display = mode === 'counter' ? 'block' : 'none';
+            document.getElementById('clubSection').style.display = mode === 'clubs' ? 'block' : 'none';
+
+            if (mode === 'clubs') {
+                // Initialize clubs array for current hole if needed
+                if (!holeClubsUsed[currentHoleIndex]) {
+                    holeClubsUsed[currentHoleIndex] = [];
+                }
+                updateClubsDisplay();
+            }
+        }
+
+        function addClub(clubCode) {
+            if (!selectedCourse) return;
+            if (!holeClubsUsed[currentHoleIndex]) {
+                holeClubsUsed[currentHoleIndex] = [];
+            }
+            holeClubsUsed[currentHoleIndex].push(clubCode);
+            holeStrokes[currentHoleIndex] = holeClubsUsed[currentHoleIndex].length;
+            updateClubsDisplay();
+            updateFinishButtonState();
+            debouncedSave();
+        }
+
+        function undoClub() {
+            if (!holeClubsUsed[currentHoleIndex] || holeClubsUsed[currentHoleIndex].length === 0) return;
+            holeClubsUsed[currentHoleIndex].pop();
+            holeStrokes[currentHoleIndex] = holeClubsUsed[currentHoleIndex].length || null;
+            updateClubsDisplay();
+            updateFinishButtonState();
+            debouncedSave();
+        }
+
+        function updateClubsDisplay() {
+            const display = document.getElementById('clubsDisplay');
+            const undoBtn = document.getElementById('clubUndoBtn');
+            const countLabel = document.getElementById('clubStrokeCount');
+            const clubs = holeClubsUsed[currentHoleIndex] || [];
+
+            countLabel.textContent = clubs.length;
+            undoBtn.disabled = clubs.length === 0;
+
+            if (clubs.length === 0) {
+                display.innerHTML = '';
+                return;
+            }
+            display.innerHTML = clubs
+                .map((c, i) => (i > 0 ? '<span class="club-arrow"> &rarr; </span>' : '') + '<span class="club-tag">' + c + '</span>')
+                .join('');
+        }
 
         async function loadUserCourses() {
             try {
@@ -1709,8 +1872,9 @@
                 currentRoundId = null;
             }
 
-            // Initialize hole strokes array
+            // Initialize hole strokes and clubs arrays
             holeStrokes = new Array(selectedCourse.holes.length).fill(null);
+            holeClubsUsed = new Array(selectedCourse.holes.length).fill(null);
             currentHoleIndex = 0;
             updateHoleDisplay();
 
@@ -1727,7 +1891,10 @@
 
             const strokesInput = document.getElementById('holeStrokes');
             strokesInput.value = holeStrokes[currentHoleIndex] || '';
-            strokesInput.focus();
+            if (inputMode === 'counter') {
+                strokesInput.focus();
+            }
+            updateClubsDisplay();
             updateFinishButtonState();
         }
 
@@ -1741,22 +1908,36 @@
             const hole = selectedCourse.holes[currentHoleIndex];
             if (!hole) return; // Hole doesn't exist in course
 
-            const strokes = parseInt(document.getElementById('holeStrokes').value);
+            let strokes;
+            let clubsUsed = null;
 
-            if (!strokes || strokes < 1) return;
+            if (inputMode === 'clubs') {
+                const clubs = holeClubsUsed[currentHoleIndex] || [];
+                strokes = clubs.length;
+                clubsUsed = clubs;
+                // Allow saving 0-stroke holes in clubs mode (in-progress)
+            } else {
+                strokes = parseInt(document.getElementById('holeStrokes').value);
+                if (!strokes && strokes !== 0) return;
+                if (strokes < 1) return;
+            }
 
             try {
+                const body = {
+                    strokes: strokes,
+                    par: hole.par,
+                    stroke_index: hole.stroke_index,
+                };
+                if (clubsUsed !== null) {
+                    body.clubs_used = clubsUsed;
+                }
                 await fetch(`/api/rounds/${currentRoundId}/holes/${hole.hole_number}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         ...getAuthHeaders()
                     },
-                    body: JSON.stringify({
-                        strokes: strokes,
-                        par: hole.par,
-                        stroke_index: hole.stroke_index,
-                    })
+                    body: JSON.stringify(body)
                 });
             } catch (err) {
                 console.error('Failed to save hole:', err);
@@ -1831,10 +2012,20 @@
                 selectedCourse = course;
                 currentRoundId = roundId;
 
-                // Populate strokes array with existing data
+                // Populate strokes and clubs arrays with existing data
                 holeStrokes = new Array(selectedCourse.holes.length).fill(null);
+                holeClubsUsed = new Array(selectedCourse.holes.length).fill(null);
+                let hasClubs = false;
                 for (const hole of roundData.holes) {
                     holeStrokes[hole.hole_number - 1] = hole.strokes;
+                    if (hole.clubs_used) {
+                        holeClubsUsed[hole.hole_number - 1] = [...hole.clubs_used];
+                        hasClubs = true;
+                    }
+                }
+                // Auto-switch to clubs mode if round has club data
+                if (hasClubs) {
+                    setInputMode('clubs');
                 }
 
                 // Start at first incomplete hole or hole 1
@@ -1861,20 +2052,27 @@
 
         // Save current strokes before navigating
         function saveCurrentStrokes() {
-            const val = document.getElementById('holeStrokes').value;
-            if (val) {
-                holeStrokes[currentHoleIndex] = parseInt(val);
+            if (inputMode === 'clubs') {
+                const clubs = holeClubsUsed[currentHoleIndex] || [];
+                holeStrokes[currentHoleIndex] = clubs.length || null;
+            } else {
+                const val = document.getElementById('holeStrokes').value;
+                if (val) {
+                    holeStrokes[currentHoleIndex] = parseInt(val);
+                }
             }
         }
 
         function resetRoundForm() {
             selectedCourse = null;
             holeStrokes = [];
+            holeClubsUsed = [];
             currentHoleIndex = 0;
             currentRoundId = null;
             courseSearchInput.value = '';
             document.getElementById('holeNavigator').style.display = 'none';
             document.getElementById('holeStrokes').value = '';
+            setInputMode('counter');
             updateFinishButtonState();
             loadRecentRounds();
         }
@@ -1885,11 +2083,18 @@
                 btn.disabled = true;
                 return;
             }
-            // Include the current input value in the check
-            const currentVal = parseInt(document.getElementById('holeStrokes').value);
             const tempStrokes = [...holeStrokes];
-            if (currentVal && currentVal >= 1) {
-                tempStrokes[currentHoleIndex] = currentVal;
+            if (inputMode === 'counter') {
+                const currentVal = parseInt(document.getElementById('holeStrokes').value);
+                if (currentVal && currentVal >= 1) {
+                    tempStrokes[currentHoleIndex] = currentVal;
+                }
+            } else {
+                // In clubs mode, strokes come from club count
+                const clubs = holeClubsUsed[currentHoleIndex] || [];
+                if (clubs.length > 0) {
+                    tempStrokes[currentHoleIndex] = clubs.length;
+                }
             }
             const allFilled = tempStrokes.length === selectedCourse.holes.length
                 && !tempStrokes.some(s => !s || s < 1);

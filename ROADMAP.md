@@ -18,15 +18,19 @@ Store golf course information including:
 - [x] Course detail endpoint (GET /api/courses/{id} with hole data)
 
 ### 2. Player Handicap
-- Store player handicap index
-- Support for course handicap calculation based on course rating/slope
+- [x] Store player handicap index (snapshot on Round at creation)
+- [x] Course handicap calculation using WHS formula (slope/course rating)
+- [x] Fallback rounding when slope/course rating not available
+- [x] Default to WHS maximum (54) when no player handicap set
+- [x] Slope rating and course rating on Course and Round aggregates
 
 ### 3. Stableford Score Calculation
-- Calculate Stableford points per hole based on:
-  - Net strokes (gross - handicap strokes)
-  - Par for the hole
-- Show running Stableford total during round
-- Store completed rounds with final scores
+- [x] Handicap stroke distribution by stroke index (hardest holes first)
+- [x] Per-hole Stableford points (auto-computed on record/update)
+- [x] Per-hole handicap strokes stored for scoring transparency
+- [x] Total Stableford score calculated on round finalization
+- [x] Backfill per-hole points and handicap strokes on finish for legacy rounds
+- [ ] Show running Stableford total during round (UI)
 
 ### 4. Round Tracking
 Use the app during a round to:

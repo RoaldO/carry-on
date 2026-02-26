@@ -81,6 +81,7 @@ class RoundService:
                         strokes=h["strokes"],
                         par=h["par"],
                         stroke_index=h["stroke_index"],
+                        clubs_used=h.get("clubs_used"),
                     )
                 )
 

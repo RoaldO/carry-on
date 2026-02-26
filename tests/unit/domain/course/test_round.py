@@ -909,3 +909,53 @@ class TestRoundPerHoleHandicapStrokes:
         # After finish, all holes should have handicap_strokes
         # CH=18 → 1 stroke per hole (18//18=1, remainder=0)
         assert all(h.handicap_strokes == 1 for h in round_.holes)
+
+
+@allure.feature("Domain Model")
+@allure.story("Round Aggregate - Zero Stroke Holes")
+class TestRoundZeroStrokeHoles:
+    """Tests for in-progress holes with 0 strokes (club tally mode)."""
+
+    def test_record_hole_with_zero_strokes(self) -> None:
+        """Should accept a hole with 0 strokes (in-progress)."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            num_holes=18,
+        )
+        hole = HoleResult(hole_number=1, strokes=0, par=4, stroke_index=1)
+        round_.record_hole(hole)
+        assert round_.holes[0].strokes == 0
+
+    def test_finish_rejects_round_with_zero_stroke_holes(self) -> None:
+        """finish() should reject rounds where any hole has 0 strokes."""
+        round_ = Round.create(
+            course_name="Old Course",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+            num_holes=9,
+        )
+        for i in range(1, 9):
+            round_.record_hole(
+                HoleResult(hole_number=i, strokes=4, par=4, stroke_index=i)
+            )
+        # Hole 9 has 0 strokes (in-progress)
+        round_.record_hole(HoleResult(hole_number=9, strokes=0, par=4, stroke_index=9))
+        with pytest.raises(
+            ValueError, match="Cannot finish round with incomplete holes"
+        ):
+            round_.finish()
+
+    def test_stableford_skips_zero_stroke_holes(self) -> None:
+        """_with_stableford should not enrich 0-stroke holes."""
+        round_ = Round.create(
+            course_name="Hilly Links",
+            date=date(2024, 1, 15),
+            player_handicap=Decimal("18"),
+            num_holes=18,
+        )
+        hole = HoleResult(hole_number=1, strokes=0, par=4, stroke_index=1)
+        round_.record_hole(hole)
+        # Should remain None — no Stableford for unplayed holes
+        assert round_.holes[0].stableford_points is None
+        assert round_.holes[0].handicap_strokes is None
