@@ -20,6 +20,7 @@ class HoleResultDoc(TypedDict):
     stroke_index: int
     stableford_points: NotRequired[int | None]
     handicap_strokes: NotRequired[int | None]
+    clubs_used: NotRequired[list[str] | None]
 
 
 class RoundDoc(TypedDict):
@@ -120,6 +121,9 @@ class MongoRoundRepository:
                     "stroke_index": h.stroke_index,
                     "stableford_points": h.stableford_points,
                     "handicap_strokes": h.handicap_strokes,
+                    "clubs_used": (
+                        list(h.clubs_used) if h.clubs_used is not None else None
+                    ),
                 }
                 for h in round.holes
             ],
@@ -178,6 +182,7 @@ class MongoRoundRepository:
             course_par=doc.get("course_par"),
         )
         for h in doc["holes"]:
+            raw_clubs = h.get("clubs_used")
             round.record_hole(
                 HoleResult(
                     hole_number=h["hole_number"],
@@ -186,6 +191,7 @@ class MongoRoundRepository:
                     stroke_index=h["stroke_index"],
                     stableford_points=h.get("stableford_points"),
                     handicap_strokes=h.get("handicap_strokes"),
+                    clubs_used=tuple(raw_clubs) if raw_clubs else None,
                 )
             )
         return round
