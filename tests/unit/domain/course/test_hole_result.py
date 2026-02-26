@@ -96,3 +96,58 @@ class TestHoleResultStablefordPoints:
             hole_number=1, strokes=4, par=4, stroke_index=7, stableford_points=2
         )
         assert hole.stableford_points == 2
+
+
+@allure.feature("Domain Model")
+@allure.story("HoleResult Value Object - Clubs Used")
+class TestHoleResultClubsUsed:
+    """Tests for the optional clubs_used field on HoleResult."""
+
+    def test_clubs_used_defaults_to_none(self) -> None:
+        """HoleResult without clubs_used should default to None."""
+        hole = HoleResult(hole_number=1, strokes=4, par=4, stroke_index=7)
+        assert hole.clubs_used is None
+
+    def test_clubs_used_accepts_matching_tuple(self) -> None:
+        """clubs_used tuple length must match strokes count."""
+        hole = HoleResult(
+            hole_number=1,
+            strokes=3,
+            par=4,
+            stroke_index=7,
+            clubs_used=("d", "7i", "pw"),
+        )
+        assert hole.clubs_used == ("d", "7i", "pw")
+
+    def test_clubs_used_rejects_mismatched_length(self) -> None:
+        """clubs_used with wrong length should raise ValueError."""
+        with pytest.raises(ValueError, match="clubs_used length must match strokes"):
+            HoleResult(
+                hole_number=1,
+                strokes=2,
+                par=4,
+                stroke_index=7,
+                clubs_used=("d", "7i", "pw"),
+            )
+
+    def test_clubs_used_accepts_empty_tuple_for_zero_strokes(self) -> None:
+        """Empty tuple is valid for 0-stroke in-progress holes."""
+        hole = HoleResult(
+            hole_number=1,
+            strokes=0,
+            par=4,
+            stroke_index=7,
+            clubs_used=(),
+        )
+        assert hole.clubs_used == ()
+
+    def test_clubs_used_none_with_nonzero_strokes(self) -> None:
+        """None clubs_used is valid with any stroke count (simple counter mode)."""
+        hole = HoleResult(
+            hole_number=1,
+            strokes=5,
+            par=4,
+            stroke_index=7,
+            clubs_used=None,
+        )
+        assert hole.clubs_used is None
