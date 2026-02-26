@@ -748,3 +748,212 @@ class TestRoundsAPIPerHoleStableford:
         data = response.json()
         for hole in data["holes"]:
             assert "handicap_strokes" in hole
+
+
+@allure.feature("REST API")
+@allure.story("Rounds API - Clubs Used")
+class TestRoundsAPIClubsUsed:
+    """Tests for clubs_used in rounds API."""
+
+    def test_patch_hole_with_clubs_used(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """PATCH hole with clubs_used should save on domain object."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        response = client.patch(
+            f"/api/rounds/{round_id}/holes/1",
+            json={
+                "strokes": 3,
+                "par": 4,
+                "stroke_index": 1,
+                "clubs_used": ["d", "7i", "pw"],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        saved_round, _ = override_round_repo.rounds[0]
+        assert saved_round.holes[0].clubs_used == ("d", "7i", "pw")
+
+    def test_patch_hole_without_clubs_used_defaults_to_none(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """PATCH hole without clubs_used should default to None."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        response = client.patch(
+            f"/api/rounds/{round_id}/holes/1",
+            json={"strokes": 4, "par": 4, "stroke_index": 1},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        saved_round, _ = override_round_repo.rounds[0]
+        assert saved_round.holes[0].clubs_used is None
+
+    def test_patch_hole_with_mismatched_clubs_used_returns_400(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """PATCH with mismatched strokes/clubs_used length should return 400."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        response = client.patch(
+            f"/api/rounds/{round_id}/holes/1",
+            json={
+                "strokes": 2,
+                "par": 4,
+                "stroke_index": 1,
+                "clubs_used": ["d", "7i", "pw"],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+
+    def test_patch_hole_zero_strokes_empty_clubs(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """PATCH with strokes=0 and clubs_used=[] should succeed (in-progress)."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        response = client.patch(
+            f"/api/rounds/{round_id}/holes/1",
+            json={
+                "strokes": 0,
+                "par": 4,
+                "stroke_index": 1,
+                "clubs_used": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+
+    def test_get_round_includes_clubs_used_per_hole(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """GET /api/rounds/{id} should include clubs_used per hole."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        # Add a hole with clubs
+        client.patch(
+            f"/api/rounds/{round_id}/holes/1",
+            json={
+                "strokes": 2,
+                "par": 3,
+                "stroke_index": 1,
+                "clubs_used": ["7i", "pw"],
+            },
+            headers=auth_headers,
+        )
+
+        response = client.get(f"/api/rounds/{round_id}", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["holes"][0]["clubs_used"] == ["7i", "pw"]
+
+    def test_finish_with_zero_stroke_hole_returns_400(
+        self,
+        client: TestClient,
+        override_round_repo: FakeRoundRepository,
+        auth_headers: dict[str, str],
+        mock_authenticated_user: MagicMock,
+    ) -> None:
+        """Finish with an incomplete 0-stroke hole should return 400."""
+        response = client.post(
+            "/api/rounds",
+            json={
+                "course_name": "Pitch & Putt",
+                "date": "2026-02-01",
+                "holes": [],
+            },
+            headers=auth_headers,
+        )
+        round_id = response.json()["id"]
+
+        # Add 8 complete holes + 1 zero-stroke hole
+        for i in range(1, 9):
+            client.patch(
+                f"/api/rounds/{round_id}/holes/{i}",
+                json={"strokes": 4, "par": 4, "stroke_index": i},
+                headers=auth_headers,
+            )
+        client.patch(
+            f"/api/rounds/{round_id}/holes/9",
+            json={"strokes": 0, "par": 4, "stroke_index": 9},
+            headers=auth_headers,
+        )
+
+        response = client.patch(
+            f"/api/rounds/{round_id}/status?action=finish",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
