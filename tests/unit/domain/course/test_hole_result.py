@@ -49,10 +49,15 @@ class TestHoleResultValidation:
         with pytest.raises(ValueError, match="Hole number must be between 1 and 18"):
             HoleResult(hole_number=19, strokes=4, par=4, stroke_index=7)
 
-    def test_strokes_must_be_at_least_1(self) -> None:
-        """Zero strokes is invalid — you must take at least one stroke."""
-        with pytest.raises(ValueError, match="Strokes must be at least 1"):
-            HoleResult(hole_number=1, strokes=0, par=4, stroke_index=7)
+    def test_strokes_allows_zero_for_in_progress_holes(self) -> None:
+        """Zero strokes is valid for in-progress holes (club tally mode)."""
+        hole = HoleResult(hole_number=1, strokes=0, par=4, stroke_index=7)
+        assert hole.strokes == 0
+
+    def test_strokes_rejects_negative(self) -> None:
+        """Negative strokes is always invalid."""
+        with pytest.raises(ValueError, match="Strokes must not be negative"):
+            HoleResult(hole_number=1, strokes=-1, par=4, stroke_index=7)
 
     def test_par_must_be_3_4_or_5(self) -> None:
         """Par must be one of the standard values: 3, 4, or 5."""
