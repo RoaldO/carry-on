@@ -88,6 +88,8 @@ class Round:
 
     def _with_stableford(self, hole: HoleResult) -> HoleResult:
         """Attach per-hole Stableford points and handicap strokes."""
+        if hole.strokes == 0:
+            return hole
         if self.course_handicap is not None and self.num_holes is not None:
             pts = compute_hole_stableford(hole, self.course_handicap, self.num_holes)
             hs = handicap_strokes_for_hole(
@@ -138,6 +140,8 @@ class Round:
         hole_count = len(self.holes)
         if hole_count not in (9, 18):
             raise ValueError("Round must have either 9 or 18 holes to finish")
+        if any(h.strokes == 0 for h in self.holes):
+            raise ValueError("Cannot finish round with incomplete holes")
         # Backfill num_holes/course_par from holes for old rounds
         if self.num_holes is None:
             self.num_holes = hole_count
